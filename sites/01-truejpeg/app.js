@@ -2319,7 +2319,6 @@ onmessage = async (e) => {
 
   /* ---------- theme switch (INK / PAPER with honeycomb dot-wave wipe) ---------- */
   const themeBtn = $('#theme-toggle');
-  const vThemeBtn = $('#v-theme');
   const themeLbl = $('#theme-lbl');
   const THEME_KEY = 'tj.theme';
   let themeBusy = false;
@@ -2369,16 +2368,14 @@ onmessage = async (e) => {
   }
 
   if (themeBtn) themeBtn.addEventListener('click', (e) => toggleTheme(themeBtn, e));
-  if (vThemeBtn) vThemeBtn.addEventListener('click', (e) => toggleTheme(vThemeBtn, e));
   addEventListener('keydown', (e) => {
     if ((e.key === 't' || e.key === 'T') && !e.metaKey && !e.ctrlKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
-      toggleTheme(vOpen ? vThemeBtn : themeBtn, null);
+      toggleTheme(themeBtn, null);
     }
   });
 
   /* ---------- PRO / RAW mode switch (Hardware LED + Shortcut P) ---------- */
   const proBtn = $('#pro-toggle');
-  const vProBtn = $('#v-pro');
   const proLbl = $('#pro-lbl');
   const PRO_KEY = 'tj.pro';
 
@@ -2387,11 +2384,6 @@ onmessage = async (e) => {
     else document.documentElement.removeAttribute('data-pro');
     const txt = on ? 'PRO' : 'RAW';
     if (proBtn) proBtn.setAttribute('aria-pressed', String(on));
-    if (vProBtn) {
-      vProBtn.setAttribute('aria-pressed', String(on));
-      vProBtn.textContent = txt;
-      if (!silent && !REDUCE && vOpen) scramble(vProBtn, 0);
-    }
     if (proLbl) {
       proLbl.textContent = txt;
       if (!silent && !REDUCE) scramble(proLbl, 0);
@@ -2425,7 +2417,6 @@ onmessage = async (e) => {
   }
 
   if (proBtn) proBtn.addEventListener('click', togglePro);
-  if (vProBtn) vProBtn.addEventListener('click', togglePro);
   addEventListener('keydown', (e) => {
     if ((e.key === 'p' || e.key === 'P') && !e.metaKey && !e.ctrlKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
       togglePro();
