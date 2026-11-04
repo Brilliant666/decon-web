@@ -618,11 +618,11 @@
       <!-- Card 3: Console Render Simulator & Honeycomb Wipe -->
       <div class="win" data-win>
         <div class="win__bar">
-          <span>01.C // CONSOLE & DOT WIPE</span>
-          <span>TRANSITION<i class="win__led"></i></span>
+          <span>01.C // CONSOLE, WIPE &amp; AUDIO</span>
+          <span>WEB AUDIO<i class="win__led"></i></span>
         </div>
         <div class="win__body">
-          <p class="win__desc">终端乱码定格器 + 24 格 LED 进度条，以及从点击坐标向外扩散的全屏蜂窝点阵波浪转场（`wipe`）：</p>
+          <p class="win__desc">终端乱码定格器 + 全屏蜂窝点阵波浪转场（`wipe`）+ 零外部音频的 `createSoundEngine()` 机械触觉声效合成器：</p>
           <div class="con" id="con-box">
             <span class="con__row"><b>model</b><span id="c-model">SeeDream 5.0 Pro</span></span>
             <span class="con__row"><b>lens</b><span id="c-lens">20mm f/1.8 CCD</span></span>
@@ -637,6 +637,13 @@
             <button class="btn btn--primary" id="wipe-btn" type="button">Trigger Dot-Wave Wipe</button>
             <button class="btn" id="con-sim-btn" type="button">Simulate Render</button>
             <button class="btn" id="scramble-btn" type="button">Matrix Scramble</button>
+          </div>
+          <div class="ctrl-row" style="border-top:1px dashed var(--line);padding-top:10px">
+            <button class="btn" type="button" id="sfx-tick">SFX: Tick</button>
+            <button class="btn" type="button" id="sfx-switch">SFX: Switch</button>
+            <button class="btn" type="button" id="sfx-shutter">SFX: Shutter</button>
+            <button class="btn" type="button" id="sfx-copy">SFX: Copy</button>
+            <button class="btn" type="button" id="sfx-amb">SFX: Ambient (OFF)</button>
           </div>
         </div>
       </div>
@@ -696,10 +703,11 @@
   <div class="toast" id="toast">Copied to clipboard</div>
 
   <script type="module">
-    import { TrueJpegUI } from './truejpeg-ui.js?v=20261104t5';
+    import { TrueJpegUI } from './truejpeg-ui.js?v=20261104t7';
 
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const sfx = TrueJpegUI.createSoundEngine();
 
     // Toast helper
     const toastEl = $('#toast');
@@ -746,17 +754,39 @@
     $('#globe-cv').addEventListener('click', triggerGlobalScramble);
     $('#scramble-btn').addEventListener('click', triggerGlobalScramble);
 
-    // 4. Initialize Honeycomb Wipe
+    // 4. Initialize Honeycomb Wipe & Web Audio Demo Buttons
     const runWipe = TrueJpegUI.createWipe($('#wipe-cv'));
     $('#wipe-btn').addEventListener('click', (e) => {
+      sfx.shutter(true);
       const origin = { x: e.clientX || innerWidth / 2, y: e.clientY || innerHeight / 2 };
       runWipe(origin, () => {
+        sfx.shutter(false);
         const presets = ['TRUE JPEG', 'DOT MATRIX', 'SEEDREAM 5.0'];
         const cur = $('#word-inp').value;
         const next = presets[(presets.indexOf(cur) + 1) % presets.length];
         $('#word-inp').value = next;
         wordmark.play(next);
       });
+    });
+
+    let sfxPitch = 0.85;
+    let sfxSwState = false;
+    $('#sfx-tick').addEventListener('click', () => {
+      sfx.tick(sfxPitch);
+      sfxPitch = sfxPitch >= 1.5 ? 0.8 : +(sfxPitch + 0.14).toFixed(2);
+    });
+    $('#sfx-switch').addEventListener('click', () => {
+      sfxSwState = !sfxSwState;
+      sfx.switch(sfxSwState);
+    });
+    $('#sfx-shutter').addEventListener('click', () => sfx.shutter(true));
+    $('#sfx-copy').addEventListener('click', () => sfx.copy());
+    $('#sfx-amb').addEventListener('click', (e) => {
+      const on = sfx.ambient();
+      sfx.switch(on);
+      e.currentTarget.textContent = on ? 'SFX: Ambient (ON)' : 'SFX: Ambient (OFF)';
+      e.currentTarget.classList.toggle('btn--primary', on);
+      showToast(on ? 'Darkroom Ambient: ON // 暗房环境底噪已开启' : 'Darkroom Ambient: OFF // 暗房环境底噪已关闭');
     });
 
     // 5. Console Simulator
@@ -845,7 +875,8 @@
       size: 150,
       hudEl: dkHud,
       initialZoom: 2.5,
-      posY: 0.25
+      posY: 0.25,
+      sound: sfx
     });
 
     function runDarkroomAnalysis() {
@@ -868,6 +899,7 @@
       const btn = e.target.closest('[data-hex]');
       if (!btn) return;
       await navigator.clipboard.writeText(btn.dataset.hex);
+      sfx.copy();
       showToast(`Copied color swatch ${btn.dataset.hex}`);
     });
 
@@ -884,6 +916,7 @@
     }
 
     $('#dk-next').addEventListener('click', () => {
+      sfx.tick(1.05);
       if (!allWorks.length) { loadDarkroomSample(null); return; }
       const safeWorks = allWorks.filter((w) => !(w.tags || []).includes('NSFW'));
       dkIdx = (dkIdx + 1) % safeWorks.length;
@@ -963,6 +996,7 @@
       if (!btn) return;
       $$('.tab', $('#cat-tabs')).forEach((b) => b.classList.toggle('is-active', b === btn));
       currentCat = btn.dataset.cat;
+      sfx.tick();
       renderVault();
     });
 
@@ -977,6 +1011,7 @@
         const card = exp.closest('.pcard');
         const open = card.classList.toggle('is-expanded');
         exp.textContent = open ? 'Collapse' : 'Expand Full';
+        sfx.switch(open);
         return;
       }
       const cp = e.target.closest('[data-copy]');
@@ -984,6 +1019,7 @@
         const w = allWorks.find((x) => String(x.id) === cp.dataset.copy);
         if (!w) return;
         await navigator.clipboard.writeText(w.prompt);
+        sfx.copy();
         TrueJpegUI.scramble(cp, 'COPIED // OK', 'en');
         showToast(`Copied #${w.id} (${w.title}) prompt!`);
         setTimeout(() => { cp.textContent = 'Copy Prompt'; }, 1600);

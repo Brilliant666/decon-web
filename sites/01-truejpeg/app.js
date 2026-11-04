@@ -35,6 +35,189 @@
   const I18N = window.TJ_I18N;
   const { t, tx } = I18N;
   const ASSET_V = new URL(document.currentScript.src).searchParams.get('v') || '';
+  const isPro = () => document.documentElement.getAttribute('data-pro') === '1';
+
+  /* ---------- Pro Darkroom Web Audio Engine (active only in PRO mode) ---------- */
+  const sfx = (() => {
+    let ctx = null, noiseBuf = null, ambNodes = null, ambOn = false, lastTick = 0;
+    function ensure() {
+      if (REDUCE) return null;
+      if (!ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        ctx = new AC();
+        const sr = ctx.sampleRate, len = Math.floor(sr * 2.5);
+        noiseBuf = ctx.createBuffer(1, len, sr);
+        const out = noiseBuf.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < len; i++) {
+          const w = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + w * 0.0555179;
+          b1 = 0.99332 * b1 + w * 0.0750759;
+          b2 = 0.96900 * b2 + w * 0.1538520;
+          b3 = 0.86650 * b3 + w * 0.3104856;
+          b4 = 0.55000 * b4 + w * 0.5329522;
+          b5 = -0.7616 * b5 - w * 0.0168980;
+          out[i] = clamp((b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.24, -0.95, 0.95);
+          b6 = w * 0.115926;
+        }
+      }
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      return ctx;
+    }
+    function rawSwitch(on = true) {
+      const c = ensure();
+      if (!c) return;
+      const t0 = c.currentTime;
+      const o1 = c.createOscillator(), g1 = c.createGain();
+      o1.type = 'triangle';
+      o1.frequency.setValueAtTime(420, t0);
+      o1.frequency.exponentialRampToValueAtTime(150, t0 + 0.012);
+      g1.gain.setValueAtTime(0.20, t0);
+      g1.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.014);
+      o1.connect(g1); g1.connect(c.destination);
+      o1.start(t0); o1.stop(t0 + 0.015);
+
+      const t2 = t0 + 0.018;
+      const o2 = c.createOscillator(), g2 = c.createGain();
+      o2.type = 'triangle';
+      o2.frequency.setValueAtTime(on ? 1620 : 920, t2);
+      o2.frequency.exponentialRampToValueAtTime(on ? 620 : 290, t2 + 0.016);
+      g2.gain.setValueAtTime(0.25, t2);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.018);
+      o2.connect(g2); g2.connect(c.destination);
+      o2.start(t2); o2.stop(t2 + 0.019);
+
+      if (noiseBuf) {
+        const ns = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain();
+        ns.buffer = noiseBuf;
+        bp.type = 'bandpass'; bp.frequency.setValueAtTime(on ? 2800 : 1700, t2); bp.Q.setValueAtTime(2.0, t2);
+        ng.gain.setValueAtTime(0.18, t2); ng.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.012);
+        ns.connect(bp); bp.connect(ng); ng.connect(c.destination);
+        ns.start(t2, Math.random() * 1.5, 0.014);
+      }
+    }
+    return {
+      tick(pitch = 1) {
+        if (!isPro()) return;
+        const nowMs = performance.now();
+        if (nowMs - lastTick < 26) return;
+        lastTick = nowMs;
+        const c = ensure();
+        if (!c) return;
+        const t0 = c.currentTime;
+        const p = clamp(pitch, 0.5, 2.5) * (0.97 + Math.random() * 0.06);
+        const osc = c.createOscillator(), g = c.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1380 * p, t0);
+        osc.frequency.exponentialRampToValueAtTime(230 * p, t0 + 0.011);
+        g.gain.setValueAtTime(0.22, t0);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.013);
+        osc.connect(g); g.connect(c.destination);
+        osc.start(t0); osc.stop(t0 + 0.014);
+        if (noiseBuf) {
+          const ns = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain();
+          ns.buffer = noiseBuf;
+          bp.type = 'bandpass'; bp.frequency.setValueAtTime(2600 * p, t0); bp.Q.setValueAtTime(2.4, t0);
+          ng.gain.setValueAtTime(0.24, t0); ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.009);
+          ns.connect(bp); bp.connect(ng); ng.connect(c.destination);
+          ns.start(t0, Math.random() * 1.5, 0.011);
+        }
+      },
+      switch(on = true, force = false) {
+        if (!force && !isPro()) return;
+        rawSwitch(on);
+      },
+      shutter(cover = true) {
+        if (!isPro()) return;
+        const c = ensure();
+        if (!c || !noiseBuf) return;
+        const t0 = c.currentTime;
+        const osc = c.createOscillator(), og = c.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(cover ? 520 : 380, t0);
+        osc.frequency.exponentialRampToValueAtTime(120, t0 + 0.014);
+        og.gain.setValueAtTime(0.14, t0);
+        og.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.016);
+        osc.connect(og); og.connect(c.destination);
+        osc.start(t0); osc.stop(t0 + 0.018);
+
+        const ns = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+        ns.buffer = noiseBuf;
+        bp.type = 'bandpass'; bp.Q.setValueAtTime(1.5, t0);
+        bp.frequency.setValueAtTime(cover ? 380 : 1480, t0);
+        bp.frequency.exponentialRampToValueAtTime(cover ? 1560 : 340, t0 + 0.16);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.linearRampToValueAtTime(0.24, t0 + 0.028);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.17);
+        ns.connect(bp); bp.connect(g); g.connect(c.destination);
+        ns.start(t0, Math.random() * 0.8, 0.18);
+      },
+      copy() {
+        if (!isPro()) return;
+        const c = ensure();
+        if (!c) return;
+        const t0 = c.currentTime;
+        [[1318.5, 0, 0.055], [1760.0, 0.052, 0.085]].forEach(([freq, delay, dur]) => {
+          const osc = c.createOscillator(), g = c.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, t0 + delay);
+          g.gain.setValueAtTime(0.0001, t0 + delay);
+          g.gain.linearRampToValueAtTime(0.18, t0 + delay + 0.004);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + delay + dur);
+          osc.connect(g); g.connect(c.destination);
+          osc.start(t0 + delay); osc.stop(t0 + delay + dur + 0.006);
+        });
+      },
+      ambient(on) {
+        const next = on != null ? !!on : !ambOn;
+        if (!next || !isPro()) {
+          ambOn = false;
+          if (ambNodes && ctx) {
+            const t0 = ctx.currentTime;
+            const { master, src, drone1, drone2 } = ambNodes;
+            ambNodes = null;
+            master.gain.cancelScheduledValues(t0);
+            master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), t0);
+            master.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.35);
+            setTimeout(() => { try { src.stop(); drone1.stop(); drone2.stop(); } catch (_) {} }, 380);
+          }
+          return false;
+        }
+        const c = ensure();
+        if (!c || !noiseBuf) return false;
+        if (ambOn && ambNodes) return true;
+        ambOn = true;
+        const t0 = c.currentTime;
+        const master = c.createGain();
+        master.gain.setValueAtTime(0.0001, t0);
+        master.gain.linearRampToValueAtTime(0.14, t0 + 0.45);
+        master.connect(c.destination);
+
+        const src = c.createBufferSource();
+        src.buffer = noiseBuf;
+        src.loop = true;
+        const lp = c.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.setValueAtTime(520, t0);
+        lp.Q.setValueAtTime(0.7, t0);
+        const ng = c.createGain();
+        ng.gain.setValueAtTime(0.75, t0);
+        src.connect(lp); lp.connect(ng); ng.connect(master);
+
+        const drone1 = c.createOscillator(), drone2 = c.createOscillator(), dg = c.createGain(), dlp = c.createBiquadFilter();
+        drone1.type = 'sine'; drone2.type = 'triangle';
+        drone1.frequency.setValueAtTime(110, t0); drone2.frequency.setValueAtTime(165, t0);
+        dlp.type = 'lowpass'; dlp.frequency.setValueAtTime(240, t0);
+        dg.gain.setValueAtTime(0.14, t0);
+        drone1.connect(dlp); drone2.connect(dlp); dlp.connect(dg); dg.connect(master);
+
+        src.start(t0); drone1.start(t0); drone2.start(t0);
+        ambNodes = { master, src, drone1, drone2 };
+        return true;
+      }
+    };
+  })();
 
   /* ---------- data ---------- */
   const DATA = window.GALLERY || { site: {}, works: [] };
@@ -292,6 +475,7 @@
     const ok = await copyText(text);
     if (!ok) { toast(tx('copyFailed'), true); return; }
     if (id) track('copy', id);
+    sfx.copy();
     if (btn) {
       btn.classList.remove('is-done');
       void btn.offsetWidth;
@@ -610,6 +794,7 @@
   let morphTimer = 0;
   function setLayout(m, d) {
     if (m === mode && d === density) return;
+    sfx.tick(m !== mode ? 1.08 : 0.92 + d * 0.1);
     // keep the card at the top of the screen in view across the change
     const off = stickyOffset();
     const gridTop = grid.getBoundingClientRect().top + scrollY;
@@ -645,6 +830,7 @@
   async function setCategory(k, asked) {
     if (k === cat || !CATS.includes(k)) return;
     if (k === 'NSFW' && !asked && !(await ageOk())) return;
+    sfx.tick(1.0);
     cat = k;
     $$('.seg__btn', catsEl).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
     movePill(false);
@@ -804,8 +990,8 @@
     vLabToggle.setAttribute('aria-expanded', String(on));
     if (on && lastHistBins) requestAnimationFrame(() => drawHistCanvas(lastHistBins));
   }
-  vReveal.addEventListener('click', () => { promptOpen = !promptOpen; showPrompt(promptOpen); });
-  if (vLabToggle) vLabToggle.addEventListener('click', () => { labOpen = !labOpen; showLab(labOpen); });
+  vReveal.addEventListener('click', () => { promptOpen = !promptOpen; sfx.switch(promptOpen); showPrompt(promptOpen); });
+  if (vLabToggle) vLabToggle.addEventListener('click', () => { labOpen = !labOpen; sfx.switch(labOpen); showLab(labOpen); });
 
   function setImage(c) {
     const w = c.w;
@@ -845,6 +1031,7 @@
     if (vIndex < 0) { vList = cells.filter((x) => !x.w.slot && isNsfw(x.w) === isNsfw(c.w)); vIndex = vList.indexOf(c); }
     vOpen = true;
     promptOpen = false;
+    sfx.shutter(true);
 
     fillPanel(c);
     let landed;
@@ -900,6 +1087,7 @@
   async function closeViewer(instant) {
     if (!vOpen || vClosing) return;
     vClosing = true;
+    if (!instant) sfx.shutter(false);
     const c = current();
     cancelAnims(frame);
     cancelAnims(vImg);
@@ -951,6 +1139,7 @@
   async function step(dir) {
     if (!vOpen || vBusy || vClosing || vList.length < 2) return;
     vBusy = true;
+    sfx.tick(dir > 0 ? 1.06 : 0.94);
     vList.forEach((x) => x.el.classList.remove('is-source'));
     cancelAnims(frame);
     cancelAnims(vImg);
@@ -992,6 +1181,7 @@
     const c = current();
     if (!c || !c.w.ref || vBusy || on === vRef) return;
     vBusy = true;
+    sfx.switch(on);
     cancelAnims(frame);
     const a = frame.animate([{ opacity: 1 }, { opacity: 0 }], { duration: REDUCE ? 1 : 180, easing: 'ease', fill: 'forwards' });
     await settle(a, 180);
@@ -1013,7 +1203,10 @@
     const sw = e.target.closest('.v-swatch');
     if (sw && sw.dataset.hex) {
       copyText(sw.dataset.hex).then((ok) => {
-        if (ok) toast(tx('hexCopied', { hex: sw.dataset.hex }));
+        if (ok) {
+          sfx.copy();
+          toast(tx('hexCopied', { hex: sw.dataset.hex }));
+        }
       });
     }
   });
@@ -1231,6 +1424,7 @@
     loupeActive = true;
     frame.setPointerCapture(e.pointerId);
     frame.classList.add('is-louping');
+    sfx.switch(true);
     updateLoupePos(e);
   });
   frame.addEventListener('pointermove', updateLoupePos);
@@ -1238,6 +1432,7 @@
     if (!loupeActive) return;
     loupeActive = false;
     frame.classList.remove('is-louping');
+    sfx.switch(false);
     if (vLoupeHud) vLoupeHud.textContent = `${tx('loupeHint')} (${loupeZoom.toFixed(1)}×)`;
   };
   frame.addEventListener('pointerup', stopLoupe);
@@ -1249,7 +1444,11 @@
   frame.addEventListener('wheel', (e) => {
     if (!vOpen || document.documentElement.getAttribute('data-pro') !== '1') return;
     e.preventDefault();
+    const prevZoom = loupeZoom;
     loupeZoom = clamp(loupeZoom + (e.deltaY < 0 ? 0.5 : -0.5), 1.5, 6.0);
+    if (loupeZoom !== prevZoom) {
+      sfx.tick(0.75 + (loupeZoom - 1.5) * 0.18);
+    }
     if (loupeActive) drawLoupe();
     else if (vLoupeHud) vLoupeHud.textContent = `${tx('loupeHint')} (${loupeZoom.toFixed(1)}×)`;
   }, { passive: false });
@@ -1380,6 +1579,7 @@
     const STEP = 18, SPREAD = 0.6;
     const ease = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
     return function run(origin, cover) {
+      sfx.shutter(cover);
       return new Promise((resolve) => {
         const W = innerWidth, H = innerHeight;
         const dpr = Math.min(2, devicePixelRatio || 1);
@@ -2374,6 +2574,7 @@ onmessage = async (e) => {
     if (themeBusy || going) return;
     themeBusy = true;
     const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    sfx.switch(next === 'light');
     try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
     let origin = e && (e.clientX || e.clientY) ? { x: e.clientX, y: e.clientY } : null;
     if (!origin && originEl) {
@@ -2410,6 +2611,7 @@ onmessage = async (e) => {
     }
     if (!on) {
       stopLoupe();
+      sfx.ambient(false);
       if (mode === 'sheet') setLayout('masonry', density);
     } else if (vOpen && labOpen && lastHistBins) {
       requestAnimationFrame(() => drawHistCanvas(lastHistBins));
@@ -2433,6 +2635,7 @@ onmessage = async (e) => {
     const next = document.documentElement.getAttribute('data-pro') !== '1';
     try { localStorage.setItem(PRO_KEY, next ? '1' : '0'); } catch (_) {}
     applyPro(next, false);
+    sfx.switch(next, true);
     toast(next ? 'PRO DARKROOM // ON' : 'RAW 1:1 MODE // ON');
   }
 

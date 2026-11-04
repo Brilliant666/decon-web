@@ -667,6 +667,7 @@ export const TrueJpegUI = (() => {
       active = true;
       frameEl.setPointerCapture(e.pointerId);
       frameEl.classList.add('is-louping');
+      if (options.sound && options.sound.switch) options.sound.switch(true);
       updatePos(e);
     });
     frameEl.addEventListener('pointermove', updatePos);
@@ -674,13 +675,18 @@ export const TrueJpegUI = (() => {
       if (!active) return;
       active = false;
       frameEl.classList.remove('is-louping');
+      if (options.sound && options.sound.switch) options.sound.switch(false);
       if (hudEl) hudEl.textContent = `${hintText} (${zoom.toFixed(1)}×)`;
     };
     frameEl.addEventListener('pointerup', stop);
     frameEl.addEventListener('pointercancel', stop);
     frameEl.addEventListener('wheel', (e) => {
       e.preventDefault();
+      const prev = zoom;
       zoom = clamp(zoom + (e.deltaY < 0 ? 0.5 : -0.5), 1.5, 6.0);
+      if (zoom !== prev && options.sound && options.sound.tick) {
+        options.sound.tick(0.75 + (zoom - 1.5) * 0.18);
+      }
       if (active) draw();
       else if (hudEl) hudEl.textContent = `${hintText} (${zoom.toFixed(1)}×)`;
     }, { passive: false });
@@ -692,5 +698,269 @@ export const TrueJpegUI = (() => {
     };
   }
 
-  return { dotType, winFrame, renderHalftone, createWipe, scramble, createGlobe, drawDotHistogram, analyzeImage, attachLoupe };
+  /* ==========================================================================
+   * 9. Web Audio Mechanical Tactile & Darkroom Sound Engine (createSoundEngine)
+   * Zero external audio assets; procedural triangle + filtered noise synthesis
+   * ========================================================================== */
+  function createSoundEngine(options = {}) {
+    const masterVol = options.volume != null ? options.volume : 1.0;
+    const reduce = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let ctx = null;
+    let noiseBuf = null;
+    let ambNodes = null;
+    let ambOn = false;
+    let lastTick = 0;
+
+    function ensure() {
+      if (reduce()) return null;
+      if (!ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        ctx = new AC();
+        // Pre-build 2.5s normalized pink/brown hybrid noise buffer for tactile bursts & darkroom ambient
+        const sr = ctx.sampleRate;
+        const len = Math.floor(sr * 2.5);
+        noiseBuf = ctx.createBuffer(1, len, sr);
+        const out = noiseBuf.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < len; i++) {
+          const w = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + w * 0.0555179;
+          b1 = 0.99332 * b1 + w * 0.0750759;
+          b2 = 0.96900 * b2 + w * 0.1538520;
+          b3 = 0.86650 * b3 + w * 0.3104856;
+          b4 = 0.55000 * b4 + w * 0.5329522;
+          b5 = -0.7616 * b5 - w * 0.0168980;
+          out[i] = clamp((b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.24, -0.95, 0.95);
+          b6 = w * 0.115926;
+        }
+      }
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      return ctx;
+    }
+
+    function tick(pitch = 1) {
+      const nowMs = performance.now();
+      if (nowMs - lastTick < 26) return;
+      lastTick = nowMs;
+      const c = ensure();
+      if (!c) return;
+      const t = c.currentTime;
+      const p = clamp(pitch, 0.5, 2.5) * (0.97 + Math.random() * 0.06);
+
+      // Metallic ratchet transient
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1380 * p, t);
+      osc.frequency.exponentialRampToValueAtTime(230 * p, t + 0.011);
+      g.gain.setValueAtTime(0.22 * masterVol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.013);
+      osc.connect(g);
+      g.connect(c.destination);
+      osc.start(t);
+      osc.stop(t + 0.014);
+
+      // Crisp micro-noise click
+      if (noiseBuf) {
+        const ns = c.createBufferSource();
+        const bp = c.createBiquadFilter();
+        const ng = c.createGain();
+        ns.buffer = noiseBuf;
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(2600 * p, t);
+        bp.Q.setValueAtTime(2.4, t);
+        ng.gain.setValueAtTime(0.24 * masterVol, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.009);
+        ns.connect(bp);
+        bp.connect(ng);
+        ng.connect(c.destination);
+        ns.start(t, Math.random() * 1.5, 0.011);
+      }
+    }
+
+    function toggleSwitch(on = true) {
+      const c = ensure();
+      if (!c) return;
+      const t = c.currentTime;
+
+      // Pulse 1: mechanical detent press
+      const o1 = c.createOscillator();
+      const g1 = c.createGain();
+      o1.type = 'triangle';
+      o1.frequency.setValueAtTime(420, t);
+      o1.frequency.exponentialRampToValueAtTime(150, t + 0.012);
+      g1.gain.setValueAtTime(0.20 * masterVol, t);
+      g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.014);
+      o1.connect(g1);
+      g1.connect(c.destination);
+      o1.start(t);
+      o1.stop(t + 0.015);
+
+      // Pulse 2 (+18ms): latch lock (brighter when on=true, deeper when on=false)
+      const t2 = t + 0.018;
+      const o2 = c.createOscillator();
+      const g2 = c.createGain();
+      o2.type = 'triangle';
+      o2.frequency.setValueAtTime(on ? 1620 : 920, t2);
+      o2.frequency.exponentialRampToValueAtTime(on ? 620 : 290, t2 + 0.016);
+      g2.gain.setValueAtTime(0.25 * masterVol, t2);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.018);
+      o2.connect(g2);
+      g2.connect(c.destination);
+      o2.start(t2);
+      o2.stop(t2 + 0.019);
+
+      if (noiseBuf) {
+        const ns = c.createBufferSource();
+        const bp = c.createBiquadFilter();
+        const ng = c.createGain();
+        ns.buffer = noiseBuf;
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(on ? 2800 : 1700, t2);
+        bp.Q.setValueAtTime(2.0, t2);
+        ng.gain.setValueAtTime(0.18 * masterVol, t2);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.012);
+        ns.connect(bp);
+        bp.connect(ng);
+        ng.connect(c.destination);
+        ns.start(t2, Math.random() * 1.5, 0.014);
+      }
+    }
+
+    function shutter(cover = true) {
+      const c = ensure();
+      if (!c || !noiseBuf) return;
+      const t = c.currentTime;
+
+      // Subtle curtain release transient
+      const osc = c.createOscillator();
+      const og = c.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(cover ? 520 : 380, t);
+      osc.frequency.exponentialRampToValueAtTime(120, t + 0.014);
+      og.gain.setValueAtTime(0.14 * masterVol, t);
+      og.gain.exponentialRampToValueAtTime(0.0001, t + 0.016);
+      osc.connect(og);
+      og.connect(c.destination);
+      osc.start(t);
+      osc.stop(t + 0.018);
+
+      // Filtered pink-noise focal-plane curtain sweep
+      const ns = c.createBufferSource();
+      const bp = c.createBiquadFilter();
+      const g = c.createGain();
+      ns.buffer = noiseBuf;
+      bp.type = 'bandpass';
+      bp.Q.setValueAtTime(1.5, t);
+      bp.frequency.setValueAtTime(cover ? 380 : 1480, t);
+      bp.frequency.exponentialRampToValueAtTime(cover ? 1560 : 340, t + 0.16);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.24 * masterVol, t + 0.028);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.17);
+      ns.connect(bp);
+      bp.connect(g);
+      g.connect(c.destination);
+      ns.start(t, Math.random() * 0.8, 0.18);
+    }
+
+    function copy() {
+      const c = ensure();
+      if (!c) return;
+      const t = c.currentTime;
+      [
+        [1318.5, 0, 0.055],     // E6
+        [1760.0, 0.052, 0.085]  // A6
+      ].forEach(([freq, delay, dur]) => {
+        const osc = c.createOscillator();
+        const g = c.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t + delay);
+        g.gain.setValueAtTime(0.0001, t + delay);
+        g.gain.linearRampToValueAtTime(0.18 * masterVol, t + delay + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + delay + dur);
+        osc.connect(g);
+        g.connect(c.destination);
+        osc.start(t + delay);
+        osc.stop(t + delay + dur + 0.006);
+      });
+    }
+
+    function ambient(on) {
+      const next = on != null ? !!on : !ambOn;
+      if (!next) {
+        ambOn = false;
+        if (ambNodes && ctx) {
+          const t = ctx.currentTime;
+          const { master, src, drone1, drone2 } = ambNodes;
+          ambNodes = null;
+          master.gain.cancelScheduledValues(t);
+          master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), t);
+          master.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+          setTimeout(() => {
+            try { src.stop(); drone1.stop(); drone2.stop(); } catch (_) {}
+          }, 380);
+        }
+        return false;
+      }
+      const c = ensure();
+      if (!c || !noiseBuf) return false;
+      if (ambOn && ambNodes) return true;
+      ambOn = true;
+      const t = c.currentTime;
+
+      const master = c.createGain();
+      master.gain.setValueAtTime(0.0001, t);
+      master.gain.linearRampToValueAtTime(0.16 * masterVol, t + 0.45);
+      master.connect(c.destination);
+
+      // Layer 1: Warm low-passed analog tape / darkroom air noise (520Hz cutoff so laptop speakers reproduce it clearly)
+      const src = c.createBufferSource();
+      src.buffer = noiseBuf;
+      src.loop = true;
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(520, t);
+      lp.Q.setValueAtTime(0.7, t);
+      const ng = c.createGain();
+      ng.gain.setValueAtTime(0.75, t);
+      src.connect(lp);
+      lp.connect(ng);
+      ng.connect(master);
+
+      // Layer 2: Subtle darkroom enlarger / film machine warm harmonic hum (110Hz A2 + 165Hz E3)
+      const drone1 = c.createOscillator();
+      const drone2 = c.createOscillator();
+      const dg = c.createGain();
+      drone1.type = 'sine';
+      drone2.type = 'triangle';
+      drone1.frequency.setValueAtTime(110, t);
+      drone2.frequency.setValueAtTime(165, t);
+      const dlp = c.createBiquadFilter();
+      dlp.type = 'lowpass';
+      dlp.frequency.setValueAtTime(240, t);
+      dg.gain.setValueAtTime(0.14, t);
+      drone1.connect(dlp);
+      drone2.connect(dlp);
+      dlp.connect(dg);
+      dg.connect(master);
+
+      src.start(t);
+      drone1.start(t);
+      drone2.start(t);
+      ambNodes = { master, src, drone1, drone2 };
+      return true;
+    }
+
+    return {
+      tick,
+      switch: toggleSwitch,
+      shutter,
+      copy,
+      ambient,
+      isAmbientOn: () => ambOn
+    };
+  }
+
+  return { dotType, winFrame, renderHalftone, createWipe, scramble, createGlobe, drawDotHistogram, analyzeImage, attachLoupe, createSoundEngine };
 })();
