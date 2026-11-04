@@ -6,6 +6,9 @@ sites/*/photos/
 favicon.ico
 legal
 
+# Specimen #04 (igloo.inc) binary 3D/texture/audio/wasm caches; run `node sites/04-igloo-inc/sync_assets.js` to populate locally
+sites/04-igloo-inc/assets/
+
 # OS & Editor files
 .DS_Store
 Thumbs.db

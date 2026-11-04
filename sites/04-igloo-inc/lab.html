@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon32-af94112f.png" />
+  <title>IGLOO INC // SPECIMEN #04 CRYO-SHADER & HUD LAB</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0D1015;
+      color: #F2F7FF;
+      font-family: 'IBMPlexMono-Medium', 'IBMPlexMono-Regular', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      min-height: 100vh;
+    }
+    .lab-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: rgba(13, 16, 21, 0.92);
+      border-bottom: 1px solid rgba(160, 165, 177, 0.28);
+      backdrop-filter: blur(12px);
+    }
+    .lab-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .lab-brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #FFFFFF;
+    }
+    .lab-brand-sub {
+      font-size: 11px;
+      color: #A0A5B1;
+      letter-spacing: 0.05em;
+    }
+    .lab-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .lab-nav-link {
+      padding: 6px 12px;
+      font-size: 11px;
+      color: #F2F7FF;
+      background: rgba(160, 165, 177, 0.14);
+      border: 1px solid rgba(205, 228, 255, 0.32);
+      text-decoration: none;
+      letter-spacing: 0.06em;
+      transition: background 140ms ease, border-color 140ms ease;
+    }
+    .lab-nav-link:hover {
+      background: rgba(140, 210, 255, 0.24);
+      border-color: #8CD2FF;
+    }
+    .lab-container {
+      max-width: 1520px;
+      margin: 0 auto;
+      padding: 20px 24px 48px;
+    }
+    .lab-hero-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      background: linear-gradient(90deg, rgba(160, 165, 177, 0.16), rgba(19, 28, 42, 0.65));
+      border: 1px solid rgba(160, 165, 177, 0.32);
+      font-size: 11.5px;
+      letter-spacing: 0.05em;
+    }
+    .lab-grid-2x2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+    @media (max-width: 1080px) {
+      .lab-grid-2x2 {
+        grid-template-columns: 1fr;
+      }
+    }
+    .lab-card {
+      background: #121720;
+      border: 1px solid rgba(160, 165, 177, 0.28);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    }
+    .lab-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 16px;
+      background: rgba(160, 165, 177, 0.1);
+      border-bottom: 1px solid rgba(160, 165, 177, 0.22);
+      font-size: 11.5px;
+      letter-spacing: 0.07em;
+    }
+    .lab-card-id {
+      color: #8CD2FF;
+      font-weight: 700;
+    }
+    .lab-card-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: rgba(140, 210, 255, 0.14);
+      border: 1px solid rgba(140, 210, 255, 0.38);
+      color: #DFF2FF;
+    }
+    .lab-viewport {
+      position: relative;
+      width: 100%;
+      height: 330px;
+      background: #090C11;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(160, 165, 177, 0.2);
+    }
+    .lab-viewport canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+    .lab-viewport canvas:active {
+      cursor: grabbing;
+    }
+    .lab-controls {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 11px;
+    }
+    .lab-slider-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 16px;
+    }
+    .lab-slider-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .lab-slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #A0A5B1;
+      letter-spacing: 0.05em;
+    }
+    .lab-slider-label strong {
+      color: #FFFFFF;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: #8CD2FF;
+      cursor: pointer;
+    }
+    .lab-btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .lab-btn {
+      flex: 1;
+      min-width: 96px;
+      height: 28px;
+      padding: 0 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(205, 228, 255, 0.25);
+      color: #F2F7FF;
+      font-family: inherit;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease;
+    }
+    .lab-btn:hover,
+    .lab-btn[data-active="true"] {
+      background: rgba(140, 210, 255, 0.22);
+      border-color: #8CD2FF;
+      color: #FFFFFF;
+    }
+    .lab-text-input {
+      width: 100%;
+      height: 28px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(205, 228, 255, 0.28);
+      color: #FFFFFF;
+      font-family: inherit;
+      font-size: 10.5px;
+      padding: 0 10px;
+      letter-spacing: 0.05em;
+    }
+    /* Full-width Asset & Shader Manifest Archive below 2x2 Grid */
+    .lab-manifest-section {
+      margin-top: 24px;
+      background: #121720;
+      border: 1px solid rgba(160, 165, 177, 0.28);
+      padding: 16px 18px;
+    }
+    .lab-manifest-table-wrap {
+      max-height: 310px;
+      overflow-y: auto;
+      margin-top: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    table.lab-manifest-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+      text-align: left;
+    }
+    table.lab-manifest-table th,
+    table.lab-manifest-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    table.lab-manifest-table th {
+      position: sticky;
+      top: 0;
+      background: #1A2230;
+      color: #8CD2FF;
+      letter-spacing: 0.06em;
+    }
+  </style>
+</head>
+<body>
+  <header class="lab-topbar">
+    <div class="lab-brand">
+      <span class="lab-brand-title">IGLOO INC // CRYO-WEBGL2 LAB</span>
+      <span class="lab-brand-sub">SPECIMEN #04 · LUSION 3D SHADER & HUD DECONSTRUCTION</span>
+    </div>
+    <nav class="lab-nav">
+      <a class="lab-nav-link" href="/">← LIVE 3D MIRROR (/)</a>
+      <a class="lab-nav-link" href="/shared-ui/igloo-ui.js" target="_blank">SHARED-UI MODULE ↗</a>
+    </nav>
+  </header>
+
+  <main class="lab-container">
+    <div class="lab-hero-banner">
+      <div>
+        <strong>// ZERO-DEPENDENCY COMPONENT SUITE:</strong>
+        <code>shared-ui/igloo-ui.js</code> (6 Extracted Organs · Pure WebGL2 GLSL + Raymarching + Web Audio Synth)
+      </div>
+      <div style="color:#8CD2FF;">
+        PALETTE: #A0A5B1 (CRYO SLATE) // #0D1015 (POLAR VAULT) · FONT: IBMPlexMono
+      </div>
+    </div>
+
+    <section class="lab-grid-2x2">
+      <!-- ====================================================================
+           CARD 01: Diagonal Frost-Cut & 5-Iteration Chromatic Aberration Shader
+           ==================================================================== -->
+      <article class="lab-card" id="card-01">
+        <div class="lab-card-header">
+          <span class="lab-card-id">CARD 01 // DIAGONAL FROST-CUT SHADER</span>
+          <span class="lab-card-tag">createFrostCutShader · class f3 (CA_ITERATIONS=5)</span>
+        </div>
+        <div class="lab-viewport">
+          <canvas id="canvas-frost-cut"></canvas>
+        </div>
+        <div class="lab-controls">
+          <div class="lab-slider-grid">
+            <div class="lab-slider-item">
+              <div class="lab-slider-label">
+                <span>uProgress (CUT)</span>
+                <strong id="val-fc-progress">0.46</strong>
+              </div>
+              <input type="range" id="slider-fc-progress" min="0" max="1" step="0.005" value="0.46" />
+            </div>
+            <div class="lab-slider-item">
+              <div class="lab-slider-label">
+                <span>uProgressVel (INERTIA)</span>
+                <strong id="val-fc-vel">0.35</strong>
+              </div>
+              <input type="range" id="slider-fc-vel" min="0" max="1" step="0.01" value="0.35" />
+            </div>
+            <div class="lab-slider-item">
+              <div class="lab-slider-label">
+                <span>5x CHROMATIC ABERRATION</span>
+                <strong id="val-fc-ca">1.00</strong>
+              </div>
+              <input type="range" id="slider-fc-ca" min="0" max="2.2" step="0.05" value="1.00" />
+            </div>
+            <div class="lab-slider-item">
+              <div class="lab-slider-label">
+                <span>FROST DISPLACEMENT DENSITY</span>
+                <strong id="val-fc-frost">1.00</strong>
+              </div>
+              <input type="range" id="slider-fc-frost" min="0.2" max="2.2" step="0.05" value="1.00" />
+            </div>
+          </div>
+          <div class="lab-btn-row">
+            <button type="button" class="lab-btn" data-fc-preset="0.0">0.00 // SCENE_01 IGLOO</button>
+            <button type="button" class="lab-btn" data-fc-preset="0.46" data-active="true">0.46 // DIAGONAL CUT</button>
+            <button type="button" class="lab-btn" data-fc-preset="1.0">1.00 // SCENE_02 VAULT</button>
+            <button type="button" class="lab-btn" id="btn-fc-sweep">AUTO SWEEP: OFF</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           CARD 02: 3D Raymarched Cryo-Specimen Cube & Subsurface Refraction
+           ==================================================================== -->
+      <article class="lab-card" id="card-02">
+        <div class="lab-card-header">
+          <span class="lab-card-id">CARD 02 // 3D RAYMARCHED CRYO-SPECIMEN CUBE</span>
+          <span class="lab-card-tag">createCryoCubeWebGL · SDF + IOR 1.31 + Shattered Ring</span>
+        </div>
+        <div class="lab-viewport">
+          <canvas id="canvas-cryo-cube"></canvas>
+        </div>
+        <div class="lab-controls">
+          <div class="lab-btn-row">
+            <button type="button" class="lab-btn" data-cube-spec="0" data-active="true">01 // PUDGY (0°C)</button>
+            <button type="button" class="lab-btn" data-cube-spec="1">02 // OVERPASS (-3°C)</button>
+            <button type="button" class="lab-btn" data-cube-spec="2">03 // IGLOO DOME (-15°C)</button>
+            <button type="button" class="lab-btn" id="btn-cube-explode">💥 EXPLODE LATTICE</button>
+          </div>
+          <div class="lab-slider-grid">
+            <div class="lab-slider-item">
+              <div class="lab-slider-label">
+                <span>ICE REFRACTION (IOR)</span>
+                <strong id="val-cube-ior">1.31</strong>
+              </div>
+              <input type="range" id="slider-cube-ior" min="1.00" max="1.60" step="0.01" value="1.31" />
+            </div>
+            <div class="lab-slider-item">
+              <div class="lab-slider-label">
+                <span>VORONOI FROST THICKNESS</span>
+                <strong id="val-cube-frost">0.42</strong>
+              </div>
+              <input type="range" id="slider-cube-frost" min="0.00" max="1.00" step="0.02" value="0.42" />
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           CARD 03: 3D DoF Blur-Text Cylinder & Polar Telemetry Reticle HUD
+           ==================================================================== -->
+      <article class="lab-card" id="card-03">
+        <div class="lab-card-header">
+          <span class="lab-card-id">CARD 03 // 3D DOF BLUR-TEXT CYLINDER & POLAR HUD</span>
+          <span class="lab-card-tag">createBlurTextCylinder + createPolarReticleHud</span>
+        </div>
+        <div class="lab-viewport" id="viewport-cylinder-hud">
+          <canvas id="canvas-blur-cylinder"></canvas>
+        </div>
+        <div class="lab-controls">
+          <div class="lab-slider-grid">
+            <div class="lab-slider-item">
+              <div class="lab-slider-label">
+                <span>CYLINDER ROTATION SPEED</span>
+                <strong id="val-cyl-speed">0.65 rad/s</strong>
+              </div>
+              <input type="range" id="slider-cyl-speed" min="-2.0" max="2.0" step="0.05" value="0.65" />
+            </div>
+            <div class="lab-slider-item">
+              <div class="lab-slider-label">
+                <span>DOF GAUSSIAN BLUR RADIUS</span>
+                <strong id="val-cyl-blur">6.5 px</strong>
+              </div>
+              <input type="range" id="slider-cyl-blur" min="0" max="16" step="0.5" value="6.5" />
+            </div>
+            <div class="lab-slider-item">
+              <div class="lab-slider-label">
+                <span>POLAR DEPTH / ALTITUDE GAUGE</span>
+                <strong id="val-cyl-depth">35% (-12.0m // 0°C)</strong>
+              </div>
+              <input type="range" id="slider-cyl-depth" min="0" max="1" step="0.01" value="0.35" />
+            </div>
+            <div class="lab-slider-item">
+              <div class="lab-slider-label">
+                <span>CYLINDER TEXT RING</span>
+                <strong>LIVE MSDF RING</strong>
+              </div>
+              <input type="text" class="lab-text-input" id="input-cyl-text" value="IGLOO INC // PORTFOLIO_CO_01 // PUDGY PENGUINS 0°C // OVERPASS -3°C" />
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ====================================================================
+           CARD 04: 100-Frame ASCII Wave Loader & Cryo Web Audio Synthesizer
+           ==================================================================== -->
+      <article class="lab-card" id="card-04">
+        <div class="lab-card-header">
+          <span class="lab-card-id">CARD 04 // 100-FRAME ASCII LOADER & CRYO SYNTH</span>
+          <span class="lab-card-tag">createAsciiWaveLoader + createCryoAudioEngine</span>
+        </div>
+        <div class="lab-viewport" style="display:flex;flex-direction:column;justify-content:space-between;padding:18px 20px;background:#0B0E14;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <div id="ascii-loader-mount"></div>
+            <span style="font-size:10px;color:#8CD2FF;border:1px solid rgba(140,210,255,0.35);padding:2px 6px;">
+              WEB AUDIO SYNTHESIZER READY
+            </span>
+          </div>
+          <canvas id="canvas-audio-scope" style="width:100%;height:130px;background:rgba(255,255,255,0.02);border:1px solid rgba(160,165,177,0.18);"></canvas>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#A0A5B1;">
+            <span>OSCILLOSCOPE: PINK-NOISE LFO + SHARD HARMONICS</span>
+            <span id="audio-status-readout">STATE: STANDBY</span>
+          </div>
+        </div>
+        <div class="lab-controls">
+          <div class="lab-btn-row">
+            <button type="button" class="lab-btn" id="btn-synth-beep1">🔊 BEEP 01 (2.4kHz)</button>
+            <button type="button" class="lab-btn" id="btn-synth-beep2">🔊 BEEP 02 (TRIAD)</button>
+            <button type="button" class="lab-btn" id="btn-synth-shard">❄️ ICE SHARD</button>
+            <button type="button" class="lab-btn" id="btn-synth-dive">🌊 VAULT DIVE</button>
+            <button type="button" class="lab-btn" id="btn-synth-wind" data-active="false">🌬️ ARCTIC WIND: OFF</button>
+          </div>
+          <div class="lab-btn-row">
+            <button type="button" class="lab-btn" data-scramble="////// MANIFESTO :: COMMUNITY + AI + CRYPTO">DECODE: MANIFESTO</button>
+            <button type="button" class="lab-btn" data-scramble="??????????????? -> CLICK TO EXPLORE">DECODE: ???????</button>
+            <button type="button" class="lab-btn" data-scramble="PORTFOLIO_CO_01 // PUDGY PENGUINS [0°C]">DECODE: PUDGY 0°C</button>
+            <button type="button" class="lab-btn" data-scramble="PORTFOLIO_CO_02 // OVERPASS [-3°C]">DECODE: OVERPASS -3°C</button>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         COMPLETE IGLOO.INC 3D ASSET & SHADER ARCHITECTURE MANIFEST TABLE
+         ====================================================================== -->
+    <section class="lab-manifest-section">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;">
+        <div>
+          <strong style="color:#8CD2FF;letter-spacing:0.06em;">// IGLOO.INC COMPLETE 3D ASSET & SHADER ARCHITECTURE INDEX</strong>
+          <span style="font-size:11px;color:#A0A5B1;margin-left:10px;">
+            (Locally mirrored under <code>sites/04-igloo-inc/assets/</code> via <code>sync_assets.js</code> &amp; transparent proxy)
+          </span>
+        </div>
+        <div class="lab-btn-row" id="manifest-filter-row" style="width:auto;">
+          <button type="button" class="lab-btn" data-cat="ALL" data-active="true" style="min-width:64px;height:24px;">ALL</button>
+          <button type="button" class="lab-btn" data-cat="DRC" style="min-width:64px;height:24px;">.DRC MESH</button>
+          <button type="button" class="lab-btn" data-cat="KTX2" style="min-width:64px;height:24px;">.KTX2 TEX</button>
+          <button type="button" class="lab-btn" data-cat="AUDIO" style="min-width:64px;height:24px;">.OGG AUDIO</button>
+          <button type="button" class="lab-btn" data-cat="WORKER" style="min-width:64px;height:24px;">WORKERS/WASM</button>
+        </div>
+      </div>
+      <div class="lab-manifest-table-wrap">
+        <table class="lab-manifest-table">
+          <thead>
+            <tr>
+              <th style="width:90px;">TYPE</th>
+              <th>ASSET PATH (CLICK TO VERIFY 200 OK MIRROR)</th>
+              <th style="width:110px;">SIZE</th>
+              <th>PIPELINE ROLE IN APP3D-D68CB154.JS</th>
+            </tr>
+          </thead>
+          <tbody id="manifest-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import {
+      IGLOO_ASSET_INDEX,
+      createFrostCutShader,
+      createCryoCubeWebGL,
+      createAsciiWaveLoader,
+      createPolarReticleHud,
+      createBlurTextCylinder,
+      createCryoAudioEngine
+    } from '/shared-ui/igloo-ui.js';
+
+    // ------------------------------------------------------------------------
+    // Card 01: Diagonal Frost-Cut Shader
+    // ------------------------------------------------------------------------
+    const slProgress = document.getElementById('slider-fc-progress');
+    const slVel = document.getElementById('slider-fc-vel');
+    const slCa = document.getElementById('slider-fc-ca');
+    const slFrost = document.getElementById('slider-fc-frost');
+    const valProgress = document.getElementById('val-fc-progress');
+    const valVel = document.getElementById('val-fc-vel');
+    const valCa = document.getElementById('val-fc-ca');
+    const valFrost = document.getElementById('val-fc-frost');
+    const btnSweep = document.getElementById('btn-fc-sweep');
+    let autoSweep = false;
+
+    const frostCut = createFrostCutShader(document.getElementById('canvas-frost-cut'), {
+      initialProgress: 0.46,
+      initialVelocity: 0.35,
+      onProgressChange(prog, vel) {
+        slProgress.value = prog.toFixed(3);
+        valProgress.textContent = prog.toFixed(2);
+        slVel.value = vel.toFixed(2);
+        valVel.textContent = vel.toFixed(2);
+      }
+    });
+
+    slProgress.addEventListener('input', () => {
+      const v = Number(slProgress.value);
+      valProgress.textContent = v.toFixed(2);
+      frostCut.setProgress(v);
+    });
+    slVel.addEventListener('input', () => {
+      const v = Number(slVel.value);
+      valVel.textContent = v.toFixed(2);
+      frostCut.setVelocity(v);
+    });
+    slCa.addEventListener('input', () => {
+      const v = Number(slCa.value);
+      valCa.textContent = v.toFixed(2);
+      frostCut.setChromaticStrength(v);
+    });
+    slFrost.addEventListener('input', () => {
+      const v = Number(slFrost.value);
+      valFrost.textContent = v.toFixed(2);
+      frostCut.setFrostDensity(v);
+    });
+
+    document.querySelectorAll('[data-fc-preset]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = Number(btn.getAttribute('data-fc-preset'));
+        slProgress.value = target;
+        valProgress.textContent = target.toFixed(2);
+        frostCut.setProgress(target);
+        document.querySelectorAll('[data-fc-preset]').forEach((b) => b.setAttribute('data-active', b === btn ? 'true' : 'false'));
+      });
+    });
+
+    btnSweep.addEventListener('click', () => {
+      autoSweep = !autoSweep;
+      btnSweep.textContent = `AUTO SWEEP: ${autoSweep ? 'ON' : 'OFF'}`;
+      btnSweep.setAttribute('data-active', autoSweep ? 'true' : 'false');
+    });
+
+    setInterval(() => {
+      if (!autoSweep) return;
+      const t = (Math.sin(performance.now() * 0.0014) + 1) * 0.5;
+      slProgress.value = t.toFixed(3);
+      valProgress.textContent = t.toFixed(2);
+      frostCut.setProgress(t);
+    }, 30);
+
+    // ------------------------------------------------------------------------
+    // Card 02: 3D Raymarched Cryo-Specimen Cube
+    // ------------------------------------------------------------------------
+    const cryoCube = createCryoCubeWebGL(document.getElementById('canvas-cryo-cube'), {
+      specimen: 0,
+      ior: 1.31,
+      frostThickness: 0.42
+    });
+
+    document.querySelectorAll('[data-cube-spec]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const spec = Number(btn.getAttribute('data-cube-spec'));
+        cryoCube.setSpecimen(spec);
+        document.querySelectorAll('[data-cube-spec]').forEach((b) => b.setAttribute('data-active', b === btn ? 'true' : 'false'));
+      });
+    });
+
+    const btnExplode = document.getElementById('btn-cube-explode');
+    btnExplode.addEventListener('click', () => {
+      const next = cryoCube.triggerExplode();
+      btnExplode.setAttribute('data-active', next > 0.3 ? 'true' : 'false');
+    });
+
+    const slIor = document.getElementById('slider-cube-ior');
+    const valIor = document.getElementById('val-cube-ior');
+    slIor.addEventListener('input', () => {
+      const v = Number(slIor.value);
+      valIor.textContent = v.toFixed(2);
+      cryoCube.setIOR(v);
+    });
+
+    const slCubeFrost = document.getElementById('slider-cube-frost');
+    const valCubeFrost = document.getElementById('val-cube-frost');
+    slCubeFrost.addEventListener('input', () => {
+      const v = Number(slCubeFrost.value);
+      valCubeFrost.textContent = v.toFixed(2);
+      cryoCube.setFrostThickness(v);
+    });
+
+    // ------------------------------------------------------------------------
+    // Card 03: 3D DoF Blur-Text Cylinder & Polar Reticle HUD
+    // ------------------------------------------------------------------------
+    const cylCanvas = document.getElementById('canvas-blur-cylinder');
+    const cylViewport = document.getElementById('viewport-cylinder-hud');
+    const blurCylinder = createBlurTextCylinder(cylCanvas, {
+      speed: 0.65,
+      blurRadius: 6.5,
+      depthProgress: 0.35
+    });
+    const labReticle = createPolarReticleHud(cylViewport, {
+      depthProgress: 0.35,
+      gridVisible: true
+    });
+
+    const slCylSpeed = document.getElementById('slider-cyl-speed');
+    const valCylSpeed = document.getElementById('val-cyl-speed');
+    slCylSpeed.addEventListener('input', () => {
+      const v = Number(slCylSpeed.value);
+      valCylSpeed.textContent = `${v.toFixed(2)} rad/s`;
+      blurCylinder.setSpeed(v);
+    });
+
+    const slCylBlur = document.getElementById('slider-cyl-blur');
+    const valCylBlur = document.getElementById('val-cyl-blur');
+    slCylBlur.addEventListener('input', () => {
+      const v = Number(slCylBlur.value);
+      valCylBlur.textContent = `${v.toFixed(1)} px`;
+      blurCylinder.setBlurRadius(v);
+    });
+
+    const slCylDepth = document.getElementById('slider-cyl-depth');
+    const valCylDepth = document.getElementById('val-cyl-depth');
+    slCylDepth.addEventListener('input', () => {
+      const v = Number(slCylDepth.value);
+      const alt = (32 - v * 80).toFixed(1);
+      valCylDepth.textContent = `${Math.round(v * 100)}% (${alt}m)`;
+      blurCylinder.setDepthProgress(v);
+      labReticle.setDepthProgress(v);
+    });
+
+    const inputCylText = document.getElementById('input-cyl-text');
+    inputCylText.addEventListener('input', () => {
+      blurCylinder.setText(inputCylText.value);
+    });
+
+    // ------------------------------------------------------------------------
+    // Card 04: 100-Frame ASCII Wave Loader & Cryo Web Audio Synth
+    // ------------------------------------------------------------------------
+    const asciiLoader = createAsciiWaveLoader(document.getElementById('ascii-loader-mount'), {
+      initialText: '////// MANIFESTO :: COMMUNITY + AI + CRYPTO'
+    });
+    const cryoAudio = createCryoAudioEngine();
+    const audioStatus = document.getElementById('audio-status-readout');
+
+    document.getElementById('btn-synth-beep1').addEventListener('click', () => {
+      cryoAudio.playBeep(1);
+      audioStatus.textContent = 'EVENT: TELEMETRY_BEEP_01 (2480Hz)';
+    });
+    document.getElementById('btn-synth-beep2').addEventListener('click', () => {
+      cryoAudio.playBeep(2);
+      audioStatus.textContent = 'EVENT: TELEMETRY_BEEP_02 (HARMONIC TRIAD)';
+    });
+    document.getElementById('btn-synth-shard').addEventListener('click', () => {
+      cryoAudio.playShard();
+      audioStatus.textContent = 'EVENT: ICE_SHARD_FRACTURE (5 PARTIALS)';
+    });
+    document.getElementById('btn-synth-dive').addEventListener('click', () => {
+      cryoAudio.playEnterCube();
+      audioStatus.textContent = 'EVENT: SUB_ZERO_VAULT_DIVE (145Hz -> 42Hz)';
+    });
+
+    const btnSynthWind = document.getElementById('btn-synth-wind');
+    btnSynthWind.addEventListener('click', () => {
+      const on = cryoAudio.toggleArcticWind();
+      btnSynthWind.textContent = `🌬️ ARCTIC WIND: ${on ? 'ON' : 'OFF'}`;
+      btnSynthWind.setAttribute('data-active', on ? 'true' : 'false');
+      audioStatus.textContent = on ? 'DRONE: ARCTIC_WIND_ACTIVE (LFO 0.14Hz)' : 'STATE: STANDBY';
+    });
+
+    document.querySelectorAll('[data-scramble]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        asciiLoader.scrambleText(btn.getAttribute('data-scramble'), 580);
+        cryoAudio.playBeep(3);
+      });
+    });
+
+    // Real-time Oscilloscope Waveform Canvas
+    const scopeCanvas = document.getElementById('canvas-audio-scope');
+    const scopeCtx = scopeCanvas.getContext('2d');
+    const timeDomainBuf = new Uint8Array(64);
+
+    function drawScope(now) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.max(1, Math.floor(scopeCanvas.clientWidth * dpr));
+      const h = Math.max(1, Math.floor(scopeCanvas.clientHeight * dpr));
+      if (scopeCanvas.width !== w || scopeCanvas.height !== h) {
+        scopeCanvas.width = w;
+        scopeCanvas.height = h;
+      }
+
+      scopeCtx.clearRect(0, 0, w, h);
+      scopeCtx.strokeStyle = 'rgba(140, 210, 255, 0.15)';
+      scopeCtx.lineWidth = 1;
+      scopeCtx.beginPath();
+      scopeCtx.moveTo(0, h * 0.5);
+      scopeCtx.lineTo(w, h * 0.5);
+      scopeCtx.stroke();
+
+      const liveData = cryoAudio.getAnalyserData(timeDomainBuf);
+      scopeCtx.strokeStyle = '#8CD2FF';
+      scopeCtx.lineWidth = 2;
+      scopeCtx.beginPath();
+      const count = 64;
+      for (let i = 0; i < count; i++) {
+        const x = (i / (count - 1)) * w;
+        let norm = 0;
+        if (liveData) {
+          norm = (liveData[i] - 128) / 128;
+        }
+        if (Math.abs(norm) < 0.008) {
+          norm = Math.sin(i * 0.35 + now * 0.005) * 0.06;
+        }
+        const y = h * 0.5 + norm * (h * 0.42);
+        if (i === 0) scopeCtx.moveTo(x, y);
+        else scopeCtx.lineTo(x, y);
+      }
+      scopeCtx.stroke();
+      requestAnimationFrame(drawScope);
+    }
+    requestAnimationFrame(drawScope);
+
+    // ------------------------------------------------------------------------
+    // Asset & Shader Architecture Manifest Table
+    // ------------------------------------------------------------------------
+    const tbody = document.getElementById('manifest-tbody');
+    function renderManifest(filterCat = 'ALL') {
+      const rows = IGLOO_ASSET_INDEX.filter((item) => {
+        if (filterCat === 'ALL') return true;
+        if (filterCat === 'WORKER') return item.cat === 'WORKER' || item.cat === 'WASM' || item.cat === 'BUNDLE';
+        if (filterCat === 'KTX2') return item.cat === 'KTX2' || item.cat === 'EXR' || item.cat === 'FONT';
+        return item.cat === filterCat;
+      });
+      tbody.innerHTML = rows
+        .map((item) => {
+          const firstPath = item.name.split(' ')[0];
+          return `
+            <tr>
+              <td><span class="lab-card-tag">${item.cat}</span></td>
+              <td><a href="/${firstPath}" target="_blank" style="color:#CFE9FF;text-decoration:none;">/${item.name} ↗</a></td>
+              <td style="color:#A0A5B1;">${item.size}</td>
+              <td>${item.role}</td>
+            </tr>
+          `;
+        })
+        .join('');
+    }
+    renderManifest('ALL');
+
+    document.querySelectorAll('#manifest-filter-row [data-cat]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cat = btn.getAttribute('data-cat');
+        renderManifest(cat);
+        document.querySelectorAll('#manifest-filter-row [data-cat]').forEach((b) =>
+          b.setAttribute('data-active', b === btn ? 'true' : 'false')
+        );
+      });
+    });
+  </script>
+</body>
+</html>

@@ -11,7 +11,8 @@
 - **Specimen #01 (`True JPEG`)**：原始网站设计、前端架构与 AI 图像/提示词作品版权均归原作者 **TJ ([@RTJLDR](https://x.com/RTJLDR))** 及官方站点 **[truejpeg.com](https://truejpeg.com/)** 所有。
 - **Specimen #02 (`musicForProgramming();`)**：原始网站设计、理念宣言与混音电台企划版权均归原作者 **Datassette ([datassette.net](https://datassette.net/))**、各期客座艺术家及官方站点 **[musicforprogramming.net](https://musicforprogramming.net/)** 所有。
 - **Specimen #03 (`Sam Becker Photos`)**：原始网站极简摄影博客排版与开源项目创意归原作者 **Sam Becker ([sambecker/exif-photo-blog](https://github.com/sambecker/exif-photo-blog))** 及官方站点 **[photos.sambecker.com](https://photos.sambecker.com/)** 所有。
-- 为保持 Git 仓库轻量与合规，本仓库**不包含**原站的大体积媒体资产（`images/` 与 `photos/` 目录已在 `.gitignore` 中忽略，音频与相片均内置本地程序化合成/显影兜底）。
+- **Specimen #04 (`Igloo Inc`)**：原始网站 3D WebGL 极地冰原巨石视觉、GLSL 着色器管线与空间声效工程版权均归创意制作团队 **Lusion ([lusion.co](https://lusion.co/))** 及品牌方 **Igloo Inc. ([igloo.inc](https://www.igloo.inc/))** 所有。
+- 为保持 Git 仓库轻量与合规，本仓库**不包含**原站的大体积媒体与 3D 网格/纹理缓存（`images/`、`photos/` 与 `sites/04-igloo-inc/assets/` 目录已在 `.gitignore` 中忽略，均提供一键同步脚本与本地程序化合成/着色器兜底）。
 
 ---
 
@@ -22,6 +23,7 @@
 | **#01** | **[True JPEG](https://truejpeg.com/)** (`@RTJLDR`) | 点阵工业风 / 半色调显影 / 硬件标尺 / Vanilla JS + OffscreenCanvas | [`sites/01-truejpeg/`](./sites/01-truejpeg/) (或 `truejpeg` 分支) | [`shared-ui/truejpeg-ui.js`](./shared-ui/truejpeg-ui.js) | [`PROMPTS_CATALOG.md`](./sites/01-truejpeg/PROMPTS_CATALOG.md) · [`lab.html`](./sites/01-truejpeg/lab.html) |
 | **#02** | **[musicForProgramming();](https://musicforprogramming.net/)** (`Datassette`) | 代码编辑器 IDE 美学 / 纯 ASCII 控件 / Web Audio 频谱与环境合成器 | [`sites/02-musicforprogramming/`](./sites/02-musicforprogramming/) | [`shared-ui/mfp-ui.js`](./shared-ui/mfp-ui.js) | [`episodes.js`](./sites/02-musicforprogramming/episodes.js) · [`lab.html`](./sites/02-musicforprogramming/lab.html) |
 | **#03** | **[Sam Becker Photos](https://photos.sambecker.com/)** (`sambecker`) | 奇偶交错无框画廊 / `oklch` 3px 色彩条 / 3D 文件夹归档 / 二进制 EXIF 解析与 `CLS=0` 暗房套件 | [`sites/03-sambecker-photos/`](./sites/03-sambecker-photos/) | [`shared-ui/photo-vault-ui.js`](./shared-ui/photo-vault-ui.js) | [`catalog.js`](./sites/03-sambecker-photos/catalog.js) · [`lab.html`](./sites/03-sambecker-photos/lab.html) |
+| **#04** | **[Igloo Inc](https://www.igloo.inc/)** (`Lusion`) | 3D 极地冰原巨石 / `class f3` 斜向冰刀 5 重色散切屏 / SDF 光线步进冰封立方体 / 隐式键盘暗门工业遥测 HUD | [`sites/04-igloo-inc/`](./sites/04-igloo-inc/) | [`shared-ui/igloo-ui.js`](./shared-ui/igloo-ui.js) | [`sync_assets.js`](./sites/04-igloo-inc/sync_assets.js) · [`lab.html`](./sites/04-igloo-inc/lab.html) |
 
 ---
 
@@ -121,6 +123,40 @@ node sites/03-sambecker-photos/sync_photos.js
 
 ---
 
+## ❄️ Specimen #04: Igloo Inc (`igloo.inc` by Lusion) 深度解析
+
+### 1. 视觉、着色器与工业 HUD 工程亮点
+1. **100% 原生 Lusion WebGL2 3D 引擎镜像与透明回源代理架构 (`server.js` & `sync_assets.js`)**：
+   - **`server.js`（端口 `6063`）**：支持 `/shared-ui/*` 跨目录路由、`/lab` 组件实验室路由，以及 `/assets/*` 透明回源代理与本地磁盘缓存（含 `inFlightProxy` 并发去重、精确 `.wasm` / `.ktx2` / `.drc` / `.exr` / `.ogg` / `.woff2` MIME 映射、`.ogg` HTTP `Range` 分片流传输，并自动修补 `index-2e130bc1.js` 中硬编码的 `"https://www.igloo.inc/"` → `"/"`）。
+   - **`sync_assets.js` 全量资产同步**：一键拉取并本地缓存全部 **108 项（18.25 MB）** 原站 WebGL2 3D 二进制资产（4 个 Web Workers `audioworker` / `msdfworker` / `bitmapworker` / `exrworker`、Draco 与 Basis Universal WASM 解码器、20 个 `.drc` 3D 几何体、46 个 `.ktx2` / `.exr` / `.png` 纹理与 3D VDB 体积云、MSDF 3D 字体图集及 18 轨 `.ogg` 空间音效），实现 100% 离线满帧秒开。
+2. **默认 `RAW` 模式 100% 零外挂 DOM + 隐式键盘暗门召唤 `PRO` 极地遥测套件 (`pro-hud.js`)**：
+   - **纯粹 `RAW` 体验（零额外像素）**：默认 `RAW` 模式下主屏不渲染任何可见外挂按钮或胶囊栏，并强制锁定 `data-igloo-optics="CRYO-STD"` 原生色彩，确保打开 `http://127.0.0.1:6063/` 时画面与 `https://www.igloo.inc/` 100.00% 完全一致。
+   - **纯键盘暗门交互 (`P` / `Esc` / `L` / `T` / `G`)**：按 `P` 键召唤/关闭 `PRO` 极地遥测覆层（`Esc` 立即退回纯净 `RAW` 模式并自动复位滤镜，`L` 新标签页打开 `/lab`）；仅在 `PRO` 模式下响应 `T`（循环切换 `CRYO-STD` / `POLAR-NIGHT` / `THERMAL-IR` / `WIREFRAME-XRAY` 四态全局光学滤镜）与 `G`（切换极坐标激光测距网格）。
+   - **非侵入式 WebGL2 管线探针与三大遥测器官**：通过拦截 `HTMLCanvasElement.prototype.getContext` 实时读取 GPU 帧率、每帧 Draw Calls / 三角形吞吐量以及 `class f3` 切屏着色器的 `uProgress` / `uProgressVel` / `uDetailProgress` uniform，驱动 **四周极地测量准星与海拔/温度标尺**、**实时 WebGL2 管线抽屉（含 4 章节平滑滚轮脉冲跃迁与合成寒风声场开关）** 以及 **展品冰块结构解剖卡片 (`Cryo-Specimen Metadata Inspector`)**。
+3. **跨站复用组件库 6 大零依赖导出模块 (`shared-ui/igloo-ui.js` & `lab.html`)**：
+   - **`createFrostCutShader`**：1:1 纯 WebGL2 GLSL 复刻 `App3D-d68cb154.js` 中的 `class f3` 斜向冰刀切面着色器（内置程序化 `tScroll` / `tFrost` / `tBlue` 多通道噪声纹理、还原 `slopeDisp = (scrollTex.b * 2.0 - 1.0) * 0.4` 与 `#define CA_ITERATIONS 5` 五重光谱桶形畸变色散）。
+   - **`createCryoCubeWebGL`**：纯手写 WebGL2 GLSL SDF 光线步进（Raymarching）3D 倒角冰封立方体 + `shattered_ring` 环绕破碎冰环，具备菲涅尔高光、次表面散射与真实冰折射率（`IOR = 1.31`），支持切换内部 3D 发光遗迹（`01: Pudgy 0°C` / `02: Overpass -3°C` / `03: Igloo Dome -15°C`）及触发 `Explode Lattice` 冰砖爆裂分离。
+   - **`createAsciiWaveLoader`**：1:1 提取 `index-2e130bc1.js` 的 100 帧 ASCII 脉冲波浪加载器（`---===+++=` → `===+++===-`）与 `////// Manifesto` 等宽字符乱码锁定解码器。
+   - **`createPolarReticleHud`**：四角工业准星、黄金分割/极坐标测距网格、鼠标实时 `AZM / ELV` 方位角追踪与垂直海拔/温度刻度尺（`+32.0m -18°C` → `-48.0m -42°C`）。
+   - **`createBlurTextCylinder`**：三维圆柱面环绕大写等宽字柱 (`blurrytext_cylinder`) 实时高斯景深模糊（DoF Blur）与 `dot_pattern` 点阵矩阵背景。
+   - **`createCryoAudioEngine`**：零外部音频依赖，纯 `Web Audio API` 合成高频遥测脉冲音（`playBeep`）、5 泛音冰晶折射碎裂声（`playShard`）、低频下潜冰层共鸣（`playEnterCube`）与粉红噪声双二阶带通 LFO 极地寒风声场（`toggleArcticWind`）。
+
+### 2. 如何本地运行 Specimen #04
+
+```bash
+# 1. 预同步全量 108 项 Lusion WebGL2 3D 二进制资产到本地 sites/04-igloo-inc/assets/（约 18.25 MB）
+node sites/04-igloo-inc/sync_assets.js
+
+# 2. 启动本地 1:1 WebGL2 3D 镜像与透明回源代理服务器（默认监听 http://127.0.0.1:6063/）
+node sites/04-igloo-inc/server.js
+```
+
+启动后可访问：
+- **1:1 原生 WebGL2 3D 极地冰屋体验（默认纯净 `RAW` 模式，按 `P` 键召唤 `PRO` 极地遥测 HUD）**：`http://127.0.0.1:6063/`
+- **2×2 极地 WebGL 着色器、SDF 光线步进冰块与工业 HUD 交互实验室**：`http://127.0.0.1:6063/lab`
+
+---
+
 ## 📦 仓库目录与分支说明 (Clean Multi-Site Architecture)
 
 ```text
@@ -131,11 +167,13 @@ decon-web (main 分支)
 ├── shared-ui/                       # 提炼出的跨项目可复用零依赖组件库
 │   ├── truejpeg-ui.js               # Specimen #01 点阵/半色调/光学放大镜组件库
 │   ├── mfp-ui.js                    # Specimen #02 ASCII 进度条/双模频谱/环境合成器/番茄钟组件库
-│   └── photo-vault-ui.js            # Specimen #03 二进制 EXIF 解析/胶片配方铭牌/构图叠层/色彩基因组件库
+│   ├── photo-vault-ui.js            # Specimen #03 二进制 EXIF 解析/胶片配方铭牌/构图叠层/色彩基因组件库
+│   └── igloo-ui.js                  # Specimen #04 斜向冰刀色散着色器/3D SDF 冰封立方体/极地遥测 HUD/寒风合成器组件库
 └── sites/                           # 各神级网站独立自包含归档目录
-    ├── 01-truejpeg/                 # Specimen #01: True JPEG 完整复刻、server 与 Prompt 手册
-    ├── 02-musicforprogramming/      # Specimen #02: musicForProgramming(); 完整复刻、server 与交互实验室
-    └── 03-sambecker-photos/         # Specimen #03: Sam Becker Photos 完整复刻、二进制 EXIF 入库与交互实验室
+    ├── 01-truejpeg/                 # Specimen #01: True JPEG 完整复刻、server (6060) 与 Prompt 手册
+    ├── 02-musicforprogramming/      # Specimen #02: musicForProgramming(); 完整复刻、server (6061) 与交互实验室
+    ├── 03-sambecker-photos/         # Specimen #03: Sam Becker Photos 完整复刻、server (6062) 与二进制 EXIF 实验室
+    └── 04-igloo-inc/                # Specimen #04: Igloo Inc (Lusion) WebGL2 3D 镜像、server (6063) 与着色器实验室
 ```
 
 - **`main` 分支**：保持根目录纯粹干净，仅包含总览文档、`shared-ui/` 通用组件库以及 `sites/` 下按编号归档的各个独立站点文件夹。

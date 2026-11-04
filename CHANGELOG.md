@@ -2,6 +2,23 @@
 
 All notable deconstruction milestones and architectural changes in `decon-web`.
 
+## [2026-11-04] — Specimen #04: Igloo Inc (`sites/04-igloo-inc`)
+
+### Architecture & 100% Native WebGL2 3D Mirror Layer
+- **Isolated Site Archive (`sites/04-igloo-inc/`)**: Added Specimen #04 (`https://www.igloo.inc/` by Lusion) strictly inside `sites/04-igloo-inc/` and `shared-ui/igloo-ui.js` (mirrored byte-for-byte at `sites/04-igloo-inc/igloo-ui.js`), with zero modifications to `sites/01-truejpeg/`, `sites/02-musicforprogramming/`, `sites/03-sambecker-photos/`, or their shared UI kits.
+- **Transparent Upstream Proxy & Disk Cache Server (`server.js`, port `6063`)**: Supports `/shared-ui/*` cross-directory routing, `/lab` & `/lab.html` component lab routing, `/portfolio/*` SPA routing, and `/assets/*` local disk cache hosting with `inFlightProxy`-deduplicated HTTPS fallback to `https://www.igloo.inc/assets/*`, exact binary MIME mapping (`.wasm` → `application/wasm`, `.ktx2` → `image/ktx2`, `.drc` / `.exr` → `application/octet-stream`, `.ogg` → `audio/ogg` with HTTP `Range` support, `.woff2` → `font/woff2`), and automatic patching of `index-2e130bc1.js` (`"https://www.igloo.inc/"` → `"/"`).
+- **One-Command 3D Asset Pre-Sync (`sync_assets.js`)**: Pre-fetches and caches all **108 upstream WebGL2 3D assets (`18.25 MB`)** into `sites/04-igloo-inc/assets/` (ignored by `.gitignore`), covering `index-2e130bc1.js`, `App3D-d68cb154.js`, 4 Web Workers (`audioworker`, `msdfworker`, `bitmapworker`, `exrworker`), Draco & Basis Universal WASM decoders, 20 `.drc` 3D meshes, 46 `.ktx2` / `.exr` / `.png` textures & 3D VDB volumetric clouds, MSDF 3D font atlases, and 18 spatial `.ogg` audio tracks.
+
+### Features & Enhancements (`04-igloo-inc`)
+- **Pure Zero-DOM `RAW` Mode & Stealth Keyboard Summon (`pro-hud.js` & `styles.css`, `CLS = 0.00px`)**:
+  - **100% Pure `RAW` Default**: Renders zero visible external buttons or capsule bars in `RAW` mode and strictly locks `data-igloo-optics="CRYO-STD"` (`filter: none !important`), preserving an untouched 1:1 `igloo.inc` canvas.
+  - **Stealth Keyboard Summon (`P` / `Esc` / `L` / `T` / `G`)**: Press `P` to summon/dismiss the `PRO` Polar Telemetry HUD overlay (`Esc` exits immediately back to pure `RAW` mode and resets optical filters to `CRYO-STD`; `L` opens `/lab` in a new tab). Optical filter cycling (`T`: `CRYO-STD` / `POLAR-NIGHT` / `THERMAL-IR` / `WIREFRAME-XRAY`) and polar rangefinder grid toggling (`G`) operate exclusively in `PRO` mode.
+  - **Non-Intrusive WebGL2 Pipeline Probe & 3 Telemetry Organs**: Wraps `HTMLCanvasElement.prototype.getContext` to read live GPU FPS/frame time, draw calls, triangle counts, and `class f3` shader uniforms (`uProgress`, `uProgressVel`, `uDetailProgress`), driving the **Polar Telemetry Reticle & Depth Gauge**, **WebGL2 & Frost-Cut Shader Telemetry Drawer** (with 4-chapter smooth wheel pulse quick-jump and synthetic wind/shard audio controls), and **Cryo-Specimen Metadata Inspector**.
+- **Zero-Dependency UI & Shader Kit Extraction (`shared-ui/igloo-ui.js` & `lab.html`)**:
+  - Extracted 6 standalone zero-dependency modules (`createFrostCutShader`, `createCryoCubeWebGL`, `createAsciiWaveLoader`, `createPolarReticleHud`, `createBlurTextCylinder`, `createCryoAudioEngine`) plus `ASCII_WAVE_FRAMES_100`, `IGLOO_PORTFOLIO_DATA`, and `IGLOO_ASSET_INDEX` (all 44 indexed asset paths verified `200 OK`) with a 2×2 interactive WebGL2 shader & audio workbench in [`lab.html`](./sites/04-igloo-inc/lab.html).
+
+---
+
 ## [2026-11-04] — Specimen #03: Sam Becker Photos (`sites/03-sambecker-photos`)
 
 ### Architecture & Real Data Layer
