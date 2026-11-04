@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en" data-theme="mfp-dark" data-pro="0">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1a1a1a">
+  <title>musicForProgramming();</title>
+  <meta name="description" content="Datassette presents a series of mixes intended for listening while programming to focus the brain and inspire the mind (also compatible with other activities).">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,200;0,300;0,400;0,500;1,200;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top-Right Hardware Status Bar (THEME [T] & RAW / PRO [P]) -->
+  <div class="hw-bar" role="toolbar" aria-label="Decon-Web Mode & Theme Controls">
+    <a class="hw-bar__lab pro-only" href="lab.html" title="Open MfpUI Interactive Component Lab">[LAB // UI KIT]</a>
+    <span class="hw-bar__sep pro-only" aria-hidden="true"></span>
+    <button class="hw-bar__btn" id="theme-toggle" type="button" title="Cycle Editor Theme (Shortcut: T)">
+      <svg class="hw-bar__ico" viewBox="0 0 18 18" aria-hidden="true">
+        <circle cx="9" cy="9" r="2.3"/>
+        <circle cx="9" cy="2.6" r="1.05"/>
+        <circle cx="13.5" cy="4.5" r="1.05"/>
+        <circle cx="15.4" cy="9" r="1.05"/>
+        <circle cx="13.5" cy="13.5" r="1.05"/>
+        <circle cx="9" cy="15.4" r="1.05"/>
+        <circle cx="4.5" cy="13.5" r="1.05"/>
+        <circle cx="2.6" cy="9" r="1.05"/>
+        <circle cx="4.5" cy="4.5" r="1.05"/>
+      </svg>
+      <span class="hw-bar__lbl" id="theme-lbl">MFP DARK</span>
+    </button>
+    <span class="hw-bar__sep" aria-hidden="true"></span>
+    <button class="hw-bar__btn" id="pro-toggle" type="button" aria-pressed="false" title="Toggle RAW (1:1 Original) / PRO (Spectrum + Pomodoro + Geek Keys) · Shortcut: P">
+      <i class="hw-bar__led" aria-hidden="true"></i>
+      <span class="hw-bar__lbl" id="pro-lbl">RAW</span>
+    </button>
+  </div>
+
+  <main class="ide-shell">
+    <div class="ide-grid">
+
+      <!-- ====================================================================
+           LEFT COLUMN: Manifesto, 4-Row Wave Equalizer, Navigation & Stats
+           ==================================================================== -->
+      <section class="col-left noselect" aria-label="Control Manifesto & Global Navigation">
+        <header class="pad pb-0">
+          <!-- Syntax-Highlighted Brand Title -->
+          <div class="mfp-brand">
+            <span class="green"><em>musicForProgramming</em></span><span class="white">();</span>
+          </div>
+
+          <!-- Primary View Switch Navigation -->
+          <div class="mfp-view-tabs" role="navigation" aria-label="Views">
+            <button type="button" class="blue hover selected" data-view-btn="episodes">[Episodes]</button>
+            <button type="button" class="blue hover" data-view-btn="about">[About]</button>
+            <button type="button" class="blue hover" data-view-btn="credits">[Credits]</button>
+          </div>
+
+          <!-- Classic Pseudo-Code Brain Flow Manifesto -->
+          <div class="mfp-code-manifesto break-anywhere">
+            <em class="blue">function</em> <span class="green">musicFor</span>(<em class="orange">task</em> = <span class="yellow">'programming'</span>) {
+            <span class="fuschia">return</span> <span class="purple">`A series of mixes intended for listening while </span><span class="yellow">${</span><span class="white">task</span><span class="yellow">}</span><span class="purple"> to focus the brain and inspire the mind.`</span>; }
+            <br>
+            <span class="grey">/* also compatible with other activities */</span>
+          </div>
+          <br>
+        </header>
+
+        <!-- Original 4-Row ASCII Wave Equalizer & Mini Transport -->
+        <nav class="pad pt-0 pb-0 grey" aria-label="ASCII Wave & Transport">
+          <div class="mfp-wave-box">
+            <span class="mfp-wave-row fuschia" id="wave-r0">                                </span>
+            <span class="mfp-wave-row orange" id="wave-r1">                                </span>
+            <span class="mfp-wave-row yellow" id="wave-r2">                                </span>
+            <span class="mfp-wave-row green" id="wave-r3">________________________________</span>
+          </div>
+          <div>
+            <span class="grey mfp-marquee" id="left-marquee">Episode 79: Corticyte //        </span>
+          </div>
+          <div class="mfp-mini-controls">
+            <button type="button" class="green hover" id="mini-prev">[prev]</button>
+            <button type="button" class="green hover" id="mini-rw">[-30]</button>
+            <button type="button" class="green hover" id="mini-play">[play]</button>
+            <button type="button" class="green hover" id="mini-ff">[+30]</button>
+            <button type="button" class="green hover" id="mini-next">[next]</button>
+          </div>
+          <div class="mfp-mini-controls">
+            <span class="grey" id="mini-clock">00:00:00</span>
+            <button type="button" class="purple hover" id="mini-vdown">[v-]</button>
+            <span class="grey" id="mini-vol">80%</span>
+            <button type="button" class="purple hover" id="mini-vup">[v+]</button>
+            <button type="button" class="purple hover" id="mini-random">[random]</button>
+          </div>
+          <br>
+        </nav>
+
+        <!-- Secondary Links, Utilities & Code-Comment Stats -->
+        <nav class="pad pt-0 grey" aria-label="External Links & Archive Statistics">
+          <div>
+            <button type="button" class="blue hover" data-view-link="about">[about]</button>
+            <button type="button" class="blue hover" data-view-link="credits">[credits]</button>
+            <a class="blue" href="/api/rss" target="_blank" rel="noopener">[rss.xml]</a>
+            <br>
+            <a class="orange" href="https://www.patreon.com/musicforprogramming/about" target="_blank" rel="noopener">[patreon]</a>
+            <a class="orange" href="https://podcasts.apple.com/us/podcast/music-for-programming/id500565620" target="_blank" rel="noopener">[podcasts.apple]</a>
+            <br>
+            <a class="fuschia" href="https://musicforprogramming.net/img/folder.jpg" target="_blank" rel="noopener">[folder.jpg]</a>
+            <a class="fuschia" href="https://www.youtube.com/watch?v=UrASH0kN_9g" target="_blank" rel="noopener">[enterprise mode]</a>
+            <br>
+            <button type="button" class="purple hover" id="btn-invert">[invert]</button>
+            <button type="button" class="purple hover" id="btn-fullscreen">[fullscreen]</button>
+            <a class="yellow hover" href="lab.html">[ui-lab]</a>
+          </div>
+
+          <div class="mfp-stats grey" id="archive-stats">
+            <br>
+            // 79 episodes<br>
+            // 1380 tracks<br>
+            // 96 hours<br>
+            // 25 minutes<br>
+            // 11 seconds
+          </div>
+
+          <div id="cookie-banner">
+            <br>
+            <span class="yellow">Do you know cookies are a thing?</span><br>
+            <button type="button" class="yellow hover" id="cookie-ok">[yes I'm aware]</button>
+          </div>
+        </nav>
+
+        <!-- Tablet-only Episode Matrix -->
+        <div class="col-right--tablet" id="tablet-index-mount"></div>
+      </section>
+
+      <!-- ====================================================================
+           MIDDLE / MAIN COLUMN: Active Episode Console, ASCII Player & Tracklist
+           ==================================================================== -->
+      <section class="col-main" id="content" aria-label="Episode Console & Tracklist">
+
+        <!-- VIEW 1: EPISODES (Default) -->
+        <div id="view-episodes">
+          <header class="episode-header noselect">
+            <h1 class="episode-title white" id="ep-title">Episode 79:<br>Corticyte</h1>
+          </header>
+
+          <article class="pad pt-0 white">
+            <!-- Pure ASCII Player Control Deck -->
+            <nav class="player-deck noselect" aria-label="Episode Player Controls">
+              <div class="player-actions">
+                <button type="button" class="green hover" id="btn-play">[Play]</button>
+                <button type="button" class="orange hover" id="btn-stop">[Stop]</button>
+                <button type="button" class="green hover" id="btn-rw">[-30s]</button>
+                <button type="button" class="green hover" id="btn-ff">[+30s]</button>
+                <button type="button" class="fuschia hover" id="btn-synth" title="Toggle Built-in Web Audio Procedural Ambient Synthesizer (Shortcut: S)">[Synth Mode]</button>
+                <span class="grey" id="ep-duration">4:00:00</span>
+              </div>
+
+              <!-- Interactive Clickable & Draggable ASCII Progress & Volume Bars -->
+              <div class="player-bars">
+                <div id="ascii-progress" title="Click or drag to scrub playback position"></div>
+                <div id="ascii-volume" title="Click or drag to adjust output volume"></div>
+              </div>
+
+              <!-- Metadata & Favourite Row -->
+              <div class="player-actions">
+                <a class="purple" id="ep-source" href="https://datashat.net/music_for_programming_79-corticyte.mp3" target="_blank" rel="noopener">[source]</a>
+                <span class="grey" id="ep-filesize">420 MB</span>
+                <button type="button" class="yellow hover" id="btn-fav">[favourite]</button>
+                <span class="grey" id="ep-date">// 2026-08-24</span>
+              </div>
+
+              <!-- Audio Stream / Synth Status Readout -->
+              <div class="engine-status" id="engine-status">
+                // AUDIO_ENGINE: READY · STREAM [datashat.net] + SYNTH FALLBACK ARMED
+              </div>
+            </nav>
+
+            <!-- ==============================================================
+                 PRO MODE SUITE (Unlocked when PRO [P] is active, hidden in RAW)
+                 1. Real-Time 32-Band ASCII / LED Dot-Matrix Spectrum
+                 2. Code-Comment Pomodoro Flow Timer
+                 3. Geek Keyboard Shortcuts HUD
+                 ============================================================== -->
+            <section class="pro-suite pro-only noselect" aria-label="PRO Flow Suite">
+              <!-- Tool 1: Code-Comment Pomodoro Flow Timer -->
+              <div id="flow-timer"></div>
+
+              <!-- Tool 2: 32-Band Real-Time Audio Spectrum -->
+              <div class="pro-suite__bar">
+                <span class="green">// SPECTRUM_32 :: REAL-TIME ANALYSER</span>
+                <div>
+                  <button type="button" class="green hover selected" id="spec-mode-ascii">[ASCII BARS]</button>
+                  <button type="button" class="blue hover" id="spec-mode-dots">[LED DOTS]</button>
+                  <button type="button" class="purple hover" id="spec-chord-next" title="Cycle Procedural Synth Chord Voicing">[Voicing ↻]</button>
+                </div>
+              </div>
+              <div id="pro-spectrum"></div>
+
+              <!-- Tool 3: Full Keyboard Shortcut Geek Readout -->
+              <div class="pro-hotkeys">
+                /* KEYS: <span class="green">[Space]</span> Play/Pause · <span class="green">[←/→]</span> ±30s · <span class="purple">[↑/↓]</span> Vol · <span class="yellow">[R]</span> Random · <span class="fuschia">[S]</span> Synth · <span class="blue">[T]</span> Theme · <span class="orange">[P]</span> Raw/Pro */
+              </div>
+            </section>
+
+            <!-- Optional Special Episode Description (e.g. Episode 62) -->
+            <div class="mb" id="ep-body" hidden></div>
+
+            <!-- Complete Episode Tracklist (with Cipher Scramble on Episode Switch) -->
+            <div class="tracklist" id="ep-tracklist" aria-label="Tracklist"></div>
+
+            <!-- Curator Links -->
+            <div class="mb blue" id="ep-links"></div>
+
+            <div class="y-space"></div>
+          </article>
+        </div>
+
+        <!-- VIEW 2: ABOUT -->
+        <div id="view-about" hidden>
+          <header class="episode-header noselect">
+            <h1 class="episode-title white" id="about-title">About</h1>
+          </header>
+          <article class="pad pt-0 white">
+            <div class="mb">
+              <button type="button" class="green hover" data-view-btn="episodes">[← Back to Episode]</button>
+            </div>
+            <div class="mb" id="about-body"></div>
+            <div class="y-space"></div>
+          </article>
+        </div>
+
+        <!-- VIEW 3: CREDITS -->
+        <div id="view-credits" hidden>
+          <header class="episode-header noselect">
+            <h1 class="episode-title white" id="credits-title">Credits</h1>
+          </header>
+          <article class="pad pt-0 white">
+            <div class="mb">
+              <button type="button" class="green hover" data-view-btn="episodes">[← Back to Episode]</button>
+            </div>
+            <div class="mb" id="credits-body"></div>
+            <div class="y-space"></div>
+          </article>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           RIGHT COLUMN: Full 79-Episode Matrix Index, Filter & Sort
+           ==================================================================== -->
+      <aside class="col-right col-right--desktop noselect" id="desktop-index-mount" aria-label="All Episodes Index">
+        <div class="ep-index-controls" id="ep-index-panel">
+          <label class="ep-filter-wrap" for="ep-filter">
+            <span>/* filter: [</span>
+            <input type="text" id="ep-filter" class="ep-filter-input" placeholder="artist/no" autocomplete="off" spellcheck="false">
+            <span>] */</span>
+          </label>
+          <div>
+            <button type="button" class="purple hover" id="ep-sort-btn" title="Toggle Descending / Ascending Episode Order">[Desc ↓]</button>
+            <button type="button" class="orange hover" id="ep-clear-btn" hidden>[×]</button>
+          </div>
+        </div>
+        <div class="ep-columns green" id="ep-list"></div>
+        <div class="y-space"></div>
+      </aside>
+
+    </div>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

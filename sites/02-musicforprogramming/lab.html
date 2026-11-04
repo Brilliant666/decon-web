@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en" data-theme="mfp-dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>musicForProgramming(); // UI Kit Lab & Tracklist Vault</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,200;0,300;0,400;0,500;1,200;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    @media (min-width: 1024px) {
+      body {
+        overflow-y: auto;
+        font-size: 14px;
+      }
+    }
+    .lab-wrap {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px clamp(16px, 3vw, 48px) 80px;
+    }
+    .lab-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px dashed var(--c-grey);
+    }
+    .lab-hero {
+      padding: 28px 0 22px;
+      border-bottom: 1px dashed var(--c-grey);
+    }
+    .lab-hero h1 {
+      margin: 0 0 8px 0;
+      font-size: clamp(24px, 4vw, 44px);
+      font-weight: 200;
+      line-height: 1.15;
+    }
+    .sec-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 34px 0 18px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--c-white);
+    }
+    .sec-head h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .lab-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 22px;
+    }
+    .mod-card {
+      background: var(--c-surface);
+      border: 1px dashed var(--c-border);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+    }
+    .mod-card__bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 16px;
+      border-bottom: 1px dashed var(--c-border);
+      font-size: 12px;
+      line-height: 1.4;
+      font-variant-numeric: tabular-nums;
+    }
+    .mod-card__body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+    .mod-desc {
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--c-grey);
+    }
+    .ctrl-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .code-box {
+      background: var(--c-black);
+      border: 1px solid var(--c-border);
+      padding: 12px;
+      border-radius: 3px;
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+    .lab-inp {
+      background: var(--c-black);
+      border: 1px solid var(--c-border);
+      padding: 4px 10px;
+      color: var(--c-yellow);
+      font-size: 13px;
+      min-width: 220px;
+    }
+    .lab-inp:focus {
+      border-color: var(--c-green);
+    }
+    .vault-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding: 12px 16px;
+      background: var(--c-surface);
+      border: 1px dashed var(--c-border);
+    }
+    .vault-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 16px;
+    }
+    .ep-card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ep-card:hover {
+      border-color: var(--c-green);
+    }
+    .ep-card__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      border-bottom: 1px dashed var(--c-border);
+      padding-bottom: 6px;
+    }
+    .ep-card__tracks {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--c-grey);
+      max-height: 150px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lab-wrap">
+    <!-- Top Masthead -->
+    <header class="lab-top noselect">
+      <div>
+        <a class="green hover" href="index.html">[← 1:1 REPLICA SITE]</a>
+        <span class="grey"> // SPECIMEN #02: MUSICFORPROGRAMMING.NET</span>
+      </div>
+      <div class="ctrl-group">
+        <span class="grey">THEME:</span>
+        <button type="button" class="blue hover selected" data-theme-set="mfp-dark">[MFP Dark]</button>
+        <button type="button" class="orange hover" data-theme-set="gruvbox">[Gruvbox]</button>
+        <button type="button" class="green hover" data-theme-set="solarized">[Solarized]</button>
+        <button type="button" class="purple hover" data-theme-set="paper-light">[Paper Light]</button>
+      </div>
+    </header>
+
+    <section class="lab-hero">
+      <h1 class="white"><span class="green"><em>musicForProgramming</em></span>(); <span class="grey" id="hero-sub">// UI Kit Lab &amp; Archive</span></h1>
+      <div class="mfp-code-manifesto">
+        <em class="blue">import</em> { <span class="green">createAsciiBar</span>, <span class="green">createSpectrum</span>, <span class="green">createAmbientPad</span>, <span class="green">createFlowTimer</span> } <em class="blue">from</em> <span class="yellow">'/shared-ui/mfp-ui.js'</span>;
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 1: 4 EXTRACTED COMPONENT PLAYGROUNDS
+         ==================================================================== -->
+    <div class="sec-head">
+      <h2 class="green">01 // EXTRACTED ZERO-DEPENDENCY UI COMPONENTS (shared-ui/mfp-ui.js)</h2>
+      <span class="grey">Pure Vanilla JS + Web Audio API + Canvas 2D</span>
+    </div>
+
+    <div class="lab-grid">
+
+      <!-- MODULE 01: Procedural Ambient Drone Synthesizer -->
+      <article class="mod-card">
+        <div class="mod-card__bar noselect">
+          <span class="fuschia">01 // createAmbientPad()</span>
+          <span class="grey" id="synth-state-badge">STATUS: IDLE</span>
+        </div>
+        <div class="mod-card__body">
+          <p class="mod-desc">
+            Multi-voice harmonic sine/triangle pad chord synthesizer with slow LFO low-pass filter sweep and generative modal bell overtones. Built-in offline fallback for all 79 episodes.
+          </p>
+          <div class="ctrl-group noselect">
+            <button type="button" class="green hover" id="lab-synth-toggle">[START AMBIENT PAD]</button>
+            <button type="button" class="yellow hover" id="lab-synth-bell">[+ Trigger Harmonic Bell]</button>
+          </div>
+          <div class="code-box noselect">
+            <div class="grey">// Select Chord Voicing Preset:</div>
+            <div class="ctrl-group" id="chord-buttons"></div>
+          </div>
+          <div class="code-box noselect">
+            <div id="lab-cutoff-bar"></div>
+            <div id="lab-lfo-bar"></div>
+            <div id="lab-gain-bar"></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- MODULE 02: 32-Band Dual-Mode Spectrum Analyzer -->
+      <article class="mod-card">
+        <div class="mod-card__bar noselect">
+          <span class="green">02 // createSpectrum()</span>
+          <div class="ctrl-group">
+            <button type="button" class="green hover selected" id="lab-spec-ascii">[ASCII BARS]</button>
+            <button type="button" class="blue hover" id="lab-spec-dots">[LED DOTS]</button>
+            <button type="button" class="purple hover selected" id="lab-spec-sim">[SIM: ON]</button>
+          </div>
+        </div>
+        <div class="mod-card__body">
+          <p class="mod-desc">
+            Real-time 32-band Web Audio AnalyserNode visualizer with one-click toggle between Unicode block bars (<span style="font-family:Consolas,monospace;line-height:1;">▁▂▃▄▅▆▇█</span>) and 32×12 hardware LED dot-matrix Canvas, plus original 4-row MFP wave output.
+          </p>
+          <div class="code-box">
+            <div id="lab-spectrum"></div>
+          </div>
+          <div class="code-box mfp-wave-box noselect">
+            <span class="grey mfp-wave-row">// Classic 4-Row MFP Wave Output (_.-•:*^º'):</span>
+            <span class="mfp-wave-row fuschia" id="lab-w0">                                </span>
+            <span class="mfp-wave-row orange" id="lab-w1">                                </span>
+            <span class="mfp-wave-row yellow" id="lab-w2">                                </span>
+            <span class="mfp-wave-row green" id="lab-w3">________________________________</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- MODULE 03: Interactive ASCII Progress & Scrubbing Bars -->
+      <article class="mod-card">
+        <div class="mod-card__bar noselect">
+          <span class="yellow">03 // createAsciiBar()</span>
+          <span class="grey" id="bar-readout">RATIO: 0.45</span>
+        </div>
+        <div class="mod-card__body">
+          <p class="mod-desc">
+            Pointer-draggable &amp; keyboard-accessible pure ASCII character sliders. Calculates character cell boundaries for exact scrubbing and emits tactile Web Audio detent clicks.
+          </p>
+          <div class="code-box noselect" style="display:flex;flex-direction:column;gap:8px;">
+            <div>
+              <div class="grey">// 1. Episode Progress Scrubber (fill='|', empty='.'):</div>
+              <div id="demo-bar-1"></div>
+            </div>
+            <div>
+              <div class="grey">// 2. Volume Attenuator (prefix='Vol: ', fill='|', empty='-'):</div>
+              <div id="demo-bar-2"></div>
+            </div>
+            <div>
+              <div class="grey">// 3. Block Shader Bar (fill='█', empty='░'):</div>
+              <div id="demo-bar-3"></div>
+            </div>
+          </div>
+          <div class="ctrl-group noselect">
+            <span class="grey">Bar Width:</span>
+            <button type="button" class="blue hover" data-bar-w="18">[18ch]</button>
+            <button type="button" class="blue hover selected" data-bar-w="26">[26ch]</button>
+            <button type="button" class="blue hover" data-bar-w="34">[34ch]</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- MODULE 04: Flow Pomodoro Timer, Cipher Scramble & Sound Engine -->
+      <article class="mod-card">
+        <div class="mod-card__bar noselect">
+          <span class="purple">04 // createFlowTimer() &amp; scrambleText()</span>
+          <span class="grey">FLOW SUITE</span>
+        </div>
+        <div class="mod-card__body">
+          <p class="mod-desc">
+            Code-comment Pomodoro timer with two-tone harmonic overtone completion chime, authentic MFP cipher text decoder (—~±§|[].+$^@*()•x%!?#), and zero-asset Web Audio tactile sound engine.
+          </p>
+          <div class="code-box noselect">
+            <div id="lab-flow-timer"></div>
+            <div style="margin-top:6px;">
+              <button type="button" class="orange hover" id="lab-flow-test3s">[⚡ Test 3-Second Countdown → Harmonic Chime]</button>
+            </div>
+          </div>
+          <div class="code-box noselect">
+            <div class="grey">// Web Audio Tactile &amp; Harmonic Sound Triggers:</div>
+            <div class="ctrl-group" style="margin-top:4px;">
+              <button type="button" class="green hover" id="snd-tick">[tick()]</button>
+              <button type="button" class="blue hover" id="snd-switch">[switch()]</button>
+              <button type="button" class="yellow hover" id="snd-beep">[beep(5555Hz)]</button>
+              <button type="button" class="fuschia hover" id="snd-chime">[chime()]</button>
+            </div>
+          </div>
+          <div class="code-box">
+            <div class="ctrl-group">
+              <input type="text" class="lab-inp" id="scramble-inp" value="Episode 79: Corticyte // Flow State">
+              <button type="button" class="purple hover" id="scramble-btn">[Scramble()]</button>
+            </div>
+            <div class="white" id="scramble-out" style="margin-top:6px;height:var(--line);line-height:var(--line);white-space:pre;overflow:hidden;">Episode 79: Corticyte // Flow State</div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- ====================================================================
+         SECTION 2: FULL 79-EPISODE & 1,380-TRACK ARCHIVE VAULT
+         ==================================================================== -->
+    <div class="sec-head">
+      <h2 class="blue">02 // COMPLETE EPISODE &amp; TRACKLIST ARCHIVE (<span id="vault-count">79</span> EPISODES · 1,380 TRACKS)</h2>
+      <span class="grey">Synced from https://musicforprogramming.net/rss.xml</span>
+    </div>
+
+    <div class="vault-bar noselect">
+      <div class="ctrl-group">
+        <span class="grey">/* query:</span>
+        <input type="text" class="lab-inp" id="vault-search" placeholder="Search artist, track, or episode...">
+        <span class="grey">*/</span>
+      </div>
+      <div class="ctrl-group">
+        <button type="button" class="green hover selected" data-vault-filter="all">[All (79)]</button>
+        <button type="button" class="yellow hover" data-vault-filter="datassette">[Datassette]</button>
+        <button type="button" class="purple hover" data-vault-filter="special">[Special #62]</button>
+        <button type="button" class="orange hover" data-vault-filter="long">[Long &gt; 2h]</button>
+      </div>
+    </div>
+
+    <div class="vault-grid" id="vault-grid"></div>
+  </div>
+
+  <script type="module">
+    import { MFP_EPISODES } from './episodes.js';
+    import { MfpUI } from '/shared-ui/mfp-ui.js';
+
+    const sound = MfpUI.createSoundEngine({ volume: 0.9 });
+    const pad = MfpUI.createAmbientPad({ preset: 0, volume: 0.85 });
+
+    // Theme buttons
+    document.querySelectorAll('[data-theme-set]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const t = btn.getAttribute('data-theme-set');
+        document.documentElement.setAttribute('data-theme', t);
+        document.body.classList.toggle('invert', t === 'paper-light');
+        document.querySelectorAll('[data-theme-set]').forEach((b) => b.classList.toggle('selected', b === btn));
+        sound.switch(t !== 'paper-light');
+      });
+    });
+
+    // Module 01: Procedural Ambient Synth
+    const synthToggleBtn = document.getElementById('lab-synth-toggle');
+    const synthBadge = document.getElementById('synth-state-badge');
+    const chordBtnsWrap = document.getElementById('chord-buttons');
+
+    MfpUI.AMBIENT_CHORDS.forEach((ch, idx) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `purple hover ${idx === 0 ? 'selected' : ''}`;
+      b.textContent = `[0${idx + 1}: ${ch.name.split('//')[0].trim()}]`;
+      b.addEventListener('click', () => {
+        sound.tick(1 + idx * 0.08);
+        pad.setPreset(idx);
+        chordBtnsWrap.querySelectorAll('button').forEach((x, i) => x.classList.toggle('selected', i === idx));
+        if (!pad.isPlaying()) toggleLabSynth();
+        else synthBadge.textContent = `PLAYING: ${ch.name.split('//')[0].trim()}`;
+      });
+      chordBtnsWrap.appendChild(b);
+    });
+
+    function toggleLabSynth() {
+      const on = pad.toggle();
+      sound.switch(on);
+      if (on) {
+        spec.setAnalyser(pad.getAnalyser());
+        synthToggleBtn.textContent = '[STOP AMBIENT PAD]';
+        synthToggleBtn.classList.add('selected');
+        synthBadge.textContent = `PLAYING: ${pad.getPreset().name.split('//')[0].trim()}`;
+        synthBadge.className = 'green';
+      } else {
+        synthToggleBtn.textContent = '[START AMBIENT PAD]';
+        synthToggleBtn.classList.remove('selected');
+        synthBadge.textContent = 'STATUS: IDLE';
+        synthBadge.className = 'grey';
+      }
+    }
+
+    synthToggleBtn.addEventListener('click', toggleLabSynth);
+    document.getElementById('lab-synth-bell').addEventListener('click', () => {
+      if (!pad.isPlaying()) toggleLabSynth();
+      pad.triggerShimmerNote();
+    });
+
+    MfpUI.createAsciiBar(document.getElementById('lab-cutoff-bar'), {
+      width: 18,
+      value: 0.32,
+      prefix: 'LPF Cutoff: ',
+      fillChar: '|',
+      emptyChar: '.',
+      sound,
+      formatSuffix: (v) => `${Math.round(140 + v * 1660)} Hz`,
+      onInput: (v) => pad.setFilterCutoff(140 + v * 1660)
+    });
+
+    MfpUI.createAsciiBar(document.getElementById('lab-lfo-bar'), {
+      width: 18,
+      value: 0.18,
+      prefix: 'LFO Sweep : ',
+      fillChar: '|',
+      emptyChar: '.',
+      sound,
+      formatSuffix: (v) => `${(0.02 + v * 0.35).toFixed(2)} Hz`,
+      onInput: (v) => pad.setLfoRate(0.02 + v * 0.35)
+    });
+
+    MfpUI.createAsciiBar(document.getElementById('lab-gain-bar'), {
+      width: 18,
+      value: 0.85,
+      prefix: 'Pad Output: ',
+      fillChar: '|',
+      emptyChar: '-',
+      sound,
+      formatSuffix: (v) => `${Math.round(v * 100)}%`,
+      onInput: (v) => pad.setVolume(v)
+    });
+
+    // Module 02: 32-Band Dual-Mode Spectrum
+    const wEls = [
+      document.getElementById('lab-w0'),
+      document.getElementById('lab-w1'),
+      document.getElementById('lab-w2'),
+      document.getElementById('lab-w3')
+    ];
+    const spec = MfpUI.createSpectrum(document.getElementById('lab-spectrum'), {
+      bands: 32,
+      asciiRows: 6,
+      dotRows: 12,
+      mode: 'ascii',
+      simulated: true,
+      onWaveFrame: (rows) => {
+        for (let i = 0; i < 4; i++) wEls[i].textContent = rows[i];
+      }
+    });
+    spec.start();
+
+    const btnSpecAscii = document.getElementById('lab-spec-ascii');
+    const btnSpecDots = document.getElementById('lab-spec-dots');
+    const btnSpecSim = document.getElementById('lab-spec-sim');
+
+    btnSpecAscii.addEventListener('click', () => {
+      sound.tick(0.95);
+      spec.setMode('ascii');
+      btnSpecAscii.classList.add('selected');
+      btnSpecDots.classList.remove('selected');
+    });
+    btnSpecDots.addEventListener('click', () => {
+      sound.tick(1.15);
+      spec.setMode('dots');
+      btnSpecDots.classList.add('selected');
+      btnSpecAscii.classList.remove('selected');
+    });
+    btnSpecSim.addEventListener('click', () => {
+      const next = !spec.isSimulated();
+      spec.setSimulated(next);
+      btnSpecSim.textContent = next ? '[SIM: ON]' : '[SIM: OFF]';
+      btnSpecSim.classList.toggle('selected', next);
+      sound.switch(next);
+    });
+
+    // Module 03: Interactive ASCII Progress & Scrubbing Bars
+    const barReadout = document.getElementById('bar-readout');
+    const demoBar1 = MfpUI.createAsciiBar(document.getElementById('demo-bar-1'), {
+      width: 26,
+      value: 0.45,
+      fillChar: '|',
+      emptyChar: '.',
+      sound,
+      formatSuffix: (v) => {
+        const sec = Math.round(v * 3510);
+        const m = String(Math.floor(sec / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        return `${m}:${s} / 58:30`;
+      },
+      onInput: (v) => { barReadout.textContent = `RATIO: ${v.toFixed(2)}`; }
+    });
+
+    const demoBar2 = MfpUI.createAsciiBar(document.getElementById('demo-bar-2'), {
+      width: 14,
+      value: 0.8,
+      prefix: 'Vol: ',
+      fillChar: '|',
+      emptyChar: '-',
+      sound,
+      formatSuffix: (v) => `${Math.round(v * 100)}%`,
+      onInput: (v) => { barReadout.textContent = `VOL: ${Math.round(v * 100)}%`; }
+    });
+
+    const demoBar3 = MfpUI.createAsciiBar(document.getElementById('demo-bar-3'), {
+      width: 20,
+      value: 0.62,
+      fillChar: '█',
+      emptyChar: '░',
+      sound,
+      formatSuffix: (v) => `${Math.round(v * 100)}%`,
+      onInput: (v) => { barReadout.textContent = `SHADER: ${Math.round(v * 100)}%`; }
+    });
+
+    document.querySelectorAll('[data-bar-w]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const w = Number(btn.getAttribute('data-bar-w'));
+        sound.tick();
+        demoBar1.setWidth(w);
+        document.querySelectorAll('[data-bar-w]').forEach((b) => b.classList.toggle('selected', b === btn));
+      });
+    });
+
+    // Module 04: Flow Timer, Tactile Sound & Scramble
+    const labTimer = MfpUI.createFlowTimer(document.getElementById('lab-flow-timer'), {
+      presets: [25 * 60, 50 * 60],
+      sound
+    });
+
+    document.getElementById('lab-flow-test3s').addEventListener('click', () => {
+      labTimer.reset(3);
+      labTimer.start();
+    });
+
+    document.getElementById('snd-tick').addEventListener('click', () => sound.tick(1.0));
+    document.getElementById('snd-switch').addEventListener('click', () => sound.switch(true));
+    document.getElementById('snd-beep').addEventListener('click', () => sound.beep(5555));
+    document.getElementById('snd-chime').addEventListener('click', () => sound.chime());
+
+    const scrambleInp = document.getElementById('scramble-inp');
+    const scrambleOut = document.getElementById('scramble-out');
+    document.getElementById('scramble-btn').addEventListener('click', () => {
+      sound.tick(1.1);
+      MfpUI.scrambleText(scrambleOut, scrambleInp.value, { duration: 560 });
+    });
+
+    // Section 02: Archive Vault
+    let vaultFilter = 'all';
+    let vaultQuery = '';
+    const vaultGrid = document.getElementById('vault-grid');
+    const vaultCount = document.getElementById('vault-count');
+    const vaultSearch = document.getElementById('vault-search');
+
+    function renderVault() {
+      const q = vaultQuery.trim().toLowerCase();
+      const filtered = MFP_EPISODES.filter((ep) => {
+        if (vaultFilter === 'datassette' && !ep.curator.toLowerCase().includes('datassette')) return false;
+        if (vaultFilter === 'special' && !ep.special) return false;
+        if (vaultFilter === 'long' && ep.durationSec < 7200) return false;
+        if (!q) return true;
+        if (ep.title.toLowerCase().includes(q)) return true;
+        return ep.tracklist.some((t) => t.toLowerCase().includes(q));
+      });
+
+      vaultCount.textContent = String(filtered.length);
+      vaultGrid.innerHTML = filtered.map((ep) => `
+        <div class="ep-card">
+          <div class="ep-card__head">
+            <strong class="${ep.special ? 'purple' : 'green'}">Episode ${ep.title}</strong>
+            <span class="grey">${ep.duration} · ${ep.sizeMb} MB</span>
+          </div>
+          <div class="ep-card__tracks">
+            ${ep.tracklist.map((t, idx) => `<div><span class="grey">${String(idx + 1).padStart(2, '0')}.</span> ${t}</div>`).join('')}
+          </div>
+          <div class="ctrl-group noselect" style="margin-top:auto;padding-top:6px;border-top:1px dotted var(--c-border);justify-content:space-between;">
+            <span class="grey">// ${ep.date} (${ep.tracklist.length} tracks)</span>
+            <a class="yellow hover" href="index.html#${ep.slug}">[Play in Console →]</a>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    vaultSearch.addEventListener('input', () => {
+      vaultQuery = vaultSearch.value;
+      renderVault();
+    });
+
+    document.querySelectorAll('[data-vault-filter]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        sound.tick();
+        vaultFilter = btn.getAttribute('data-vault-filter');
+        document.querySelectorAll('[data-vault-filter]').forEach((b) => b.classList.toggle('selected', b === btn));
+        renderVault();
+      });
+    });
+
+    renderVault();
+  </script>
+</body>
+</html>

@@ -2,6 +2,24 @@
 
 All notable deconstruction milestones and architectural changes in `decon-web`.
 
+## [2026-11-04] — Specimen #02: `musicForProgramming();` (`sites/02-musicforprogramming`)
+
+### Architecture & Data Layer
+- **Isolated Site Archive (`sites/02-musicforprogramming/`)**: Added Specimen #02 strictly inside `sites/02-musicforprogramming/` with zero modifications to `sites/01-truejpeg/`.
+- **Local Mirror & Audio/RSS Proxy (`server.js`)**: Local port `6061` server supporting `/shared-ui/` cross-directory routing, `/api/rss` feed proxy, and `/api/audio` HTTP `Range` + CORS streaming proxy.
+- **Complete 79-Episode Database (`episodes.js` & `sync_rss.js`)**: Parsed all **79 episodes** (`01: Datassette` through `79: Corticyte`, totaling **1,380 tracks** and **96h 25m 11s** of mixes), including episode metadata, file sizes, direct MP3 URLs, full tracklists, curator links, and special anniversary notes (`62: Our Grey Lives`).
+
+### Features & Enhancements (`02-musicforprogramming`)
+- **1:1 Responsive IDE Layout**: Replicated the 3-column monospace IDE interface (`IBM Plex Mono`), syntax-highlighted `musicFor()` pseudo-code manifesto, 4-row `_.-•:*^º'` ASCII wave equalizer, 32-character scrolling marquee, and cipher text scramble (`—~±§|[].+$^@*()•x%!?#`) on episode and view transitions.
+- **Interactive ASCII Player Controls**: Clickable and pointer-draggable pure ASCII progress bar (`[||||||||||||..................] 14:20 / 58:00`) and volume bar (`[Vol: ||||||||--] 80%`) with tactile Web Audio detent clicks, plus episode index filtering and ascending/descending sort.
+- **Procedural Ambient Drone Synthesizer (`createAmbientPad` / `[Synth Mode]`)**: Built-in zero-asset Web Audio synthesizer with 6 consonant chord voicings (`Dmaj9`, `F#m11`, `Cmaj9#11`, `Em9`, `Asus2/F`, `Bbmaj9`), slow LFO low-pass filter sweep, and generative bell overtones for instant offline/fallback playback and live spectrum drive.
+- **`RAW / PRO` Hardware Switch (`P`) & 4 Editor Themes (`T`)**:
+  - Defaults to `RAW` (pure 1:1 original look); switching to `PRO` unlocks the **32-Band Real-Time ASCII (`▁▂▃▄▅▆▇█`) / LED Dot-Matrix Spectrum Analyzer**, **Code-Comment Pomodoro Flow Timer (`/* FLOW_TIMER: 25:00 */`)** with two-tone harmonic overtone chime, and **Full Geek Keyboard Shortcuts** (`Space`, `←/→`, `↑/↓`, `R`, `S`, `T`, `P`).
+  - Cycle through `MFP Dark`, `Gruvbox`, `Solarized`, and `Paper Light` themes via `T`.
+- **UI Kit Extraction (`shared-ui/mfp-ui.js` & `lab.html`)**: Extracted `createAsciiBar`, `createSpectrum`, `createAmbientPad`, `createFlowTimer`, `scrambleText`, and `createSoundEngine` into [`shared-ui/mfp-ui.js`](./shared-ui/mfp-ui.js) (and site copy) with a 2×2 interactive playground and 1,380-track searchable vault in [`lab.html`](./sites/02-musicforprogramming/lab.html).
+
+---
+
 ## [2026-11-04] — Specimen #01: True JPEG (`sites/01-truejpeg`)
 
 ### Architecture

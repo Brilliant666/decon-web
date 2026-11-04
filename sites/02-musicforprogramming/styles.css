@@ -1,0 +1,736 @@
+/* ==========================================================================
+ * Specimen #02: musicForProgramming(); — 1:1 Stylesheet & Theme System
+ * Deconstructed from https://musicforprogramming.net/ (v3.0.0)
+ * Pure Monospace Typography (IBM Plex Mono) + RAW/PRO Hardware Suite
+ * ========================================================================== */
+
+:root,
+:root[data-theme="mfp-dark"] {
+  --c-black: #1a1a1a;
+  --c-surface: #212121;
+  --c-border: #333333;
+  --c-white: #e1e1e1;
+  --c-grey: #898989;
+  --c-purple: #b462ff;
+  --c-fuschia: #ff45b4;
+  --c-blue: #18b6ff;
+  --c-green: #1beb9e;
+  --c-orange: #ff9528;
+  --c-yellow: #dddd25;
+  --line: 2.5ch;
+  --font: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+
+/* Theme 2: Gruvbox Dark */
+:root[data-theme="gruvbox"] {
+  --c-black: #1d2021;
+  --c-surface: #282828;
+  --c-border: #3c3836;
+  --c-white: #ebdbb2;
+  --c-grey: #928374;
+  --c-purple: #d3869b;
+  --c-fuschia: #fb4934;
+  --c-blue: #83a598;
+  --c-green: #b8bb26;
+  --c-orange: #fe8019;
+  --c-yellow: #fabd2f;
+  color-scheme: dark;
+}
+
+/* Theme 3: Solarized Dark */
+:root[data-theme="solarized"] {
+  --c-black: #002b36;
+  --c-surface: #073642;
+  --c-border: #194b57;
+  --c-white: #eee8d5;
+  --c-grey: #657b83;
+  --c-purple: #6c71c4;
+  --c-fuschia: #d33682;
+  --c-blue: #268bd2;
+  --c-green: #859900;
+  --c-orange: #cb4b16;
+  --c-yellow: #b58900;
+  color-scheme: dark;
+}
+
+/* Theme 4: Paper Light (Authentic MFP body.invert palette) */
+:root[data-theme="paper-light"],
+body.invert {
+  --c-black: #d5d5d5;
+  --c-surface: #cacaca;
+  --c-border: #b2b2b2;
+  --c-white: #2a2830;
+  --c-grey: #6e6e6e;
+  --c-purple: #6b1fa3;
+  --c-fuschia: #f50777;
+  --c-blue: #0b8cff;
+  --c-green: #00a76c;
+  --c-orange: #dd7200;
+  --c-yellow: #8a8d00;
+  color-scheme: light;
+}
+
+/* Syntax Highlighting Color Classes (1:1 Original MFP) */
+.black   { color: var(--c-black);   --c-current: var(--c-black); }
+.white   { color: var(--c-white);   --c-current: var(--c-white); }
+.grey    { color: var(--c-grey);    --c-current: var(--c-grey); }
+.purple  { color: var(--c-purple);  --c-current: var(--c-purple); }
+.fuschia { color: var(--c-fuschia); --c-current: var(--c-fuschia); }
+.blue    { color: var(--c-blue);    --c-current: var(--c-blue); }
+.green   { color: var(--c-green);   --c-current: var(--c-green); }
+.orange  { color: var(--c-orange);  --c-current: var(--c-orange); }
+.yellow  { color: var(--c-yellow);  --c-current: var(--c-yellow); }
+
+/* Reset & Base Typography */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--c-black);
+  color: var(--c-white);
+  min-height: 100vh;
+  font-family: var(--font);
+  font-weight: 400;
+  line-height: var(--line);
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body {
+  font-size: clamp(13px, 3.8vw, 16px);
+}
+@media (min-width: 768px) {
+  body { font-size: clamp(13px, 1.85vw, 16px); }
+}
+@media (min-width: 1024px) {
+  body {
+    font-size: clamp(12.5px, 1.08vw, 17px);
+    overflow: hidden;
+  }
+}
+
+::selection {
+  color: #000000;
+  background: var(--c-grey);
+}
+
+a {
+  color: var(--c-current, var(--c-white));
+  text-decoration: none;
+}
+
+button, input {
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  color: inherit;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+button {
+  display: inline;
+  cursor: pointer;
+}
+
+/* Authentic MFP Inverted Block Hover & Selection Highlight */
+a:hover,
+.selected,
+.hover:hover {
+  color: var(--c-black) !important;
+  background: var(--c-current, var(--c-green));
+  box-shadow:
+    0.4ch 0 0 0 var(--c-current, var(--c-green)),
+    -0.3ch 0 0 0 var(--c-current, var(--c-green)),
+    0.4ch 0.2ch 0 0 var(--c-current, var(--c-green)),
+    -0.3ch 0.2ch 0 0 var(--c-current, var(--c-green));
+  opacity: 0.9;
+  cursor: pointer;
+}
+
+.subtle-hover:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  opacity: 0.8;
+  color: var(--c-green) !important;
+}
+
+.italic, em {
+  font-style: italic;
+}
+
+.noselect {
+  user-select: none;
+}
+
+.break-anywhere {
+  line-break: anywhere;
+}
+
+.pointer-events-none {
+  pointer-events: none;
+}
+
+/* ==========================================================================
+ * Top-Right Hardware Status Bar (THEME [T] + RAW / PRO [P] + LAB Link)
+ * Consistent with decon-web Specimen #01 hardware switcher philosophy
+ * ========================================================================== */
+.hw-bar {
+  position: fixed;
+  top: 12px;
+  right: 18px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  user-select: none;
+}
+
+.hw-bar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  color: var(--c-grey);
+  transition: color 0.15s ease;
+}
+.hw-bar__btn:hover {
+  color: var(--c-white) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.hw-bar__sep {
+  width: 1px;
+  height: 12px;
+  background: var(--c-border);
+}
+
+.hw-bar__ico {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  transition: transform 0.45s cubic-bezier(.22, 1, .36, 1);
+}
+.hw-bar__btn:hover .hw-bar__ico {
+  transform: rotate(45deg);
+}
+
+.hw-bar__led {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  background: radial-gradient(circle, var(--c-grey) 1px, transparent 1.3px) 0 0 / 3px 3px;
+}
+:root[data-pro="1"] .hw-bar__led {
+  background: radial-gradient(circle, var(--c-green) 1px, transparent 1.3px) 0 0 / 3px 3px;
+}
+
+.hw-bar__lbl {
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--c-white);
+}
+
+.hw-bar__lab {
+  color: var(--c-purple);
+  padding: 2px 6px;
+  font-weight: 500;
+}
+.hw-bar__lab:hover {
+  color: var(--c-black) !important;
+  background: var(--c-purple) !important;
+}
+
+/* Non-intrusive RAW / PRO visibility rule */
+:root:not([data-pro="1"]) .pro-only {
+  display: none !important;
+}
+
+/* ==========================================================================
+ * 3-Column IDE Responsive Layout (1:1 Original MFP Grid)
+ * ========================================================================== */
+.ide-shell {
+  width: 100%;
+  min-height: 100vh;
+  padding: 0 var(--line);
+}
+
+.ide-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  align-content: flex-start;
+}
+
+.col-left,
+.col-main,
+.col-right {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .col-left {
+    width: 50%;
+  }
+  .col-main {
+    width: 50%;
+  }
+  .col-right--desktop {
+    display: none;
+  }
+  .col-right--tablet {
+    display: block;
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .col-right--tablet {
+    display: none;
+  }
+  .col-right--desktop {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .col-left {
+    width: 26%;
+    height: 100vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .col-main {
+    width: 46%;
+    height: 100vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+  }
+  .col-right--tablet {
+    display: none;
+  }
+  .col-right--desktop {
+    display: block;
+    width: 28%;
+    height: 100vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .col-left::-webkit-scrollbar,
+  .col-main::-webkit-scrollbar,
+  .col-right--desktop::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Spacing Utilities (1:1 Original MFP) */
+.pad { padding: var(--line); }
+.px  { padding-left: var(--line); padding-right: var(--line); }
+.py  { padding-top: var(--line); padding-bottom: var(--line); }
+.pt  { padding-top: var(--line); }
+.pr  { padding-right: var(--line); }
+.pb  { padding-bottom: var(--line); }
+.pl  { padding-left: var(--line); }
+.pt-0 { padding-top: 0; }
+.pr-0 { padding-right: 0; }
+.pb-0 { padding-bottom: 0; }
+.pl-0 { padding-left: 0; }
+.mb  { margin-bottom: var(--line); }
+.y-space { width: 100%; height: 5ch; }
+
+/* ==========================================================================
+ * Left Column: Manifesto, 4-Row Wave Equalizer & Navigation
+ * ========================================================================== */
+.mfp-brand {
+  margin-bottom: 1.2ch;
+}
+.mfp-brand__title {
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.mfp-view-tabs {
+  margin: 0.8ch 0 1.6ch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1ch;
+}
+
+.mfp-code-manifesto {
+  line-height: var(--line);
+}
+
+/* Strict fixed-height 4-row wave container to prevent any layout reflow */
+.mfp-wave-box {
+  font-family: "Consolas", "SF Mono", var(--font), monospace;
+  line-height: var(--line);
+  white-space: pre;
+  overflow: hidden;
+  contain: layout paint;
+}
+.mfp-wave-row {
+  display: block;
+  height: var(--line);
+  line-height: var(--line);
+  white-space: pre;
+  overflow: hidden;
+}
+
+.mfp-marquee {
+  display: block;
+  width: 32ch;
+  max-width: 100%;
+  height: var(--line);
+  line-height: var(--line);
+  white-space: pre;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.mfp-mini-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8ch;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+
+.mfp-stats {
+  line-height: var(--line);
+}
+
+/* ==========================================================================
+ * Middle Column: Episode Title, ASCII Player Deck, PRO Suite & Tracklist
+ * ========================================================================== */
+.episode-header {
+  padding: var(--line) var(--line) 0 var(--line);
+}
+
+.episode-title {
+  font-size: clamp(24px, 6.5vw, 56px);
+  line-height: 1.12;
+  font-weight: 200;
+  margin: 0 0 0.4em 0;
+  letter-spacing: -0.01em;
+}
+@media (min-width: 1024px) {
+  .episode-title {
+    font-size: 3.8vw;
+    line-height: 1.11111111em;
+    font-weight: 200;
+    margin-left: -0.25rem;
+    margin-top: -0.25rem;
+  }
+}
+
+.player-deck {
+  margin-bottom: var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45ch;
+}
+
+.player-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1ch;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+
+.player-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25ch;
+  margin-top: 0.3ch;
+}
+
+/* ASCII Progress & Volume Bar (MfpUI.createAsciiBar) — Locked Single-Line Geometry */
+.mfp-ascii-bar {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  height: var(--line);
+  line-height: var(--line);
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
+  font-variant-numeric: tabular-nums;
+  contain: layout paint;
+}
+.mfp-ascii-bar:focus-visible {
+  outline: 1px dashed var(--c-green);
+  outline-offset: 2px;
+}
+.mfp-ascii-bar__track {
+  display: inline-block;
+  font-family: "Consolas", "SF Mono", "Courier New", var(--font), monospace;
+  white-space: pre;
+  line-height: 1;
+}
+.mfp-ascii-bar__br {
+  color: var(--c-grey);
+}
+.mfp-ascii-bar__fill {
+  color: var(--c-green);
+}
+.mfp-ascii-bar__empty {
+  color: var(--c-grey);
+  opacity: 0.55;
+}
+.mfp-ascii-bar__suffix {
+  color: var(--c-grey);
+  white-space: pre;
+  font-variant-numeric: tabular-nums;
+}
+.mfp-ascii-bar.is-dragging .mfp-ascii-bar__fill {
+  color: var(--c-yellow);
+}
+
+.engine-status {
+  font-size: 0.92em;
+  height: var(--line);
+  line-height: var(--line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--c-grey);
+}
+
+/* ==========================================================================
+ * PRO Mode Suite: Spectrum Analyzer + Flow Pomodoro Timer + Hotkey HUD
+ * ========================================================================== */
+.pro-suite {
+  margin: 0.5ch 0 var(--line) 0;
+  padding: 1.2ch 1.4ch;
+  background: var(--c-surface);
+  border: 1px dashed var(--c-border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1ch;
+}
+
+.pro-suite__bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1ch;
+  font-size: 0.9em;
+  border-bottom: 1px dashed var(--c-border);
+  padding-bottom: 0.6ch;
+}
+
+/* Strict Fixed-Dimension 32-Column Spectrum Stage (Zero CSS Jitter!) */
+.mfp-spectrum {
+  width: 100%;
+}
+
+.mfp-spectrum__stage {
+  position: relative;
+  width: 100%;
+  height: 108px;
+  overflow: hidden;
+  contain: strict;
+}
+
+.mfp-spectrum__ascii {
+  display: grid;
+  grid-template-columns: repeat(32, minmax(0, 1fr));
+  width: 100%;
+  height: 108px;
+  padding: 4px 0;
+  overflow: hidden;
+  user-select: none;
+}
+
+.mfp-spectrum__col {
+  display: grid;
+  grid-template-rows: repeat(6, 1fr);
+  align-items: center;
+  justify-items: center;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.mfp-spectrum__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-family: "Consolas", "SF Mono", "Menlo", monospace;
+  font-size: 12px;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.mfp-spectrum__canvas {
+  width: 100%;
+  height: 108px;
+  display: block;
+}
+
+.mfp-spectrum__scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75em;
+  line-height: 1.3;
+  color: var(--c-grey);
+  padding-top: 0.4ch;
+  border-top: 1px dotted var(--c-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.mfp-flow-timer {
+  font-size: 0.92em;
+  line-height: 1.6;
+  padding: 0.3ch 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.pro-hotkeys {
+  font-size: 0.82em;
+  line-height: 1.5;
+  color: var(--c-grey);
+  border-top: 1px dashed var(--c-border);
+  padding-top: 0.6ch;
+}
+
+/* ==========================================================================
+ * Tracklist & Episode Content
+ * ========================================================================== */
+.tracklist {
+  margin-bottom: var(--line);
+}
+
+.track-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1ch;
+  line-height: var(--line);
+}
+
+.track-link {
+  display: inline;
+  color: var(--c-white);
+  word-break: break-word;
+}
+
+.track-idx {
+  color: var(--c-grey);
+  margin-right: 0.8ch;
+  font-size: 0.88em;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.track-seek {
+  font-size: 0.82em;
+  color: var(--c-grey);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.track-row:hover .track-seek {
+  opacity: 1;
+}
+
+/* ==========================================================================
+ * Right Column: Full 79-Episode Matrix Index & Filter
+ * ========================================================================== */
+.ep-index-controls {
+  padding: var(--line) var(--line) 0.8ch var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8ch;
+}
+
+.ep-filter-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  color: var(--c-grey);
+  flex: 1;
+  min-width: 16ch;
+}
+
+.ep-filter-input {
+  width: 11ch;
+  color: var(--c-yellow);
+  border-bottom: 1px dashed var(--c-grey);
+  padding: 0 0.3ch;
+}
+.ep-filter-input:focus {
+  border-bottom-color: var(--c-green);
+}
+.ep-filter-input::placeholder {
+  color: var(--c-grey);
+  opacity: 0.6;
+}
+
+.ep-columns {
+  padding: 0 var(--line) var(--line) var(--line);
+  width: 100%;
+  column-count: 2;
+  column-gap: 1.5ch;
+}
+@media (max-width: 460px) {
+  .ep-columns {
+    column-count: 1;
+  }
+}
+
+.ep-item {
+  display: inline-block;
+  margin-bottom: 0;
+  line-height: var(--line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.ep-item__playing {
+  color: var(--c-fuschia);
+  margin-right: 0.3ch;
+}
