@@ -54,8 +54,13 @@ http.createServer((req, res) => {
     return;
   }
 
-  // On-demand fallback fetch & cache from truejpeg.com if not yet downloaded locally
-  fs.mkdirSync(path.dirname(fp), { recursive: true });
+  // On-demand fallback fetch & cache from truejpeg.com (only for /images/ or /prompts/)
+  if (!u.startsWith('/images/') && !u.startsWith('/prompts/')) {
+    res.writeHead(404);
+    res.end('Not found');
+    return;
+  }
+
   https.get(`https://truejpeg.com${u}`, (upRes) => {
     if (upRes.statusCode !== 200) {
       upRes.resume();
@@ -63,6 +68,7 @@ http.createServer((req, res) => {
       res.end('Not found');
       return;
     }
+    fs.mkdirSync(path.dirname(fp), { recursive: true });
     res.writeHead(200, {
       'Content-Type': contentType,
       'Cache-Control': cacheHeader
