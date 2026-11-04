@@ -467,5 +467,500 @@ export const TrueJpegUI = (() => {
     };
   }
 
-  return { dotType, winFrame, renderHalftone, createWipe, scramble, createGlobe };
+  /* ==========================================================================
+   * 7. Darkroom Dot-Matrix Exposure Histogram & 5-Chip Color Gene Analyzer
+   * ========================================================================== */
+  const sampleCv = document.createElement('canvas');
+  sampleCv.width = 72;
+  sampleCv.height = 72;
+  const sampleCtx = sampleCv.getContext('2d', { willReadFrequently: true });
+
+  function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map((x) => clamp(Math.round(x), 0, 255).toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+
+  function drawDotHistogram(cv, bins, options = {}) {
+    if (!cv || !bins) return;
+    const W = cv.clientWidth || options.width || 280;
+    const H = options.height || cv.clientHeight || 54;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    const cs = getComputedStyle(document.documentElement);
+    const onCol = options.onColor || cs.getPropertyValue('--ink-fg').trim() || cs.getPropertyValue('--fg').trim() || '#ececea';
+    const dimCol = options.dimColor || cs.getPropertyValue('--dot').trim() || '#2e2e2c';
+    const COLS = bins.length;
+    const ROWS = options.rows || 10;
+    const stepX = W / COLS, stepY = H / ROWS;
+    const maxVal = Math.max(0.001, ...bins);
+
+    for (let c = 0; c < COLS; c++) {
+      const norm = Math.pow(bins[c] / maxVal, 0.62);
+      const litRows = Math.round(norm * ROWS);
+      const cx = (c + 0.5) * stepX;
+      for (let r = 0; r < ROWS; r++) {
+        const rowFromBottom = ROWS - 1 - r;
+        const isLit = rowFromBottom < litRows;
+        const cy = (r + 0.5) * stepY;
+        ctx.fillStyle = isLit ? onCol : dimCol;
+        ctx.beginPath();
+        ctx.arc(cx, cy, isLit ? 1.45 : 0.75, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  function analyzeImage(imgEl, options = {}) {
+    if (!imgEl || !(imgEl.naturalWidth || imgEl.width)) return null;
+    try {
+      sampleCtx.clearRect(0, 0, 72, 72);
+      sampleCtx.drawImage(imgEl, 0, 0, 72, 72);
+      const data = sampleCtx.getImageData(0, 0, 72, 72).data;
+      const COLS = options.cols || 40;
+      const bins = new Float32Array(COLS);
+      let lumSum = 0, darkCount = 0;
+      const totalPx = 72 * 72;
+      const buckets = Array.from({ length: 5 }, () => ({ r: 0, g: 0, b: 0, w: 0 }));
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        lumSum += lum;
+        if (lum < 64) darkCount++;
+        const binIdx = clamp(Math.floor((lum / 256) * COLS), 0, COLS - 1);
+        bins[binIdx]++;
+
+        const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+        const sat = maxC === 0 ? 0 : (maxC - minC) / maxC;
+        const bIdx = (sat > 0.45 && lum > 35 && lum < 235) ? 4 : clamp(Math.floor((lum / 256) * 4), 0, 3);
+        const weight = bIdx === 4 ? (sat * 3 + 0.5) : 1;
+        buckets[bIdx].r += r * weight;
+        buckets[bIdx].g += g * weight;
+        buckets[bIdx].b += b * weight;
+        buckets[bIdx].w += weight;
+      }
+
+      const avgLum = Math.round((lumSum / totalPx / 255) * 100);
+      const darkPct = Math.round((darkCount / totalPx) * 100);
+      const keyLabel = avgLum < 32 ? 'LOW-KEY' : avgLum > 65 ? 'HIGH-KEY' : 'BALANCED';
+      const statText = `${keyLabel} // SHD ${darkPct}% · LUM ${avgLum}%`;
+
+      const swatches = [];
+      buckets.forEach((bk) => {
+        if (bk.w > 0) swatches.push(rgbToHex(bk.r / bk.w, bk.g / bk.w, bk.b / bk.w));
+      });
+      while (swatches.length < 5) swatches.push('#1A1A19');
+
+      if (options.histCanvas) drawDotHistogram(options.histCanvas, bins, options);
+      return { bins, avgLum, darkPct, keyLabel, statText, swatches: swatches.slice(0, 5) };
+    } catch (_) {
+      if (options.histCanvas) {
+        const ctx = options.histCanvas.getContext('2d');
+        ctx.clearRect(0, 0, options.histCanvas.width, options.histCanvas.height);
+      }
+      return null;
+    }
+  }
+
+  /* ==========================================================================
+   * 8. Darkroom Optical Loupe (attachLoupe)
+   * ========================================================================== */
+  function attachLoupe(frameEl, imgEl, loupeCv, options = {}) {
+    const L = options.size || 180;
+    const R = L / 2;
+    const hudEl = options.hudEl || null;
+    const hintText = options.hintText || 'HOLD TO LOUPE · WHEEL ZOOM';
+    let active = false, zoom = options.initialZoom || 2.5, lx = 0, ly = 0;
+
+    function draw() {
+      const iw = imgEl.naturalWidth || imgEl.width;
+      const ih = imgEl.naturalHeight || imgEl.height;
+      if (!active || !loupeCv || !iw) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const targetPx = Math.round(L * dpr);
+      if (loupeCv.width !== targetPx || loupeCv.height !== targetPx) {
+        loupeCv.width = targetPx;
+        loupeCv.height = targetPx;
+        loupeCv.style.width = `${L}px`;
+        loupeCv.style.height = `${L}px`;
+      }
+      const ctx = loupeCv.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, L, L);
+
+      const rect = frameEl.getBoundingClientRect();
+      const cw = rect.width || 1, ch = rect.height || 1;
+      const scale = Math.max(cw / iw, ch / ih);
+      const drawW = iw * scale;
+      const drawH = ih * scale;
+      const posX = options.posX != null ? options.posX : 0.5;
+      const posY = options.posY != null ? options.posY : 0.5;
+      const imgLeft = (cw - drawW) * posX;
+      const imgTop = (ch - drawH) * posY;
+      const dx = R + (imgLeft - lx) * zoom;
+      const dy = R + (imgTop - ly) * zoom;
+      const dw = drawW * zoom;
+      const dh = drawH * zoom;
+      const imgX = clamp(((lx - imgLeft) / drawW) * iw, 0, iw);
+      const imgY = clamp(((ly - imgTop) / drawH) * ih, 0, ih);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(R, R, R - 2, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = '#0d0d0c';
+      ctx.fillRect(0, 0, L, L);
+      ctx.drawImage(imgEl, dx, dy, dw, dh);
+
+      ctx.strokeStyle = 'rgba(236, 236, 234, 0.38)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(R - 14, R); ctx.lineTo(R - 4, R);
+      ctx.moveTo(R + 4, R); ctx.lineTo(R + 14, R);
+      ctx.moveTo(R, R - 14); ctx.lineTo(R, R - 4);
+      ctx.moveTo(R, R + 4); ctx.lineTo(R, R + 14);
+      for (let a = 0; a < 36; a++) {
+        const ang = (a * 10 * Math.PI) / 180;
+        const len = a % 3 === 0 ? 7 : 3.5;
+        ctx.moveTo(R + Math.cos(ang) * (R - 3), R + Math.sin(ang) * (R - 3));
+        ctx.lineTo(R + Math.cos(ang) * (R - 3 - len), R + Math.sin(ang) * (R - 3 - len));
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = '#ececea';
+      const dots = 64;
+      ctx.beginPath();
+      for (let i = 0; i < dots; i++) {
+        const a = (i / dots) * Math.PI * 2;
+        const dx = R + Math.cos(a) * (R - 1.5);
+        const dy = R + Math.sin(a) * (R - 1.5);
+        ctx.moveTo(dx + 1.1, dy);
+        ctx.arc(dx, dy, i % 8 === 0 ? 1.4 : 0.9, 0, Math.PI * 2);
+      }
+      ctx.fill();
+
+      loupeCv.style.left = `${lx}px`;
+      loupeCv.style.top = `${ly}px`;
+      if (hudEl) {
+        const pxX = String(Math.round(imgX)).padStart(4, '0');
+        const pxY = String(Math.round(imgY)).padStart(4, '0');
+        hudEl.textContent = `LOUPE ${zoom.toFixed(1)}× // X:${pxX} Y:${pxY}`;
+      }
+    }
+
+    function updatePos(e) {
+      const rect = frameEl.getBoundingClientRect();
+      lx = clamp(e.clientX - rect.left, 0, rect.width);
+      ly = clamp(e.clientY - rect.top, 0, rect.height);
+      if (active) draw();
+      else if (hudEl) hudEl.textContent = `${hintText} (${zoom.toFixed(1)}×)`;
+    }
+
+    frameEl.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      active = true;
+      frameEl.setPointerCapture(e.pointerId);
+      frameEl.classList.add('is-louping');
+      if (options.sound && options.sound.switch) options.sound.switch(true);
+      updatePos(e);
+    });
+    frameEl.addEventListener('pointermove', updatePos);
+    const stop = () => {
+      if (!active) return;
+      active = false;
+      frameEl.classList.remove('is-louping');
+      if (options.sound && options.sound.switch) options.sound.switch(false);
+      if (hudEl) hudEl.textContent = `${hintText} (${zoom.toFixed(1)}×)`;
+    };
+    frameEl.addEventListener('pointerup', stop);
+    frameEl.addEventListener('pointercancel', stop);
+    frameEl.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const prev = zoom;
+      zoom = clamp(zoom + (e.deltaY < 0 ? 0.5 : -0.5), 1.5, 6.0);
+      if (zoom !== prev && options.sound && options.sound.tick) {
+        options.sound.tick(0.75 + (zoom - 1.5) * 0.18);
+      }
+      if (active) draw();
+      else if (hudEl) hudEl.textContent = `${hintText} (${zoom.toFixed(1)}×)`;
+    }, { passive: false });
+
+    return {
+      refresh() { if (active) draw(); },
+      setZoom(z) { zoom = clamp(z, 1.5, 6.0); if (active) draw(); },
+      getZoom() { return zoom; }
+    };
+  }
+
+  /* ==========================================================================
+   * 9. Web Audio Mechanical Tactile & Darkroom Sound Engine (createSoundEngine)
+   * Zero external audio assets; procedural triangle + filtered noise synthesis
+   * ========================================================================== */
+  function createSoundEngine(options = {}) {
+    const masterVol = options.volume != null ? options.volume : 1.0;
+    const reduce = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let ctx = null;
+    let noiseBuf = null;
+    let ambNodes = null;
+    let ambOn = false;
+    let lastTick = 0;
+
+    function ensure() {
+      if (reduce()) return null;
+      if (!ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        ctx = new AC();
+        // Pre-build 2.5s normalized pink/brown hybrid noise buffer for tactile bursts & darkroom ambient
+        const sr = ctx.sampleRate;
+        const len = Math.floor(sr * 2.5);
+        noiseBuf = ctx.createBuffer(1, len, sr);
+        const out = noiseBuf.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < len; i++) {
+          const w = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + w * 0.0555179;
+          b1 = 0.99332 * b1 + w * 0.0750759;
+          b2 = 0.96900 * b2 + w * 0.1538520;
+          b3 = 0.86650 * b3 + w * 0.3104856;
+          b4 = 0.55000 * b4 + w * 0.5329522;
+          b5 = -0.7616 * b5 - w * 0.0168980;
+          out[i] = clamp((b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.24, -0.95, 0.95);
+          b6 = w * 0.115926;
+        }
+      }
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      return ctx;
+    }
+
+    function tick(pitch = 1) {
+      const nowMs = performance.now();
+      if (nowMs - lastTick < 26) return;
+      lastTick = nowMs;
+      const c = ensure();
+      if (!c) return;
+      const t = c.currentTime;
+      const p = clamp(pitch, 0.5, 2.5) * (0.97 + Math.random() * 0.06);
+
+      // Metallic ratchet transient
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1380 * p, t);
+      osc.frequency.exponentialRampToValueAtTime(230 * p, t + 0.011);
+      g.gain.setValueAtTime(0.22 * masterVol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.013);
+      osc.connect(g);
+      g.connect(c.destination);
+      osc.start(t);
+      osc.stop(t + 0.014);
+
+      // Crisp micro-noise click
+      if (noiseBuf) {
+        const ns = c.createBufferSource();
+        const bp = c.createBiquadFilter();
+        const ng = c.createGain();
+        ns.buffer = noiseBuf;
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(2600 * p, t);
+        bp.Q.setValueAtTime(2.4, t);
+        ng.gain.setValueAtTime(0.24 * masterVol, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.009);
+        ns.connect(bp);
+        bp.connect(ng);
+        ng.connect(c.destination);
+        ns.start(t, Math.random() * 1.5, 0.011);
+      }
+    }
+
+    function toggleSwitch(on = true) {
+      const c = ensure();
+      if (!c) return;
+      const t = c.currentTime;
+
+      // Pulse 1: mechanical detent press
+      const o1 = c.createOscillator();
+      const g1 = c.createGain();
+      o1.type = 'triangle';
+      o1.frequency.setValueAtTime(420, t);
+      o1.frequency.exponentialRampToValueAtTime(150, t + 0.012);
+      g1.gain.setValueAtTime(0.20 * masterVol, t);
+      g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.014);
+      o1.connect(g1);
+      g1.connect(c.destination);
+      o1.start(t);
+      o1.stop(t + 0.015);
+
+      // Pulse 2 (+18ms): latch lock (brighter when on=true, deeper when on=false)
+      const t2 = t + 0.018;
+      const o2 = c.createOscillator();
+      const g2 = c.createGain();
+      o2.type = 'triangle';
+      o2.frequency.setValueAtTime(on ? 1620 : 920, t2);
+      o2.frequency.exponentialRampToValueAtTime(on ? 620 : 290, t2 + 0.016);
+      g2.gain.setValueAtTime(0.25 * masterVol, t2);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.018);
+      o2.connect(g2);
+      g2.connect(c.destination);
+      o2.start(t2);
+      o2.stop(t2 + 0.019);
+
+      if (noiseBuf) {
+        const ns = c.createBufferSource();
+        const bp = c.createBiquadFilter();
+        const ng = c.createGain();
+        ns.buffer = noiseBuf;
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(on ? 2800 : 1700, t2);
+        bp.Q.setValueAtTime(2.0, t2);
+        ng.gain.setValueAtTime(0.18 * masterVol, t2);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.012);
+        ns.connect(bp);
+        bp.connect(ng);
+        ng.connect(c.destination);
+        ns.start(t2, Math.random() * 1.5, 0.014);
+      }
+    }
+
+    function shutter(cover = true) {
+      const c = ensure();
+      if (!c || !noiseBuf) return;
+      const t = c.currentTime;
+
+      // Subtle curtain release transient
+      const osc = c.createOscillator();
+      const og = c.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(cover ? 520 : 380, t);
+      osc.frequency.exponentialRampToValueAtTime(120, t + 0.014);
+      og.gain.setValueAtTime(0.14 * masterVol, t);
+      og.gain.exponentialRampToValueAtTime(0.0001, t + 0.016);
+      osc.connect(og);
+      og.connect(c.destination);
+      osc.start(t);
+      osc.stop(t + 0.018);
+
+      // Filtered pink-noise focal-plane curtain sweep
+      const ns = c.createBufferSource();
+      const bp = c.createBiquadFilter();
+      const g = c.createGain();
+      ns.buffer = noiseBuf;
+      bp.type = 'bandpass';
+      bp.Q.setValueAtTime(1.5, t);
+      bp.frequency.setValueAtTime(cover ? 380 : 1480, t);
+      bp.frequency.exponentialRampToValueAtTime(cover ? 1560 : 340, t + 0.16);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.24 * masterVol, t + 0.028);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.17);
+      ns.connect(bp);
+      bp.connect(g);
+      g.connect(c.destination);
+      ns.start(t, Math.random() * 0.8, 0.18);
+    }
+
+    function copy() {
+      const c = ensure();
+      if (!c) return;
+      const t = c.currentTime;
+      [
+        [1318.5, 0, 0.055],     // E6
+        [1760.0, 0.052, 0.085]  // A6
+      ].forEach(([freq, delay, dur]) => {
+        const osc = c.createOscillator();
+        const g = c.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t + delay);
+        g.gain.setValueAtTime(0.0001, t + delay);
+        g.gain.linearRampToValueAtTime(0.18 * masterVol, t + delay + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + delay + dur);
+        osc.connect(g);
+        g.connect(c.destination);
+        osc.start(t + delay);
+        osc.stop(t + delay + dur + 0.006);
+      });
+    }
+
+    function ambient(on) {
+      const next = on != null ? !!on : !ambOn;
+      if (!next) {
+        ambOn = false;
+        if (ambNodes && ctx) {
+          const t = ctx.currentTime;
+          const { master, src, drone1, drone2 } = ambNodes;
+          ambNodes = null;
+          master.gain.cancelScheduledValues(t);
+          master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), t);
+          master.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+          setTimeout(() => {
+            try { src.stop(); drone1.stop(); drone2.stop(); } catch (_) {}
+          }, 380);
+        }
+        return false;
+      }
+      const c = ensure();
+      if (!c || !noiseBuf) return false;
+      if (ambOn && ambNodes) return true;
+      ambOn = true;
+      const t = c.currentTime;
+
+      const master = c.createGain();
+      master.gain.setValueAtTime(0.0001, t);
+      master.gain.linearRampToValueAtTime(0.16 * masterVol, t + 0.45);
+      master.connect(c.destination);
+
+      // Layer 1: Warm low-passed analog tape / darkroom air noise (520Hz cutoff so laptop speakers reproduce it clearly)
+      const src = c.createBufferSource();
+      src.buffer = noiseBuf;
+      src.loop = true;
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(520, t);
+      lp.Q.setValueAtTime(0.7, t);
+      const ng = c.createGain();
+      ng.gain.setValueAtTime(0.75, t);
+      src.connect(lp);
+      lp.connect(ng);
+      ng.connect(master);
+
+      // Layer 2: Subtle darkroom enlarger / film machine warm harmonic hum (110Hz A2 + 165Hz E3)
+      const drone1 = c.createOscillator();
+      const drone2 = c.createOscillator();
+      const dg = c.createGain();
+      drone1.type = 'sine';
+      drone2.type = 'triangle';
+      drone1.frequency.setValueAtTime(110, t);
+      drone2.frequency.setValueAtTime(165, t);
+      const dlp = c.createBiquadFilter();
+      dlp.type = 'lowpass';
+      dlp.frequency.setValueAtTime(240, t);
+      dg.gain.setValueAtTime(0.14, t);
+      drone1.connect(dlp);
+      drone2.connect(dlp);
+      dlp.connect(dg);
+      dg.connect(master);
+
+      src.start(t);
+      drone1.start(t);
+      drone2.start(t);
+      ambNodes = { master, src, drone1, drone2 };
+      return true;
+    }
+
+    return {
+      tick,
+      switch: toggleSwitch,
+      shutter,
+      copy,
+      ambient,
+      isAmbientOn: () => ambOn
+    };
+  }
+
+  return { dotType, winFrame, renderHalftone, createWipe, scramble, createGlobe, drawDotHistogram, analyzeImage, attachLoupe, createSoundEngine };
 })();

@@ -271,6 +271,108 @@
     }
     .halftone-stage.show-photo canvas { opacity: 0; pointer-events: none; }
 
+    /* Card 4: Darkroom Loupe & Exposure Lab */
+    .loupe-stage {
+      position: relative;
+      height: 175px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: visible;
+      cursor: crosshair;
+      user-select: none;
+      touch-action: none;
+    }
+    .loupe-stage img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 25%;
+      border-radius: 7px;
+      display: block;
+      pointer-events: none;
+    }
+    .loupe-cv {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(0.75);
+      opacity: 0;
+      transition: opacity .15s, transform .2s var(--ease);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.72);
+      z-index: 5;
+    }
+    .loupe-stage.is-louping { cursor: none; }
+    .loupe-stage.is-louping .loupe-cv {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .loupe-hud {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      padding: 3px 8px;
+      background: rgba(17, 17, 16, 0.82);
+      border: 1px solid var(--line-2);
+      border-radius: 4px;
+      font: 400 10px/1.3 var(--mono);
+      letter-spacing: .06em;
+      color: var(--fg-2);
+      pointer-events: none;
+      z-index: 6;
+    }
+    .lab-exp {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .lab-exp__head {
+      display: flex;
+      justify-content: space-between;
+      font: 400 10px/1.2 var(--mono);
+      letter-spacing: .06em;
+      color: var(--fg-2);
+    }
+    .lab-exp__hist {
+      width: 100%;
+      height: 44px;
+      display: block;
+    }
+    .lab-swatches {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+    }
+    .lab-swatch {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 4px 3px;
+      background: var(--sunk);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      font: 400 9.5px/1 var(--mono);
+      color: var(--fg-2);
+      transition: border-color .15s, color .15s;
+    }
+    .lab-swatch:hover { border-color: var(--fg-2); color: var(--fg); }
+    .lab-swatch i {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      border: 1px solid rgba(255,255,255,0.18);
+      flex: none;
+    }
+
     /* Prompt Vault Filter Toolbar */
     .toolbar {
       position: sticky;
@@ -467,7 +569,7 @@
     <!-- SECTION 01: UI KIT INTERACTIVE PLAYGROUND -->
     <div class="sec-head">
       <h2 data-scramble>01 // Interactive Dot-Matrix UI Kit</h2>
-      <span>Extracted Vanilla JS Components (<a href="truejpeg-ui.js" style="text-decoration:underline">truejpeg-ui.js</a>)</span>
+      <span>Extracted Vanilla JS Components (<a href="/shared-ui/truejpeg-ui.js" style="text-decoration:underline">shared-ui/truejpeg-ui.js</a>)</span>
     </div>
 
     <div class="lab-grid">
@@ -516,11 +618,11 @@
       <!-- Card 3: Console Render Simulator & Honeycomb Wipe -->
       <div class="win" data-win>
         <div class="win__bar">
-          <span>01.C // CONSOLE & DOT WIPE</span>
-          <span>TRANSITION<i class="win__led"></i></span>
+          <span>01.C // CONSOLE, WIPE &amp; AUDIO</span>
+          <span>WEB AUDIO<i class="win__led"></i></span>
         </div>
         <div class="win__body">
-          <p class="win__desc">终端乱码定格器 + 24 格 LED 进度条，以及从点击坐标向外扩散的全屏蜂窝点阵波浪转场（`wipe`）：</p>
+          <p class="win__desc">终端乱码定格器 + 全屏蜂窝点阵波浪转场（`wipe`）+ 零外部音频的 `createSoundEngine()` 机械触觉声效合成器：</p>
           <div class="con" id="con-box">
             <span class="con__row"><b>model</b><span id="c-model">SeeDream 5.0 Pro</span></span>
             <span class="con__row"><b>lens</b><span id="c-lens">20mm f/1.8 CCD</span></span>
@@ -535,6 +637,41 @@
             <button class="btn btn--primary" id="wipe-btn" type="button">Trigger Dot-Wave Wipe</button>
             <button class="btn" id="con-sim-btn" type="button">Simulate Render</button>
             <button class="btn" id="scramble-btn" type="button">Matrix Scramble</button>
+          </div>
+          <div class="ctrl-row" style="border-top:1px dashed var(--line);padding-top:10px">
+            <button class="btn" type="button" id="sfx-tick">SFX: Tick</button>
+            <button class="btn" type="button" id="sfx-switch">SFX: Switch</button>
+            <button class="btn" type="button" id="sfx-shutter">SFX: Shutter</button>
+            <button class="btn" type="button" id="sfx-copy">SFX: Copy</button>
+            <button class="btn" type="button" id="sfx-amb">SFX: Ambient (OFF)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Darkroom Optical Loupe & Exposure / Color Gene Analyzer -->
+      <div class="win" data-win>
+        <div class="win__bar">
+          <span>01.D // LOUPE & EXPOSURE LAB</span>
+          <span>DARKROOM PRO<i class="win__led"></i></span>
+        </div>
+        <div class="win__body">
+          <p class="win__desc">按住画面拖动开启 `attachLoupe` 光学放大镜（滚轮 `1.5×~6.0×` 变焦），实时联动 `analyzeImage` 点阵直方图与 5 格色彩基因：</p>
+          <div class="loupe-stage" id="dk-stage">
+            <img id="dk-img" src="./images/122.jpg" crossorigin="anonymous" alt="Darkroom sample">
+            <canvas class="loupe-cv" id="dk-loupe"></canvas>
+            <div class="loupe-hud" id="dk-hud">HOLD TO LOUPE · WHEEL ZOOM (2.5×)</div>
+          </div>
+          <div class="lab-exp">
+            <div class="lab-exp__head">
+              <span>40×10 DOT HISTOGRAM</span>
+              <span id="dk-stat">ANALYZING...</span>
+            </div>
+            <canvas class="lab-exp__hist" id="dk-hist"></canvas>
+            <div class="lab-swatches" id="dk-swatches"></div>
+          </div>
+          <div class="ctrl-row">
+            <button class="btn btn--primary" id="dk-next" type="button">Next Specimen</button>
+            <span id="dk-label" style="font-family:var(--mono);font-size:11px;color:var(--fg-2);margin-left:auto">NO.049 // ID #122</span>
           </div>
         </div>
       </div>
@@ -566,10 +703,11 @@
   <div class="toast" id="toast">Copied to clipboard</div>
 
   <script type="module">
-    import { TrueJpegUI } from './truejpeg-ui.js';
+    import { TrueJpegUI } from './truejpeg-ui.js?v=20261104t7';
 
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const sfx = TrueJpegUI.createSoundEngine();
 
     // Toast helper
     const toastEl = $('#toast');
@@ -616,17 +754,39 @@
     $('#globe-cv').addEventListener('click', triggerGlobalScramble);
     $('#scramble-btn').addEventListener('click', triggerGlobalScramble);
 
-    // 4. Initialize Honeycomb Wipe
+    // 4. Initialize Honeycomb Wipe & Web Audio Demo Buttons
     const runWipe = TrueJpegUI.createWipe($('#wipe-cv'));
     $('#wipe-btn').addEventListener('click', (e) => {
+      sfx.shutter(true);
       const origin = { x: e.clientX || innerWidth / 2, y: e.clientY || innerHeight / 2 };
       runWipe(origin, () => {
+        sfx.shutter(false);
         const presets = ['TRUE JPEG', 'DOT MATRIX', 'SEEDREAM 5.0'];
         const cur = $('#word-inp').value;
         const next = presets[(presets.indexOf(cur) + 1) % presets.length];
         $('#word-inp').value = next;
         wordmark.play(next);
       });
+    });
+
+    let sfxPitch = 0.85;
+    let sfxSwState = false;
+    $('#sfx-tick').addEventListener('click', () => {
+      sfx.tick(sfxPitch);
+      sfxPitch = sfxPitch >= 1.5 ? 0.8 : +(sfxPitch + 0.14).toFixed(2);
+    });
+    $('#sfx-switch').addEventListener('click', () => {
+      sfxSwState = !sfxSwState;
+      sfx.switch(sfxSwState);
+    });
+    $('#sfx-shutter').addEventListener('click', () => sfx.shutter(true));
+    $('#sfx-copy').addEventListener('click', () => sfx.copy());
+    $('#sfx-amb').addEventListener('click', (e) => {
+      const on = sfx.ambient();
+      sfx.switch(on);
+      e.currentTarget.textContent = on ? 'SFX: Ambient (ON)' : 'SFX: Ambient (OFF)';
+      e.currentTarget.classList.toggle('btn--primary', on);
+      showToast(on ? 'Darkroom Ambient: ON // 暗房环境底噪已开启' : 'Darkroom Ambient: OFF // 暗房环境底噪已关闭');
     });
 
     // 5. Console Simulator
@@ -701,7 +861,69 @@
     });
     htStep.addEventListener('input', refreshHalftone);
 
-    // 7. Load & Render 144 Prompts Vault
+    // 6.B Darkroom Optical Loupe & Exposure Histogram Demo (Card 01.D)
+    const dkStage = $('#dk-stage');
+    const dkImg = $('#dk-img');
+    const dkLoupeCv = $('#dk-loupe');
+    const dkHud = $('#dk-hud');
+    const dkHist = $('#dk-hist');
+    const dkStat = $('#dk-stat');
+    const dkSwatches = $('#dk-swatches');
+    const dkLabel = $('#dk-label');
+
+    const loupeCtrl = TrueJpegUI.attachLoupe(dkStage, dkImg, dkLoupeCv, {
+      size: 150,
+      hudEl: dkHud,
+      initialZoom: 2.5,
+      posY: 0.25,
+      sound: sfx
+    });
+
+    function runDarkroomAnalysis() {
+      const res = TrueJpegUI.analyzeImage(dkImg, { histCanvas: dkHist, height: 44 });
+      if (!res) {
+        dkStat.textContent = 'N/A // CORS';
+        dkSwatches.innerHTML = '';
+        return;
+      }
+      dkStat.textContent = res.statText;
+      dkSwatches.innerHTML = res.swatches.map((hex) =>
+        `<button class="lab-swatch" type="button" data-hex="${hex}" title="Copy ${hex}"><i style="background:${hex}"></i><span>${hex}</span></button>`
+      ).join('');
+      loupeCtrl.refresh();
+    }
+
+    dkImg.addEventListener('load', runDarkroomAnalysis);
+    if (dkImg.complete && dkImg.naturalWidth) runDarkroomAnalysis();
+    dkSwatches.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-hex]');
+      if (!btn) return;
+      await navigator.clipboard.writeText(btn.dataset.hex);
+      sfx.copy();
+      showToast(`Copied color swatch ${btn.dataset.hex}`);
+    });
+
+    let dkIdx = 0;
+    function loadDarkroomSample(work) {
+      if (!work) {
+        dkImg.src = makeSampleDataUrl(330);
+        dkLabel.textContent = 'SYNTHETIC CCD';
+        return;
+      }
+      const no = String(allWorks.indexOf(work) + 1).padStart(3, '0');
+      dkImg.src = `./${work.image || work.thumb}`;
+      dkLabel.textContent = `NO.${no} // ID #${work.id}`;
+    }
+
+    $('#dk-next').addEventListener('click', () => {
+      sfx.tick(1.05);
+      if (!allWorks.length) { loadDarkroomSample(null); return; }
+      const safeWorks = allWorks.filter((w) => !(w.tags || []).includes('NSFW'));
+      dkIdx = (dkIdx + 1) % safeWorks.length;
+      loadDarkroomSample(safeWorks[dkIdx]);
+    });
+
+    // 7. Load & Render 154 Prompts Vault
     let allWorks = [];
     let currentCat = 'ALL';
     let searchQuery = '';
@@ -709,6 +931,14 @@
     async function loadVault() {
       const res = await fetch('./prompts.json');
       allWorks = await res.json();
+      const safeWorks = allWorks.filter((w) => !(w.tags || []).includes('NSFW'));
+      const idx122 = safeWorks.findIndex((w) => String(w.id) === '122');
+      if (idx122 >= 0) {
+        dkIdx = idx122;
+        loadDarkroomSample(safeWorks[dkIdx]);
+      } else if (safeWorks.length) {
+        loadDarkroomSample(safeWorks[0]);
+      }
       renderVault();
     }
 
@@ -730,7 +960,7 @@
       const grid = $('#vault-grid');
       grid.innerHTML = filtered.map((w, idx) => {
         const no = String(allWorks.indexOf(w) + 1).padStart(3, '0');
-        const thumbUrl = `https://truejpeg.com/${w.thumb || w.image}`;
+        const thumbUrl = `./${w.thumb || w.image}`;
         const tagsHtml = (w.tags || []).map((t) => `<span class="pcard__tag">${t}</span>`).join('');
         return `
           <article class="pcard" data-id="${w.id}">
@@ -766,6 +996,7 @@
       if (!btn) return;
       $$('.tab', $('#cat-tabs')).forEach((b) => b.classList.toggle('is-active', b === btn));
       currentCat = btn.dataset.cat;
+      sfx.tick();
       renderVault();
     });
 
@@ -780,6 +1011,7 @@
         const card = exp.closest('.pcard');
         const open = card.classList.toggle('is-expanded');
         exp.textContent = open ? 'Collapse' : 'Expand Full';
+        sfx.switch(open);
         return;
       }
       const cp = e.target.closest('[data-copy]');
@@ -787,6 +1019,7 @@
         const w = allWorks.find((x) => String(x.id) === cp.dataset.copy);
         if (!w) return;
         await navigator.clipboard.writeText(w.prompt);
+        sfx.copy();
         TrueJpegUI.scramble(cp, 'COPIED // OK', 'en');
         showToast(`Copied #${w.id} (${w.title}) prompt!`);
         setTimeout(() => { cp.textContent = 'Copy Prompt'; }, 1600);

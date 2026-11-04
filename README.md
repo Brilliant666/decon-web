@@ -39,24 +39,36 @@
    - **暗房光学放大镜（Optical Loupe，`PRO` 模式开启）**：在大图详情页按住鼠标左键拖动，浮现带 64 颗点阵外环、36 道内圈镜头刻度与十字准星的光学放大镜（滚轮支持 `1.5× ~ 6.0×` 实时变焦），100% 审视原图微距细节。
    - **实时点阵曝光直方图与 5 格色彩基因（Foldable Exposure Histogram & Tones，`PRO` 模式开启）**：位于 `Show prompt` 下方，默认以单行参数（如 `LOW-KEY // SHD 78% · LUM 21%`）无侵入式折叠收纳，点击展开 `40×10` 点阵直方图与 5 格主色/跳色提取色卡（点击一键复制 HEX）。
    - **Contact Sheet（暗房底片索引模式，`PRO` 模式开启）**：画廊工具栏集成第 3 视图开关（快捷键 `3`），将瀑布流一键切换为带齿孔刻度与常显编号的高密度底片小样网格。
+   - **Web Audio 机械触觉声效与暗房声场（`createSoundEngine`，`PRO` 模式开启）**：零外部音频依赖，纯 `Web Audio API` 合成金属棘轮变焦（`tick`）、机械拨杆双脉冲（`switch`）、帘幕快门扫频（`shutter`）、双音合焦复制确认（`copy`），并在 `lab.html` 额外提供双层暗房环境声场（`ambient`）实验开关。
 
 ### 2. 如何本地运行 (Quick Start)
 
 ```bash
 # 1. 启动本地 1:1 镜像服务器（默认监听 http://127.0.0.1:6060/）
-node server.js
+node sites/01-truejpeg/server.js
 
-# 2. （可选）全量下载 727 个图像文件到本地 images/ 目录以实现 100% 离线秒开
-node sync_images.js
+# 2. （可选）全量下载 777 个图像文件到本地 sites/01-truejpeg/images/ 目录以实现 100% 离线秒开
+node sites/01-truejpeg/sync_images.js
 ```
 
 启动后可访问：
-- **1:1 完整复刻站（含 `INK / PAPER` 主题切换）**：`http://127.0.0.1:6060/`
+- **1:1 完整复刻站（含 `RAW / PRO` 暗房套件与 `INK / PAPER` 主题切换）**：`http://127.0.0.1:6060/`
 - **抽离组件交互实验室 & 154 组 Prompt 检索库**：`http://127.0.0.1:6060/lab.html`
 
 ---
 
-## 📦 仓库分支说明 (Hybrid Architecture)
+## 📦 仓库目录与分支说明 (Clean Multi-Site Architecture)
 
-- **`main` 分支**：作为 `decon-web` 的总览门户，按 `sites/01-truejpeg/`、`sites/02-.../` 归档各个神级网站的复刻实现，并在 `shared-ui/` 中沉淀抽离出的零依赖原生组件。
-- **`truejpeg` 分支**：纯粹对应 `True JPEG` 单站点的独立分支。
+```text
+decon-web (main 分支)
+├── .gitignore
+├── README.md                  # 博物馆总览门户文档
+├── CHANGELOG.md               # 精简演进与版本记录
+├── shared-ui/                 # 提炼出的跨项目可复用零依赖组件库
+│   └── truejpeg-ui.js
+└── sites/                     # 各神级网站独立自包含归档目录
+    └── 01-truejpeg/           # Specimen #01: True JPEG 完整复刻、server 与 Prompt 手册
+```
+
+- **`main` 分支**：保持根目录纯粹干净，仅包含总览文档、`shared-ui/` 通用组件库以及 `sites/` 下按编号归档的各个独立站点文件夹。
+- **`truejpeg` 分支**：根目录直接作为 `True JPEG` 单站点的独立分支快照。
