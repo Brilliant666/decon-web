@@ -821,7 +821,13 @@
       const im = new Image();
       im.src = w.full;
       // swapping in a large image mid-zoom repaints the moving frame; wait until it has landed
-      Promise.all([im.decode(), vZoom]).then(() => { if (current() === c && !vRef) vImg.src = w.full; }).catch(() => {});
+      Promise.all([im.decode(), vZoom]).then(() => {
+        if (current() === c && !vRef) {
+          vImg.src = w.full;
+          analyzeWorkImage(vImg);
+          if (loupeActive) drawLoupe();
+        }
+      }).catch(() => {});
     }
   }
 
@@ -994,6 +1000,8 @@
     vImg.alt = on ? `${tx('ref')} · ${c.w.title}` : c.w.title;
     fitFrame(c.w);
     await Promise.race([vImg.decode().catch(() => {}), wait(450)]);
+    analyzeWorkImage(vImg);
+    if (loupeActive) drawLoupe();
     cancelAnims(frame);
     frame.animate([{ opacity: 0, transform: 'scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: REDUCE ? 1 : 420, easing: EASE });
     const t = $('.ref__thumb', vBody);
@@ -1114,7 +1122,15 @@
           `<button class="v-swatch" type="button" data-hex="${hex}" title="Click to copy ${hex}"><span class="v-swatch__dot" style="background:${hex}"></span><span>${hex}</span></button>`
         ).join('');
       }
-    } catch (_) { /* ignore tainted canvas if any */ }
+    } catch (_) {
+      lastHistBins = null;
+      if (vEvStat) vEvStat.textContent = 'N/A // CORS';
+      if (vHist) {
+        const ctx = vHist.getContext('2d');
+        ctx.clearRect(0, 0, vHist.width, vHist.height);
+      }
+      if (vSwatches) vSwatches.innerHTML = '';
+    }
   }
 
   function analyzeWorkImage(imgEl) {
@@ -1131,22 +1147,26 @@
     if (!loupeActive || !vLoupe || !vImg.naturalWidth) return;
     const L = 210, R = L / 2;
     const dpr = Math.min(2, devicePixelRatio || 1);
-    if (vLoupe.width !== Math.round(L * dpr)) {
-      vLoupe.width = Math.round(L * dpr);
-      vLoupe.height = Math.round(L * dpr);
+    const targetPx = Math.round(L * dpr);
+    if (vLoupe.width !== targetPx || vLoupe.height !== targetPx) {
+      vLoupe.width = targetPx;
+      vLoupe.height = targetPx;
     }
     const ctx = vLoupe.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, L, L);
 
     const rect = frame.getBoundingClientRect();
-    const u = clamp(loupeX / rect.width, 0, 1);
-    const v = clamp(loupeY / rect.height, 0, 1);
+    const cw = rect.width || 1, ch = rect.height || 1;
     const iw = vImg.naturalWidth, ih = vImg.naturalHeight;
-    const srcW = (L / rect.width) * iw / loupeZoom;
-    const srcH = (L / rect.height) * ih / loupeZoom;
-    const sx = u * iw - srcW / 2;
-    const sy = v * ih - srcH / 2;
+    const scale = Math.max(cw / iw, ch / ih);
+    const drawW = iw * scale, drawH = ih * scale;
+    const imgLeft = (cw - drawW) * 0.5, imgTop = (ch - drawH) * 0.5;
+    const dx = R + (imgLeft - loupeX) * loupeZoom;
+    const dy = R + (imgTop - loupeY) * loupeZoom;
+    const dw = drawW * loupeZoom, dh = drawH * loupeZoom;
+    const u = clamp((loupeX - imgLeft) / drawW, 0, 1);
+    const v = clamp((loupeY - imgTop) / drawH, 0, 1);
 
     ctx.save();
     ctx.beginPath();
@@ -1154,7 +1174,7 @@
     ctx.clip();
     ctx.fillStyle = '#0d0d0c';
     ctx.fillRect(0, 0, L, L);
-    ctx.drawImage(vImg, sx, sy, srcW, srcH, 0, 0, L, L);
+    ctx.drawImage(vImg, dx, dy, dw, dh);
 
     // Subtle darkroom crosshair & reticle ticks
     ctx.strokeStyle = 'rgba(236, 236, 234, 0.38)';

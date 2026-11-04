@@ -467,5 +467,230 @@ export const TrueJpegUI = (() => {
     };
   }
 
-  return { dotType, winFrame, renderHalftone, createWipe, scramble, createGlobe };
+  /* ==========================================================================
+   * 7. Darkroom Dot-Matrix Exposure Histogram & 5-Chip Color Gene Analyzer
+   * ========================================================================== */
+  const sampleCv = document.createElement('canvas');
+  sampleCv.width = 72;
+  sampleCv.height = 72;
+  const sampleCtx = sampleCv.getContext('2d', { willReadFrequently: true });
+
+  function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map((x) => clamp(Math.round(x), 0, 255).toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+
+  function drawDotHistogram(cv, bins, options = {}) {
+    if (!cv || !bins) return;
+    const W = cv.clientWidth || options.width || 280;
+    const H = options.height || cv.clientHeight || 54;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    const cs = getComputedStyle(document.documentElement);
+    const onCol = options.onColor || cs.getPropertyValue('--ink-fg').trim() || cs.getPropertyValue('--fg').trim() || '#ececea';
+    const dimCol = options.dimColor || cs.getPropertyValue('--dot').trim() || '#2e2e2c';
+    const COLS = bins.length;
+    const ROWS = options.rows || 10;
+    const stepX = W / COLS, stepY = H / ROWS;
+    const maxVal = Math.max(0.001, ...bins);
+
+    for (let c = 0; c < COLS; c++) {
+      const norm = Math.pow(bins[c] / maxVal, 0.62);
+      const litRows = Math.round(norm * ROWS);
+      const cx = (c + 0.5) * stepX;
+      for (let r = 0; r < ROWS; r++) {
+        const rowFromBottom = ROWS - 1 - r;
+        const isLit = rowFromBottom < litRows;
+        const cy = (r + 0.5) * stepY;
+        ctx.fillStyle = isLit ? onCol : dimCol;
+        ctx.beginPath();
+        ctx.arc(cx, cy, isLit ? 1.45 : 0.75, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  function analyzeImage(imgEl, options = {}) {
+    if (!imgEl || !(imgEl.naturalWidth || imgEl.width)) return null;
+    try {
+      sampleCtx.clearRect(0, 0, 72, 72);
+      sampleCtx.drawImage(imgEl, 0, 0, 72, 72);
+      const data = sampleCtx.getImageData(0, 0, 72, 72).data;
+      const COLS = options.cols || 40;
+      const bins = new Float32Array(COLS);
+      let lumSum = 0, darkCount = 0;
+      const totalPx = 72 * 72;
+      const buckets = Array.from({ length: 5 }, () => ({ r: 0, g: 0, b: 0, w: 0 }));
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        lumSum += lum;
+        if (lum < 64) darkCount++;
+        const binIdx = clamp(Math.floor((lum / 256) * COLS), 0, COLS - 1);
+        bins[binIdx]++;
+
+        const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+        const sat = maxC === 0 ? 0 : (maxC - minC) / maxC;
+        const bIdx = (sat > 0.45 && lum > 35 && lum < 235) ? 4 : clamp(Math.floor((lum / 256) * 4), 0, 3);
+        const weight = bIdx === 4 ? (sat * 3 + 0.5) : 1;
+        buckets[bIdx].r += r * weight;
+        buckets[bIdx].g += g * weight;
+        buckets[bIdx].b += b * weight;
+        buckets[bIdx].w += weight;
+      }
+
+      const avgLum = Math.round((lumSum / totalPx / 255) * 100);
+      const darkPct = Math.round((darkCount / totalPx) * 100);
+      const keyLabel = avgLum < 32 ? 'LOW-KEY' : avgLum > 65 ? 'HIGH-KEY' : 'BALANCED';
+      const statText = `${keyLabel} // SHD ${darkPct}% · LUM ${avgLum}%`;
+
+      const swatches = [];
+      buckets.forEach((bk) => {
+        if (bk.w > 0) swatches.push(rgbToHex(bk.r / bk.w, bk.g / bk.w, bk.b / bk.w));
+      });
+      while (swatches.length < 5) swatches.push('#1A1A19');
+
+      if (options.histCanvas) drawDotHistogram(options.histCanvas, bins, options);
+      return { bins, avgLum, darkPct, keyLabel, statText, swatches: swatches.slice(0, 5) };
+    } catch (_) {
+      if (options.histCanvas) {
+        const ctx = options.histCanvas.getContext('2d');
+        ctx.clearRect(0, 0, options.histCanvas.width, options.histCanvas.height);
+      }
+      return null;
+    }
+  }
+
+  /* ==========================================================================
+   * 8. Darkroom Optical Loupe (attachLoupe)
+   * ========================================================================== */
+  function attachLoupe(frameEl, imgEl, loupeCv, options = {}) {
+    const L = options.size || 180;
+    const R = L / 2;
+    const hudEl = options.hudEl || null;
+    const hintText = options.hintText || 'HOLD TO LOUPE · WHEEL ZOOM';
+    let active = false, zoom = options.initialZoom || 2.5, lx = 0, ly = 0;
+
+    function draw() {
+      const iw = imgEl.naturalWidth || imgEl.width;
+      const ih = imgEl.naturalHeight || imgEl.height;
+      if (!active || !loupeCv || !iw) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const targetPx = Math.round(L * dpr);
+      if (loupeCv.width !== targetPx || loupeCv.height !== targetPx) {
+        loupeCv.width = targetPx;
+        loupeCv.height = targetPx;
+        loupeCv.style.width = `${L}px`;
+        loupeCv.style.height = `${L}px`;
+      }
+      const ctx = loupeCv.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, L, L);
+
+      const rect = frameEl.getBoundingClientRect();
+      const cw = rect.width || 1, ch = rect.height || 1;
+      const scale = Math.max(cw / iw, ch / ih);
+      const drawW = iw * scale;
+      const drawH = ih * scale;
+      const posX = options.posX != null ? options.posX : 0.5;
+      const posY = options.posY != null ? options.posY : 0.5;
+      const imgLeft = (cw - drawW) * posX;
+      const imgTop = (ch - drawH) * posY;
+      const dx = R + (imgLeft - lx) * zoom;
+      const dy = R + (imgTop - ly) * zoom;
+      const dw = drawW * zoom;
+      const dh = drawH * zoom;
+      const imgX = clamp(((lx - imgLeft) / drawW) * iw, 0, iw);
+      const imgY = clamp(((ly - imgTop) / drawH) * ih, 0, ih);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(R, R, R - 2, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = '#0d0d0c';
+      ctx.fillRect(0, 0, L, L);
+      ctx.drawImage(imgEl, dx, dy, dw, dh);
+
+      ctx.strokeStyle = 'rgba(236, 236, 234, 0.38)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(R - 14, R); ctx.lineTo(R - 4, R);
+      ctx.moveTo(R + 4, R); ctx.lineTo(R + 14, R);
+      ctx.moveTo(R, R - 14); ctx.lineTo(R, R - 4);
+      ctx.moveTo(R, R + 4); ctx.lineTo(R, R + 14);
+      for (let a = 0; a < 36; a++) {
+        const ang = (a * 10 * Math.PI) / 180;
+        const len = a % 3 === 0 ? 7 : 3.5;
+        ctx.moveTo(R + Math.cos(ang) * (R - 3), R + Math.sin(ang) * (R - 3));
+        ctx.lineTo(R + Math.cos(ang) * (R - 3 - len), R + Math.sin(ang) * (R - 3 - len));
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = '#ececea';
+      const dots = 64;
+      ctx.beginPath();
+      for (let i = 0; i < dots; i++) {
+        const a = (i / dots) * Math.PI * 2;
+        const dx = R + Math.cos(a) * (R - 1.5);
+        const dy = R + Math.sin(a) * (R - 1.5);
+        ctx.moveTo(dx + 1.1, dy);
+        ctx.arc(dx, dy, i % 8 === 0 ? 1.4 : 0.9, 0, Math.PI * 2);
+      }
+      ctx.fill();
+
+      loupeCv.style.left = `${lx}px`;
+      loupeCv.style.top = `${ly}px`;
+      if (hudEl) {
+        const pxX = String(Math.round(imgX)).padStart(4, '0');
+        const pxY = String(Math.round(imgY)).padStart(4, '0');
+        hudEl.textContent = `LOUPE ${zoom.toFixed(1)}× // X:${pxX} Y:${pxY}`;
+      }
+    }
+
+    function updatePos(e) {
+      const rect = frameEl.getBoundingClientRect();
+      lx = clamp(e.clientX - rect.left, 0, rect.width);
+      ly = clamp(e.clientY - rect.top, 0, rect.height);
+      if (active) draw();
+      else if (hudEl) hudEl.textContent = `${hintText} (${zoom.toFixed(1)}×)`;
+    }
+
+    frameEl.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      active = true;
+      frameEl.setPointerCapture(e.pointerId);
+      frameEl.classList.add('is-louping');
+      updatePos(e);
+    });
+    frameEl.addEventListener('pointermove', updatePos);
+    const stop = () => {
+      if (!active) return;
+      active = false;
+      frameEl.classList.remove('is-louping');
+      if (hudEl) hudEl.textContent = `${hintText} (${zoom.toFixed(1)}×)`;
+    };
+    frameEl.addEventListener('pointerup', stop);
+    frameEl.addEventListener('pointercancel', stop);
+    frameEl.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      zoom = clamp(zoom + (e.deltaY < 0 ? 0.5 : -0.5), 1.5, 6.0);
+      if (active) draw();
+      else if (hudEl) hudEl.textContent = `${hintText} (${zoom.toFixed(1)}×)`;
+    }, { passive: false });
+
+    return {
+      refresh() { if (active) draw(); },
+      setZoom(z) { zoom = clamp(z, 1.5, 6.0); if (active) draw(); },
+      getZoom() { return zoom; }
+    };
+  }
+
+  return { dotType, winFrame, renderHalftone, createWipe, scramble, createGlobe, drawDotHistogram, analyzeImage, attachLoupe };
 })();

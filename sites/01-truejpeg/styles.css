@@ -156,6 +156,7 @@
 
 /* When in RAW mode (default 1:1 original), hide all PRO darkroom additions */
 :root:not([data-pro="1"]) #layouts .seg__btn[data-layout="sheet"],
+:root:not([data-pro="1"]) #v-lab-sec,
 :root:not([data-pro="1"]) #v-lab-toggle,
 :root:not([data-pro="1"]) #v-lab-fold,
 :root:not([data-pro="1"]) #v-loupe,
@@ -860,6 +861,8 @@ input.field { height: 36px; }
   position: relative;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   display: flex;
   flex-direction: column;
   padding: 26px 32px 32px;
@@ -870,6 +873,7 @@ input.field { height: 36px; }
   transform: translateX(24px);
   transition: opacity .3s ease, transform .4s ease;
 }
+.viewer__panel::-webkit-scrollbar { display: none; }
 .viewer.is-active .viewer__panel { opacity: 1; transform: none; transition: opacity .5s ease .1s, transform .8s var(--ease) .1s; }
 
 .viewer__head { display: flex; align-items: center; justify-content: space-between; height: 32px; margin-bottom: 10px; }
@@ -1219,16 +1223,22 @@ input.field { height: 36px; }
 }
 
 /* 3. Live Dot-Matrix Histogram & 5-Chip Color Gene Swatches (Folded by default like Prompt) */
-#v-fold.is-open {
-  padding-bottom: 10px;
+.viewer__sec {
+  display: grid;
+}
+.viewer__sec + .viewer__sec {
+  margin-top: -12px;
+}
+#v-fold .fold__text {
+  padding: 12px 0 14px;
   border-bottom: 1px solid var(--ink-line);
 }
-.reveal--lab { margin-top: -6px; }
+.reveal--lab { margin-top: 0; }
 .reveal__right { display: inline-flex; align-items: center; gap: 8px; }
 .v-lab {
   display: grid;
   gap: 8px;
-  padding: 6px 0 10px;
+  padding: 10px 0 12px;
   border-bottom: 1px solid var(--ink-line);
 }
 .v-lab__head {

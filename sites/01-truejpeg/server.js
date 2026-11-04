@@ -31,13 +31,24 @@ http.createServer((req, res) => {
   let u = decodeURIComponent(req.url.split('?')[0]);
   if (u === '/') u = '/index.html';
   if (u === '/legal') u = '/legal.html';
-  const fp = path.join(root, u);
 
-  // Security check to stay inside root
-  if (!path.resolve(fp).startsWith(path.resolve(root))) {
-    res.writeHead(403);
-    res.end('Forbidden');
-    return;
+  const sharedRoot = path.resolve(root, '../../shared-ui');
+  let fp;
+  if (u.startsWith('/shared-ui/')) {
+    fp = path.join(sharedRoot, u.slice('/shared-ui/'.length));
+    if (!path.resolve(fp).startsWith(sharedRoot)) {
+      res.writeHead(403);
+      res.end('Forbidden');
+      return;
+    }
+  } else {
+    fp = path.join(root, u);
+    // Security check to stay inside root
+    if (!path.resolve(fp).startsWith(path.resolve(root))) {
+      res.writeHead(403);
+      res.end('Forbidden');
+      return;
+    }
   }
 
   const ext = path.extname(fp).toLowerCase();
