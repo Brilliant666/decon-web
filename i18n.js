@@ -32,6 +32,11 @@
     // prompt
     masonry: ['Masonry', 'メイソンリー', '瀑布流'],
     rows: ['Rows', '行', '横排'],
+    sheet: ['Contact sheet', 'コンタクトシート', '底片索引'],
+    histogram: ['Exposure', '露出ヒストグラム', '曝光分布'],
+    tones: ['Tones', 'カラーパレット', '色彩基因'],
+    hexCopied: ['HEX {hex} copied', 'HEX {hex} をコピーしました', '已复制色值 {hex}'],
+    loupeHint: ['HOLD TO INSPECT // SCROLL ZOOM', '長押しで拡大 // ホイールで倍率変更', '按住审视细节 // 滚轮调节倍率'],
     layoutAria: ['{name} layout', 'レイアウト：{name}', '{name}布局'],
     small: ['Small', '小', '小'],
     medium: ['Medium', '中', '中'],

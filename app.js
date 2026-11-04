@@ -365,6 +365,7 @@
   const LAYOUTS = [
     ['masonry', 'masonry', '<rect x="3.5" y="3.5" width="7" height="10" rx="1.5"/><rect x="3.5" y="16.5" width="7" height="4" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="4" rx="1.5"/><rect x="13.5" y="10.5" width="7" height="10" rx="1.5"/>'],
     ['rows', 'rows', '<rect x="3.5" y="4.5" width="10" height="6" rx="1.5"/><rect x="16.5" y="4.5" width="4" height="6" rx="1.5"/><rect x="3.5" y="13.5" width="5" height="6" rx="1.5"/><rect x="11.5" y="13.5" width="9" height="6" rx="1.5"/>'],
+    ['sheet', 'sheet', '<rect x="3.5" y="3.5" width="4.5" height="4.5" rx="1"/><rect x="9.75" y="3.5" width="4.5" height="4.5" rx="1"/><rect x="16" y="3.5" width="4.5" height="4.5" rx="1"/><rect x="3.5" y="9.75" width="4.5" height="4.5" rx="1"/><rect x="9.75" y="9.75" width="4.5" height="4.5" rx="1"/><rect x="16" y="9.75" width="4.5" height="4.5" rx="1"/><rect x="3.5" y="16" width="4.5" height="4.5" rx="1"/><rect x="9.75" y="16" width="4.5" height="4.5" rx="1"/><rect x="16" y="16" width="4.5" height="4.5" rx="1"/>'],
   ];
   const SIZES = ['S', 'M', 'L'];
   const SIZE_KEYS = ['small', 'medium', 'large'];
@@ -414,7 +415,7 @@
         heights[k] += h + gap;
       });
       total = Math.max(0, ...heights) - gap;
-    } else {
+    } else if (mode === 'rows') {
       // justified rows: every row fills the width, images keep their full frame
       const target = [190, 280, 400][density] * (small ? 0.55 : vw < 1240 ? 0.8 : 1);
       let row = [], sum = 0, y = 0;
@@ -433,6 +434,18 @@
       });
       if (row.length) flush(true);
       total = y - gap;
+    } else if (mode === 'sheet') {
+      // contact sheet: uniform darkroom proof frames in a high-density grid
+      const sheetGap = small ? 8 : 12;
+      const cols = clamp((vw >= 1680 ? 8 : vw >= 1240 ? 6 : vw >= 820 ? 5 : 3) + (1 - density) * 2, 2, 12);
+      const colW = (W - sheetGap * (cols - 1)) / cols;
+      const cellH = colW * 1.18;
+      shown.forEach((c, i) => {
+        const col = i % cols, r = Math.floor(i / cols);
+        out.push({ c, x: col * (colW + sheetGap), y: r * (cellH + sheetGap), w: colW, h: cellH });
+      });
+      const rows = Math.ceil(shown.length / cols);
+      total = rows ? rows * (cellH + sheetGap) - sheetGap : 0;
     }
     return { out, total: Math.max(0, total) };
   }
@@ -775,14 +788,24 @@
   // the full prompt is folded away until asked for; once opened it stays open while browsing
   const vReveal = $('#v-reveal');
   const vFold = $('#v-fold');
-  let promptOpen = false;
+  const vLabToggle = $('#v-lab-toggle');
+  const vLabFold = $('#v-lab-fold');
+  let promptOpen = false, labOpen = false;
   function showPrompt(on) {
     vFold.classList.toggle('is-open', on);
     vFold.inert = !on;
     vReveal.setAttribute('aria-expanded', String(on));
     $('.reveal__lbl', vReveal).textContent = tx(on ? 'hidePrompt' : 'showPrompt');
   }
+  function showLab(on) {
+    if (!vLabFold || !vLabToggle) return;
+    vLabFold.classList.toggle('is-open', on);
+    vLabFold.inert = !on;
+    vLabToggle.setAttribute('aria-expanded', String(on));
+    if (on && lastHistBins) requestAnimationFrame(() => drawHistCanvas(lastHistBins));
+  }
   vReveal.addEventListener('click', () => { promptOpen = !promptOpen; showPrompt(promptOpen); });
+  if (vLabToggle) vLabToggle.addEventListener('click', () => { labOpen = !labOpen; showLab(labOpen); });
 
   function setImage(c) {
     const w = c.w;
@@ -793,6 +816,7 @@
     vImg.src = (c.img && c.img.currentSrc) || w.thumb;
     vImg.alt = w.title;
     frame.style.backgroundColor = w.color || '';
+    analyzeWorkImage(vImg);
     if (w.full !== w.thumb) {
       const im = new Image();
       im.src = w.full;
@@ -976,7 +1000,237 @@
     if (t) t.setAttribute('aria-pressed', String(on));
     vBusy = false;
   }
-  vBody.addEventListener('click', (e) => { if (e.target.closest('.ref__thumb')) showRef(!vRef); });
+  vBody.addEventListener('click', (e) => {
+    if (e.target.closest('.ref__thumb')) { showRef(!vRef); return; }
+    const sw = e.target.closest('.v-swatch');
+    if (sw && sw.dataset.hex) {
+      copyText(sw.dataset.hex).then((ok) => {
+        if (ok) toast(tx('hexCopied', { hex: sw.dataset.hex }));
+      });
+    }
+  });
+
+  /* ---------- Pro Darkroom 1: Live Dot-Matrix Histogram & 5-Chip Color Gene Swatches ---------- */
+  const vHist = $('#v-hist');
+  const vEvStat = $('#v-ev-stat');
+  const vSwatches = $('#v-swatches');
+  const histSampleCv = document.createElement('canvas');
+  histSampleCv.width = 72;
+  histSampleCv.height = 72;
+  const histSampleCtx = histSampleCv.getContext('2d', { willReadFrequently: true });
+  let lastHistBins = null;
+
+  function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map((x) => clamp(Math.round(x), 0, 255).toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+
+  function drawHistCanvas(bins) {
+    if (!vHist || !bins) return;
+    const W = vHist.clientWidth || 280, H = 54;
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    vHist.width = Math.round(W * dpr);
+    vHist.height = Math.round(H * dpr);
+    const ctx = vHist.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    const cs = getComputedStyle(document.documentElement);
+    const onCol = cs.getPropertyValue('--ink-fg').trim() || '#ececea';
+    const dimCol = cs.getPropertyValue('--dot').trim() || '#2e2e2c';
+    const COLS = bins.length; // 40 columns
+    const ROWS = 10;
+    const stepX = W / COLS, stepY = H / ROWS;
+    const maxVal = Math.max(0.001, ...bins);
+
+    for (let c = 0; c < COLS; c++) {
+      const norm = Math.pow(bins[c] / maxVal, 0.62); // gamma lift so small highlight spikes show clearly
+      const litRows = Math.round(norm * ROWS);
+      const cx = (c + 0.5) * stepX;
+      for (let r = 0; r < ROWS; r++) {
+        const rowFromBottom = ROWS - 1 - r;
+        const isLit = rowFromBottom < litRows;
+        const cy = (r + 0.5) * stepY;
+        ctx.fillStyle = isLit ? onCol : dimCol;
+        ctx.beginPath();
+        ctx.arc(cx, cy, isLit ? 1.45 : 0.75, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  function runImageAnalysis(imgEl) {
+    if (!imgEl || !imgEl.naturalWidth) return;
+    try {
+      histSampleCtx.clearRect(0, 0, 72, 72);
+      histSampleCtx.drawImage(imgEl, 0, 0, 72, 72);
+      const data = histSampleCtx.getImageData(0, 0, 72, 72).data;
+      const COLS = 40;
+      const bins = new Float32Array(COLS);
+      let lumSum = 0, darkCount = 0;
+      const totalPx = 72 * 72;
+
+      // 5 luminance/saturation buckets for representative 5-chip palette extraction
+      const buckets = Array.from({ length: 5 }, () => ({ r: 0, g: 0, b: 0, w: 0 }));
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        lumSum += lum;
+        if (lum < 64) darkCount++;
+        const binIdx = clamp(Math.floor((lum / 256) * COLS), 0, COLS - 1);
+        bins[binIdx]++;
+
+        const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+        const sat = maxC === 0 ? 0 : (maxC - minC) / maxC;
+        // Bucket 4 reserves high-saturation accent color (e.g., neon green heels, Tiffany blue)
+        let bIdx;
+        if (sat > 0.45 && lum > 35 && lum < 235) {
+          bIdx = 4;
+        } else {
+          bIdx = clamp(Math.floor((lum / 256) * 4), 0, 3);
+        }
+        const weight = bIdx === 4 ? (sat * 3 + 0.5) : 1;
+        buckets[bIdx].r += r * weight;
+        buckets[bIdx].g += g * weight;
+        buckets[bIdx].b += b * weight;
+        buckets[bIdx].w += weight;
+      }
+
+      lastHistBins = bins;
+      drawHistCanvas(bins);
+
+      const avgLum = Math.round((lumSum / totalPx / 255) * 100);
+      const darkPct = Math.round((darkCount / totalPx) * 100);
+      const keyLabel = avgLum < 32 ? 'LOW-KEY' : avgLum > 65 ? 'HIGH-KEY' : 'BALANCED';
+      if (vEvStat) vEvStat.textContent = `${keyLabel} // SHD ${darkPct}% · LUM ${avgLum}%`;
+
+      if (vSwatches) {
+        const hexes = [];
+        buckets.forEach((bk) => {
+          if (bk.w > 0) hexes.push(rgbToHex(bk.r / bk.w, bk.g / bk.w, bk.b / bk.w));
+        });
+        while (hexes.length < 5) hexes.push('#1A1A19');
+        vSwatches.innerHTML = hexes.slice(0, 5).map((hex) =>
+          `<button class="v-swatch" type="button" data-hex="${hex}" title="Click to copy ${hex}"><span class="v-swatch__dot" style="background:${hex}"></span><span>${hex}</span></button>`
+        ).join('');
+      }
+    } catch (_) { /* ignore tainted canvas if any */ }
+  }
+
+  function analyzeWorkImage(imgEl) {
+    if (imgEl.complete && imgEl.naturalWidth) runImageAnalysis(imgEl);
+    else imgEl.addEventListener('load', () => runImageAnalysis(imgEl), { once: true });
+  }
+
+  /* ---------- Pro Darkroom 2: Optical Loupe (100% Detail Magnifier inside #v-frame) ---------- */
+  const vLoupe = $('#v-loupe');
+  const vLoupeHud = $('#v-loupe-hud');
+  let loupeActive = false, loupeZoom = 2.5, loupeX = 0, loupeY = 0;
+
+  function drawLoupe() {
+    if (!loupeActive || !vLoupe || !vImg.naturalWidth) return;
+    const L = 210, R = L / 2;
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    if (vLoupe.width !== Math.round(L * dpr)) {
+      vLoupe.width = Math.round(L * dpr);
+      vLoupe.height = Math.round(L * dpr);
+    }
+    const ctx = vLoupe.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, L, L);
+
+    const rect = frame.getBoundingClientRect();
+    const u = clamp(loupeX / rect.width, 0, 1);
+    const v = clamp(loupeY / rect.height, 0, 1);
+    const iw = vImg.naturalWidth, ih = vImg.naturalHeight;
+    const srcW = (L / rect.width) * iw / loupeZoom;
+    const srcH = (L / rect.height) * ih / loupeZoom;
+    const sx = u * iw - srcW / 2;
+    const sy = v * ih - srcH / 2;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(R, R, R - 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = '#0d0d0c';
+    ctx.fillRect(0, 0, L, L);
+    ctx.drawImage(vImg, sx, sy, srcW, srcH, 0, 0, L, L);
+
+    // Subtle darkroom crosshair & reticle ticks
+    ctx.strokeStyle = 'rgba(236, 236, 234, 0.38)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(R - 14, R); ctx.lineTo(R - 4, R);
+    ctx.moveTo(R + 4, R); ctx.lineTo(R + 14, R);
+    ctx.moveTo(R, R - 14); ctx.lineTo(R, R - 4);
+    ctx.moveTo(R, R + 4); ctx.lineTo(R, R + 14);
+    // Ruler ticks around inner rim
+    for (let a = 0; a < 36; a++) {
+      const ang = (a * 10 * Math.PI) / 180;
+      const len = a % 3 === 0 ? 7 : 3.5;
+      ctx.moveTo(R + Math.cos(ang) * (R - 3), R + Math.sin(ang) * (R - 3));
+      ctx.lineTo(R + Math.cos(ang) * (R - 3 - len), R + Math.sin(ang) * (R - 3 - len));
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // Dotted outer bezel ring matching True JPEG's dot-matrix language
+    ctx.fillStyle = '#ececea';
+    const dots = 64;
+    ctx.beginPath();
+    for (let i = 0; i < dots; i++) {
+      const a = (i / dots) * Math.PI * 2;
+      const dx = R + Math.cos(a) * (R - 1.5);
+      const dy = R + Math.sin(a) * (R - 1.5);
+      ctx.moveTo(dx + 1.1, dy);
+      ctx.arc(dx, dy, i % 8 === 0 ? 1.4 : 0.9, 0, Math.PI * 2);
+    }
+    ctx.fill();
+
+    vLoupe.style.left = `${loupeX}px`;
+    vLoupe.style.top = `${loupeY}px`;
+    if (vLoupeHud) {
+      const pxX = String(Math.round(u * iw)).padStart(4, '0');
+      const pxY = String(Math.round(v * ih)).padStart(4, '0');
+      vLoupeHud.textContent = `LOUPE ${loupeZoom.toFixed(1)}× // X:${pxX} Y:${pxY}`;
+    }
+  }
+
+  function updateLoupePos(e) {
+    const rect = frame.getBoundingClientRect();
+    loupeX = clamp(e.clientX - rect.left, 0, rect.width);
+    loupeY = clamp(e.clientY - rect.top, 0, rect.height);
+    if (loupeActive) drawLoupe();
+    else if (vLoupeHud) vLoupeHud.textContent = `${tx('loupeHint')} (${loupeZoom.toFixed(1)}×)`;
+  }
+
+  frame.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || !vOpen) return;
+    e.preventDefault();
+    loupeActive = true;
+    frame.setPointerCapture(e.pointerId);
+    frame.classList.add('is-louping');
+    updateLoupePos(e);
+  });
+  frame.addEventListener('pointermove', updateLoupePos);
+  const stopLoupe = () => {
+    if (!loupeActive) return;
+    loupeActive = false;
+    frame.classList.remove('is-louping');
+    if (vLoupeHud) vLoupeHud.textContent = `${tx('loupeHint')} (${loupeZoom.toFixed(1)}×)`;
+  };
+  frame.addEventListener('pointerup', stopLoupe);
+  frame.addEventListener('pointercancel', stopLoupe);
+  frame.addEventListener('pointerenter', () => {
+    if (!loupeActive && vLoupeHud) vLoupeHud.textContent = `${tx('loupeHint')} (${loupeZoom.toFixed(1)}×)`;
+  });
+  frame.addEventListener('wheel', (e) => {
+    if (!vOpen) return;
+    e.preventDefault();
+    loupeZoom = clamp(loupeZoom + (e.deltaY < 0 ? 0.5 : -0.5), 1.5, 6.0);
+    if (loupeActive) drawLoupe();
+    else if (vLoupeHud) vLoupeHud.textContent = `${tx('loupeHint')} (${loupeZoom.toFixed(1)}×)`;
+  }, { passive: false });
 
   // swipe between works on touch screens
   let touchX = null;
@@ -2076,7 +2330,10 @@ onmessage = async (e) => {
     inks.clear();
     homeFrames.forEach((f) => f.refresh && f.refresh());
     if (view && marks[view]) marks[view].play();
-    if (vOpen && current()) drawNo(current().w.no);
+    if (vOpen && current()) {
+      drawNo(current().w.no);
+      if (lastHistBins) drawHistCanvas(lastHistBins);
+    }
     globe.build(true);
     placeLang();
   }

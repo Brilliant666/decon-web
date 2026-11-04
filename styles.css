@@ -1051,6 +1051,203 @@ input.field { height: 36px; }
   .entries { margin-top: 36px; }
 }
 
+/* ============ Pro Darkroom Features (Contact Sheet, Optical Loupe, Dot Histogram & Swatches) ============ */
+/* 1. Contact Sheet Mode */
+.grid[data-layout="sheet"] .card {
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  background: var(--lift);
+}
+.grid[data-layout="sheet"] .card__media {
+  inset: 24px 6px 24px 6px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.grid[data-layout="sheet"] .card__media img {
+  object-fit: contain;
+  background: var(--paper);
+}
+.grid[data-layout="sheet"] .card__num {
+  top: 5px;
+  left: 7px;
+  padding: 0;
+  background: none;
+  color: var(--fg-2);
+  font-size: 10px;
+}
+.grid[data-layout="sheet"] .card__num::before {
+  content: "#";
+  color: var(--fg-3);
+}
+.grid[data-layout="sheet"] .card__ref {
+  top: 4px;
+  right: 6px;
+  padding: 2px 4px;
+  font-size: 9px;
+}
+.grid[data-layout="sheet"] .card__info {
+  padding: 3px 7px;
+  height: 22px;
+  align-items: center;
+}
+.grid[data-layout="sheet"] .card__ratio {
+  opacity: 1;
+  transform: none;
+  padding: 0;
+  background: none;
+  color: var(--fg-3);
+  font-size: 9.5px;
+}
+.grid[data-layout="sheet"] .card__copy {
+  height: 18px;
+  padding: 0 6px;
+  font-size: 9.5px;
+  border-radius: 3px;
+}
+/* Sprocket-like ruler ticks along top of each contact sheet frame */
+.grid[data-layout="sheet"] .card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 52px;
+  right: 8px;
+  height: 4px;
+  background: repeating-linear-gradient(90deg, var(--line-2) 0 1px, transparent 1px 6px);
+  opacity: .75;
+  pointer-events: none;
+}
+
+/* 2. Optical Loupe (100% Detail Magnifier inside #v-frame) */
+.viewer__frame { cursor: crosshair; }
+.viewer__loupe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 210px;
+  height: 210px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  transform: translate3d(-50%, -50%, 0) scale(0.82);
+  transition: opacity .22s ease, transform .28s var(--ease);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, .72), 0 0 0 1px rgba(255, 255, 255, .14);
+}
+.viewer__frame.is-louping { cursor: none; }
+.viewer__frame.is-louping .viewer__loupe {
+  opacity: 1;
+  transform: translate3d(-50%, -50%, 0) scale(1);
+}
+.viewer__loupe-hud {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 11;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(17, 17, 16, .84);
+  border: 1px solid var(--line-2);
+  color: var(--fg);
+  font-size: 10.5px;
+  letter-spacing: .08em;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .25s ease, transform .3s var(--ease);
+}
+:root[data-theme="light"] .viewer__loupe-hud {
+  background: rgba(244, 243, 238, .9);
+}
+.viewer__frame:hover .viewer__loupe-hud {
+  opacity: .55;
+  transform: none;
+}
+.viewer__frame.is-louping .viewer__loupe-hud {
+  opacity: 1;
+  transform: none;
+}
+
+/* 3. Live Dot-Matrix Histogram & 5-Chip Color Gene Swatches (Folded by default like Prompt) */
+.reveal--lab { margin-top: -12px; }
+.reveal__right { display: inline-flex; align-items: center; gap: 8px; }
+.v-lab {
+  display: grid;
+  gap: 8px;
+  padding: 6px 0 10px;
+  border-bottom: 1px solid var(--ink-line);
+}
+.v-lab__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.v-lab__title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-fg-2);
+}
+.v-lab__sub {
+  font-size: 10.5px;
+  letter-spacing: .06em;
+  color: var(--ink-fg-3);
+}
+.v-lab__hist {
+  width: 100%;
+  height: 54px;
+  display: block;
+}
+.v-lab__axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  color: var(--ink-fg-3);
+  padding-top: 2px;
+  border-top: 1px solid var(--ink-line);
+}
+.v-lab__tones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px dashed var(--ink-line);
+}
+.v-swatches {
+  display: flex;
+  gap: 6px;
+}
+.v-swatch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 7px 0 5px;
+  border-radius: 4px;
+  background: var(--sunk);
+  box-shadow: inset 0 0 0 1px var(--ink-line);
+  font: 400 10px/1 var(--mono);
+  letter-spacing: .04em;
+  color: var(--ink-fg-2);
+  transition: transform .2s var(--ease), color .2s ease, box-shadow .2s ease;
+}
+.v-swatch:hover {
+  transform: translateY(-2px);
+  color: var(--ink-fg);
+  box-shadow: inset 0 0 0 1px var(--ink-fg-2);
+}
+.v-swatch:active { scale: .96; }
+.v-swatch__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
 }
