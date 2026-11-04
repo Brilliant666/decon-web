@@ -62,6 +62,7 @@ node sites/01-truejpeg/sync_images.js
 decon-web (main 分支)
 ├── .gitignore
 ├── README.md                  # 博物馆总览门户文档
+├── CHANGELOG.md               # 精简演进与版本记录
 ├── shared-ui/                 # 提炼出的跨项目可复用零依赖组件库
 │   └── truejpeg-ui.js
 └── sites/                     # 各神级网站独立自包含归档目录
