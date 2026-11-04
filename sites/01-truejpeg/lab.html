@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TRUE JPEG // UI Kit Lab & Prompt Vault</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #111110;
+      --sunk: #1a1a19;
+      --lift: #161615;
+      --line: #2a2a28;
+      --line-2: #3d3d3b;
+      --fg: #ececea;
+      --fg-2: #9b9b98;
+      --fg-3: #636360;
+      --dot: #2e2e2c;
+      --led-on: #4fbf6a;
+      --led-off: #e0483c;
+      --sans: "Inter", "Helvetica Neue", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, "PingFang SC", monospace;
+      --ease: cubic-bezier(.22, 1, .36, 1);
+      --pad: clamp(16px, 3.4vw, 56px);
+      color-scheme: dark;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--fg);
+      font: 400 14px/1.55 var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select { font: inherit; color: inherit; background: none; border: 0; }
+    button { cursor: pointer; }
+    canvas { display: block; }
+
+    /* Top Masthead */
+    .masthead {
+      padding: 28px var(--pad) 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .masthead__bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--fg-2);
+    }
+    .masthead__right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .wordmark-wrap {
+      padding: 24px 0 12px;
+      cursor: crosshair;
+    }
+    .wordmark {
+      width: 100%;
+      color: var(--fg);
+    }
+
+    /* Ruler Divider */
+    .ruler {
+      height: 8px;
+      margin: 8px 0 0;
+      background:
+        repeating-linear-gradient(90deg, var(--fg-3) 0 1px, transparent 1px 40px),
+        repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 8px);
+      background-size: 40px 7px, 8px 4px;
+      background-repeat: repeat-x;
+      border-top: 1px solid var(--line);
+    }
+
+    /* Section Layout */
+    .container {
+      padding: 28px var(--pad) 72px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .sec-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 36px 0 18px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--fg);
+    }
+    .sec-head h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .sec-head span {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--fg-2);
+    }
+
+    /* Dotted Windows Grid (UI Lab) */
+    .lab-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+    }
+    .win {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: var(--lift);
+      border-radius: 16px;
+      padding: 0;
+      overflow: visible;
+    }
+    .win__frame {
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .win__bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 40px;
+      padding: 0 18px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--fg-2);
+    }
+    .win__led {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--led-on);
+      box-shadow: 0 0 8px var(--led-on);
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .win__body {
+      padding: 20px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+    .win__desc {
+      font-size: 13px;
+      color: var(--fg-2);
+      margin: 0;
+    }
+
+    /* Controls inside Lab Windows */
+    .ctrl-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .inp {
+      flex: 1;
+      min-width: 140px;
+      background: var(--sunk);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 11px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--fg);
+      outline: none;
+    }
+    .inp:focus { border-color: var(--fg-2); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--sunk);
+      border: 1px solid var(--line-2);
+      border-radius: 6px;
+      padding: 7px 13px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--fg);
+      transition: background .2s, border-color .2s, transform .15s;
+    }
+    .btn:hover { background: var(--line); border-color: var(--fg-2); }
+    .btn:active { transform: scale(0.98); }
+    .btn--primary { background: var(--fg); color: var(--paper); border-color: var(--fg); font-weight: 600; }
+    .btn--primary:hover { background: #d8d8d4; }
+
+    /* Console Simulator */
+    .con {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .con__row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed var(--line);
+      padding-bottom: 4px;
+    }
+    .con__row b { color: var(--fg-3); font-weight: 400; text-transform: uppercase; }
+    .con__run {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .con__bar {
+      display: grid;
+      grid-template-columns: repeat(24, 1fr);
+      gap: 3px;
+      flex: 1;
+    }
+    .con__bar i {
+      height: 10px;
+      background: var(--dot);
+      border-radius: 1px;
+      transition: background .1s;
+    }
+    .con__bar i.is-on { background: var(--fg); }
+    .con__n { font-size: 11px; color: var(--fg-2); min-width: 48px; text-align: right; }
+    .con__n.is-done { color: var(--led-on); font-weight: 500; }
+
+    /* Halftone Developer Stage */
+    .halftone-stage {
+      position: relative;
+      height: 175px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .halftone-stage img,
+    .halftone-stage canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity .75s var(--ease);
+    }
+    .halftone-stage.show-photo canvas { opacity: 0; pointer-events: none; }
+
+    /* Prompt Vault Filter Toolbar */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      background: rgba(17, 17, 16, 0.92);
+      backdrop-filter: blur(10px);
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 6px 13px;
+      border-radius: 99px;
+      border: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--fg-2);
+      transition: all .2s;
+    }
+    .tab:hover { color: var(--fg); border-color: var(--line-2); }
+    .tab.is-active { background: var(--fg); color: var(--paper); border-color: var(--fg); font-weight: 600; }
+
+    /* Prompt Cards Grid */
+    .vault-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 18px;
+    }
+    .pcard {
+      background: var(--lift);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: border-color .25s;
+    }
+    .pcard:hover { border-color: var(--fg-3); }
+    .pcard__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--sunk);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    .pcard__no {
+      font-weight: 600;
+      color: var(--fg);
+      letter-spacing: .08em;
+    }
+    .pcard__meta {
+      color: var(--fg-2);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .pcard__tag {
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--line);
+      color: var(--fg);
+      font-size: 10px;
+    }
+    .pcard__preview {
+      display: flex;
+      gap: 14px;
+      padding: 14px 16px 0;
+      align-items: flex-start;
+    }
+    .pcard__thumb {
+      width: 76px;
+      height: 96px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: var(--sunk);
+      border: 1px solid var(--line);
+      flex: none;
+    }
+    .pcard__info {
+      flex: 1;
+      min-width: 0;
+    }
+    .pcard__title {
+      margin: 0 0 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--fg);
+    }
+    .pcard__specs {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--fg-2);
+      margin-bottom: 8px;
+    }
+    .pcard__body {
+      padding: 12px 16px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pcard__prompt {
+      margin: 0;
+      padding: 10px 12px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: var(--fg-2);
+      max-height: 170px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      scrollbar-width: thin;
+    }
+    .pcard.is-expanded .pcard__prompt {
+      max-height: none;
+      color: var(--fg);
+    }
+    .pcard__acts {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    /* Fullscreen Wipe Canvas */
+    .wipe {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0;
+    }
+    .wipe.is-on { opacity: 1; pointer-events: auto; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--fg);
+      color: var(--paper);
+      padding: 10px 18px;
+      border-radius: 99px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all .3s var(--ease);
+      z-index: 200;
+    }
+    .toast.is-on { transform: none; opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="masthead__bar">
+      <span>TRUE JPEG // ARCHITECTURE & PROMPT LAB</span>
+      <div class="masthead__right">
+        <span id="scramble-status">SYSTEM // READY</span>
+        <canvas id="globe-cv" title="Click to spin 3D dot globe & scramble UI" style="cursor:pointer"></canvas>
+      </div>
+    </div>
+    <div class="wordmark-wrap" id="wordmark-host" title="Move cursor across the dots!">
+      <canvas class="wordmark" id="wordmark-cv"></canvas>
+    </div>
+    <div class="ruler" aria-hidden="true"></div>
+  </header>
+
+  <main class="container">
+    <!-- SECTION 01: UI KIT INTERACTIVE PLAYGROUND -->
+    <div class="sec-head">
+      <h2 data-scramble>01 // Interactive Dot-Matrix UI Kit</h2>
+      <span>Extracted Vanilla JS Components (<a href="truejpeg-ui.js" style="text-decoration:underline">truejpeg-ui.js</a>)</span>
+    </div>
+
+    <div class="lab-grid">
+      <!-- Card 1: Dot Wordmark Customizer -->
+      <div class="win" data-win>
+        <div class="win__bar">
+          <span>01.A // DOT TYPE ENGINE</span>
+          <span>INTERACTIVE<i class="win__led"></i></span>
+        </div>
+        <div class="win__body">
+          <p class="win__desc">将任意文字或 SVG Path 采样为 `Float32Array` 粒子网格，支持鼠标斥力场推开与弹性阻尼复位。试试修改顶部大字标：</p>
+          <div class="ctrl-row">
+            <input class="inp" id="word-inp" type="text" value="TRUE JPEG" maxlength="18" placeholder="输入英文字符...">
+            <button class="btn btn--primary" id="word-btn" type="button">Render Dots</button>
+          </div>
+          <div class="ctrl-row">
+            <button class="btn" type="button" data-preset="SEEDREAM 5.0">SEEDREAM 5.0</button>
+            <button class="btn" type="button" data-preset="HALFTONE">HALFTONE</button>
+            <button class="btn" type="button" data-preset="CYBER CCD">CYBER CCD</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Halftone Dot-Screen Developer -->
+      <div class="win" data-win>
+        <div class="win__bar">
+          <span>01.B // HALFTONE DEVELOPER</span>
+          <span>CANVAS 2D<i class="win__led"></i></span>
+        </div>
+        <div class="win__body">
+          <p class="win__desc">按像素亮度 $L = 0.299R + 0.587G + 0.114B$ 实时计算网点半径 $r \propto \sqrt{L}$，模拟拍立得从半色调网点显影为真实照片：</p>
+          <div class="halftone-stage" id="ht-stage">
+            <img id="ht-img" crossorigin="anonymous" alt="Sample">
+            <canvas id="ht-cv"></canvas>
+          </div>
+          <div class="ctrl-row">
+            <button class="btn btn--primary" id="ht-toggle" type="button">Hold / Toggle Photo</button>
+            <button class="btn" id="ht-next" type="button">Random Sample</button>
+            <label style="font-family:var(--mono);font-size:11px;color:var(--fg-2);display:flex;align-items:center;gap:6px;margin-left:auto">
+              DOT STEP: <input type="range" id="ht-step" min="4" max="12" value="6" style="width:70px">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Console Render Simulator & Honeycomb Wipe -->
+      <div class="win" data-win>
+        <div class="win__bar">
+          <span>01.C // CONSOLE & DOT WIPE</span>
+          <span>TRANSITION<i class="win__led"></i></span>
+        </div>
+        <div class="win__body">
+          <p class="win__desc">终端乱码定格器 + 24 格 LED 进度条，以及从点击坐标向外扩散的全屏蜂窝点阵波浪转场（`wipe`）：</p>
+          <div class="con" id="con-box">
+            <span class="con__row"><b>model</b><span id="c-model">SeeDream 5.0 Pro</span></span>
+            <span class="con__row"><b>lens</b><span id="c-lens">20mm f/1.8 CCD</span></span>
+            <span class="con__row"><b>size</b><span id="c-size">1584 × 2816</span></span>
+            <span class="con__row"><b>seed</b><span id="c-seed">84920</span></span>
+            <span class="con__run">
+              <span class="con__bar" id="c-bar"></span>
+              <span class="con__n is-done" id="c-n">DONE</span>
+            </span>
+          </div>
+          <div class="ctrl-row">
+            <button class="btn btn--primary" id="wipe-btn" type="button">Trigger Dot-Wave Wipe</button>
+            <button class="btn" id="con-sim-btn" type="button">Simulate Render</button>
+            <button class="btn" id="scramble-btn" type="button">Matrix Scramble</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 02: 144 PROMPT VAULT -->
+    <div class="sec-head">
+      <h2 data-scramble>02 // Complete Chinese Prompt Vault (144 Works)</h2>
+      <span id="vault-count">Loading prompts.json...</span>
+    </div>
+
+    <div class="toolbar">
+      <div class="tabs" id="cat-tabs">
+        <button class="tab is-active" type="button" data-cat="ALL">ALL (144)</button>
+        <button class="tab" type="button" data-cat="Portrait">Portrait (Safe)</button>
+        <button class="tab" type="button" data-cat="Anime">Anime</button>
+        <button class="tab" type="button" data-cat="Poster">Poster</button>
+        <button class="tab" type="button" data-cat="NSFW">NSFW (18+)</button>
+      </div>
+      <div class="ctrl-row" style="min-width:280px">
+        <input class="inp" id="search-inp" type="search" placeholder="搜索关键词（如：CCD、液态金属、俯拍、网袜、厨房...）">
+      </div>
+    </div>
+
+    <div class="vault-grid" id="vault-grid"></div>
+  </main>
+
+  <canvas class="wipe" id="wipe-cv" aria-hidden="true"></canvas>
+  <div class="toast" id="toast">Copied to clipboard</div>
+
+  <script type="module">
+    import { TrueJpegUI } from './truejpeg-ui.js';
+
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+    // Toast helper
+    const toastEl = $('#toast');
+    let toastTimer = 0;
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('is-on');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('is-on'), 2000);
+    }
+
+    // 1. Initialize Top Dot-Matrix Wordmark
+    const wordmark = TrueJpegUI.dotType($('#wordmark-cv'), 'TRUE JPEG', {
+      host: $('#wordmark-host'),
+      maxH: 0.14
+    });
+
+    $('#word-btn').addEventListener('click', () => {
+      const val = $('#word-inp').value.trim() || 'TRUE JPEG';
+      wordmark.play(val);
+    });
+    $('#word-inp').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') $('#word-btn').click();
+    });
+    $$('[data-preset]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        $('#word-inp').value = btn.dataset.preset;
+        wordmark.play(btn.dataset.preset);
+      });
+    });
+
+    // 2. Initialize Dotted Window Frames with Running Glint
+    $$('[data-win]').forEach((win) => TrueJpegUI.winFrame(win));
+
+    // 3. Initialize 3D Dot Globe & Scramble
+    const globe = TrueJpegUI.createGlobe($('#globe-cv'), 34);
+    const triggerGlobalScramble = () => {
+      globe.spin(Math.PI * 1.5, 1100);
+      TrueJpegUI.scramble($('#scramble-status'), 'MATRIX // DECODED', 'en');
+      $$('[data-scramble]').forEach((el, i) => {
+        TrueJpegUI.scramble(el, el.textContent, 'en', i * 120);
+      });
+    };
+    $('#globe-cv').addEventListener('click', triggerGlobalScramble);
+    $('#scramble-btn').addEventListener('click', triggerGlobalScramble);
+
+    // 4. Initialize Honeycomb Wipe
+    const runWipe = TrueJpegUI.createWipe($('#wipe-cv'));
+    $('#wipe-btn').addEventListener('click', (e) => {
+      const origin = { x: e.clientX || innerWidth / 2, y: e.clientY || innerHeight / 2 };
+      runWipe(origin, () => {
+        const presets = ['TRUE JPEG', 'DOT MATRIX', 'SEEDREAM 5.0'];
+        const cur = $('#word-inp').value;
+        const next = presets[(presets.indexOf(cur) + 1) % presets.length];
+        $('#word-inp').value = next;
+        wordmark.play(next);
+      });
+    });
+
+    // 5. Console Simulator
+    const cBar = $('#c-bar');
+    cBar.innerHTML = '<i></i>'.repeat(24);
+    const barCells = $$('i', cBar);
+    barCells.forEach((c) => c.classList.add('is-on'));
+
+    let simTimer = 0;
+    function simulateConsole() {
+      clearTimeout(simTimer);
+      const lenses = ['20mm f/1.8 CCD', '28mm f/2.0 Wide', '35mm f/1.4 Prime', '50mm Anamorphic'];
+      const sizes = ['1584 × 2816', '2048 × 2048', '2560 × 1440', '1440 × 2560'];
+      TrueJpegUI.scramble($('#c-model'), 'SeeDream 5.0 Pro', 'en');
+      TrueJpegUI.scramble($('#c-lens'), lenses[Math.floor(Math.random() * lenses.length)], 'en');
+      TrueJpegUI.scramble($('#c-size'), sizes[Math.floor(Math.random() * sizes.length)], 'en');
+      TrueJpegUI.scramble($('#c-seed'), String(10000 + Math.floor(Math.random() * 90000)), 'en');
+
+      let step = 0;
+      const total = 24;
+      $('#c-n').classList.remove('is-done');
+      function tick() {
+        step++;
+        barCells.forEach((c, i) => c.classList.toggle('is-on', i < step));
+        $('#c-n').textContent = step >= total ? 'DONE' : `${String(step).padStart(2, '0')}/${total}`;
+        if (step >= total) $('#c-n').classList.add('is-done');
+        else simTimer = setTimeout(tick, 45);
+      }
+      tick();
+    }
+    $('#con-sim-btn').addEventListener('click', simulateConsole);
+
+    // 6. Halftone Developer Demo (using synthetic procedural high-contrast portrait canvas or remote image)
+    const htStage = $('#ht-stage');
+    const htImg = $('#ht-img');
+    const htCv = $('#ht-cv');
+    const htStep = $('#ht-step');
+
+    function makeSampleDataUrl(seedHue) {
+      const c = document.createElement('canvas');
+      c.width = 640; c.height = 360;
+      const g = c.getContext('2d');
+      const grad = g.createRadialGradient(320, 160, 20, 320, 180, 320);
+      grad.addColorStop(0, `hsl(${seedHue}, 80%, 88%)`);
+      grad.addColorStop(0.45, `hsl(${(seedHue + 40) % 360}, 65%, 48%)`);
+      grad.addColorStop(1, '#090909');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 640, 360);
+      g.fillStyle = '#ffffff';
+      g.font = '700 84px Inter, sans-serif';
+      g.textAlign = 'center';
+      g.fillText('CCD 2000s', 320, 195);
+      g.font = '400 20px "IBM Plex Mono", monospace';
+      g.fillText('HALFTONE DOT SCREEN // f/1.8', 320, 245);
+      return c.toDataURL();
+    }
+
+    let sampleHue = 195;
+    function refreshHalftone() {
+      TrueJpegUI.renderHalftone(htImg, htCv, Number(htStep.value), '#ececea', '#111110');
+    }
+    htImg.onload = refreshHalftone;
+    htImg.src = makeSampleDataUrl(sampleHue);
+
+    $('#ht-toggle').addEventListener('click', () => {
+      htStage.classList.toggle('show-photo');
+    });
+    $('#ht-next').addEventListener('click', () => {
+      htStage.classList.remove('show-photo');
+      sampleHue = (sampleHue + 67) % 360;
+      htImg.src = makeSampleDataUrl(sampleHue);
+    });
+    htStep.addEventListener('input', refreshHalftone);
+
+    // 7. Load & Render 144 Prompts Vault
+    let allWorks = [];
+    let currentCat = 'ALL';
+    let searchQuery = '';
+
+    async function loadVault() {
+      const res = await fetch('./prompts.json');
+      allWorks = await res.json();
+      renderVault();
+    }
+
+    function renderVault() {
+      const q = searchQuery.trim().toLowerCase();
+      const filtered = allWorks.filter((w) => {
+        if (currentCat === 'Portrait' && (!w.tags.includes('Portrait') || w.tags.includes('NSFW'))) return false;
+        if (currentCat === 'Anime' && (!w.tags.includes('Anime') || w.tags.includes('NSFW'))) return false;
+        if (currentCat === 'Poster' && !w.tags.includes('Poster')) return false;
+        if (currentCat === 'NSFW' && !w.tags.includes('NSFW')) return false;
+        if (q) {
+          const hay = `${w.id} ${w.title} ${w.prompt} ${(w.tags || []).join(' ')}`.toLowerCase();
+          return hay.includes(q);
+        }
+        return true;
+      });
+
+      $('#vault-count').textContent = `Showing ${filtered.length} of ${allWorks.length} works`;
+      const grid = $('#vault-grid');
+      grid.innerHTML = filtered.map((w, idx) => {
+        const no = String(allWorks.indexOf(w) + 1).padStart(3, '0');
+        const thumbUrl = `https://truejpeg.com/${w.thumb || w.image}`;
+        const tagsHtml = (w.tags || []).map((t) => `<span class="pcard__tag">${t}</span>`).join('');
+        return `
+          <article class="pcard" data-id="${w.id}">
+            <div class="pcard__head">
+              <span class="pcard__no">NO.${no} // ID #${w.id}</span>
+              <div class="pcard__meta">${tagsHtml}<span>${w.date || ''}</span></div>
+            </div>
+            <div class="pcard__preview">
+              <img class="pcard__thumb" src="${thumbUrl}" alt="${w.title}" loading="lazy" referrerpolicy="no-referrer">
+              <div class="pcard__info">
+                <h3 class="pcard__title">${w.title}</h3>
+                <div class="pcard__specs">
+                  Model: ${(w.params && w.params.Model) || 'SeeDream 5.0 Pro'}<br>
+                  Size: ${w.width} × ${w.height} px
+                </div>
+                <a href="https://truejpeg.com/#${w.id}" target="_blank" rel="noopener" style="font-family:var(--mono);font-size:11px;color:var(--fg-2);text-decoration:underline">View on truejpeg.com ↗</a>
+              </div>
+            </div>
+            <div class="pcard__body">
+              <pre class="pcard__prompt">${w.prompt.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>
+              <div class="pcard__acts">
+                <button class="btn" type="button" data-expand>Expand Full</button>
+                <button class="btn btn--primary" type="button" data-copy="${w.id}">Copy Prompt</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    $('#cat-tabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-cat]');
+      if (!btn) return;
+      $$('.tab', $('#cat-tabs')).forEach((b) => b.classList.toggle('is-active', b === btn));
+      currentCat = btn.dataset.cat;
+      renderVault();
+    });
+
+    $('#search-inp').addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderVault();
+    });
+
+    $('#vault-grid').addEventListener('click', async (e) => {
+      const exp = e.target.closest('[data-expand]');
+      if (exp) {
+        const card = exp.closest('.pcard');
+        const open = card.classList.toggle('is-expanded');
+        exp.textContent = open ? 'Collapse' : 'Expand Full';
+        return;
+      }
+      const cp = e.target.closest('[data-copy]');
+      if (cp) {
+        const w = allWorks.find((x) => String(x.id) === cp.dataset.copy);
+        if (!w) return;
+        await navigator.clipboard.writeText(w.prompt);
+        TrueJpegUI.scramble(cp, 'COPIED // OK', 'en');
+        showToast(`Copied #${w.id} (${w.title}) prompt!`);
+        setTimeout(() => { cp.textContent = 'Copy Prompt'; }, 1600);
+      }
+    });
+
+    loadVault();
+  </script>
+</body>
+</html>

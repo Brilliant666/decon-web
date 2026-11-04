@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>True JPEG</title>
+  <meta name="description" content="AI images with their full prompts. Click to copy.">
+  <meta name="theme-color" content="#111110">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <!-- link previews (X, iMessage, Slack...): absolute URLs on the live domain -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="True JPEG">
+  <meta property="og:title" content="True JPEG">
+  <meta property="og:description" content="AI images with their full prompts. Click to copy.">
+  <link rel="canonical" href="https://truejpeg.com/">
+  <meta property="og:url" content="https://truejpeg.com/">
+  <meta property="og:image" content="https://truejpeg.com/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="TRUE JPEG — Images, and the words that made them.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@RTJLDR">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20261104t2">
+</head>
+<body class="is-loading">
+
+  <div class="lang" id="lang">
+    <canvas class="lang__dots" aria-hidden="true"></canvas>
+    <div class="lang__menu" id="lang-menu" role="group" aria-label="Language" data-i18n-attr="aria-label:language">
+      <button class="lang__btn" type="button" data-lang="en" lang="en">EN</button>
+      <button class="lang__btn" type="button" data-lang="ja" lang="ja">日本語</button>
+      <button class="lang__btn" type="button" data-lang="zh" lang="zh-Hans">中文</button>
+    </div>
+    <button class="lang__toggle" id="lang-toggle" type="button" aria-expanded="false" aria-controls="lang-menu" aria-label="Language" data-i18n-attr="aria-label:language"></button>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme (T)" title="Switch Paper / Ink theme (Shortcut: T)">
+      <span class="theme-toggle__sep" aria-hidden="true"></span>
+      <svg class="theme-toggle__ico" viewBox="0 0 18 18" aria-hidden="true">
+        <circle class="t-core" cx="9" cy="9" r="2.2"/>
+        <circle class="t-ray" cx="9" cy="2.6" r="1.05" style="--i:0"/>
+        <circle class="t-ray" cx="13.5" cy="4.5" r="1.05" style="--i:1"/>
+        <circle class="t-ray" cx="15.4" cy="9" r="1.05" style="--i:2"/>
+        <circle class="t-ray" cx="13.5" cy="13.5" r="1.05" style="--i:3"/>
+        <circle class="t-ray" cx="9" cy="15.4" r="1.05" style="--i:4"/>
+        <circle class="t-ray" cx="4.5" cy="13.5" r="1.05" style="--i:5"/>
+        <circle class="t-ray" cx="2.6" cy="9" r="1.05" style="--i:6"/>
+        <circle class="t-ray" cx="4.5" cy="4.5" r="1.05" style="--i:7"/>
+      </svg>
+      <span class="theme-toggle__lbl mono" id="theme-lbl">INK</span>
+    </button>
+  </div>
+
+  <section class="view home" id="view-home" data-view="home" hidden>
+    <h1 class="wordmark-sr" data-site-name></h1>
+    <canvas class="wordmark" id="home-mark" aria-hidden="true"></canvas>
+    <nav class="entries" aria-label="Sections">
+      <div class="fade" style="--i:2">
+        <a class="win" href="#prompt" data-go="prompt">
+          <canvas class="win__frame" aria-hidden="true"></canvas>
+          <span class="win__bar"><span class="win__no">01</span><span class="win__state">Prompt // <span data-i18n="live">Live</span><i class="win__led win__led--on"></i></span></span>
+          <span class="win__view" data-reel aria-hidden="true">
+            <span class="win__tile"></span><span class="win__tile"></span><span class="win__tile"></span><span class="win__tile"></span>
+            <span class="win__slot">01.0 // <span data-i18n="works"><span data-count></span> works</span></span>
+          </span>
+          <span class="win__body">
+            <span class="win__name">Prompt</span>
+            <span class="win__desc" data-i18n="promptDesc">Images with their full prompts. Copy one, paste it into your generator.</span>
+            <span class="win__spec">
+              <span><b data-i18n="section">Section</b><span>01 // Prompt</span></span>
+              <span><b data-i18n="enter">Enter</b><span data-i18n="worksGo"><span data-count></span> works <i>→</i></span></span>
+            </span>
+          </span>
+        </a>
+      </div>
+      <div class="fade" style="--i:3">
+        <a class="win" href="#generate" data-go="generate">
+          <canvas class="win__frame" aria-hidden="true"></canvas>
+          <span class="win__bar"><span class="win__no">02</span><span class="win__state">Generate // <span data-i18n="live">Live</span><i class="win__led win__led--on"></i></span></span>
+          <span class="win__view win__view--con" data-console aria-hidden="true"><span class="con"></span><span class="win__slot">02.0 // <span data-i18n="twoWays">Two ways</span></span></span>
+          <span class="win__body">
+            <span class="win__name">Generate</span>
+            <span class="win__desc" data-i18n="genDesc">Make images with closed models. Here with points, or on Yir with your own API key.</span>
+            <span class="win__spec">
+              <span><b data-i18n="section">Section</b><span>02 // Generate</span></span>
+              <span><b data-i18n="enter">Enter</b><span data-i18n="twoWaysGo">Two ways <i>→</i></span></span>
+            </span>
+          </span>
+        </a>
+      </div>
+      <div class="fade" style="--i:4">
+        <a class="win is-off" href="#other" data-go="other">
+          <canvas class="win__frame" aria-hidden="true"></canvas>
+          <span class="win__bar"><span class="win__no">03</span><span class="win__state">Other // <span data-i18n="soon">Soon</span><i class="win__led win__led--off"></i></span></span>
+          <span class="win__view win__view--empty" aria-hidden="true"><canvas class="win__num win__num--word" data-num="Soon"></canvas><span class="win__slot">03.0 // <span data-i18n="empty">Empty</span></span></span>
+          <span class="win__body">
+            <span class="win__name">Other</span>
+            <span class="win__desc" data-i18n="otherDesc">Notes, experiments and everything else.</span>
+            <span class="win__spec">
+              <span><b data-i18n="section">Section</b><span>03 // Other</span></span>
+              <span><b data-i18n="status">Status</b><span data-i18n="inPrepGo">In preparation <i>→</i></span></span>
+            </span>
+          </span>
+        </a>
+      </div>
+    </nav>
+    <a class="foot__legal fade" style="--i:5" href="/legal" data-i18n="legal">Terms &amp; Privacy</a>
+  </section>
+
+  <div id="page" class="view" data-view="prompt" hidden>
+    <header class="masthead" id="top">
+      <div class="masthead__bar masthead__bar--min fade" style="--i:0">
+        <a class="back" href="#" data-go="home" aria-label="Index" data-i18n-attr="aria-label:index"><svg class="back__ico" viewBox="0 0 18 18" aria-hidden="true"><circle cx="3" cy="9" r="1.05" style="--d:0"/><circle cx="6" cy="6" r="1.05" style="--d:1"/><circle cx="6" cy="12" r="1.05" style="--d:2"/><circle cx="9" cy="3" r="1.05" style="--d:3"/><circle cx="9" cy="15" r="1.05" style="--d:4"/><circle cx="6" cy="9" r="1.05" style="--d:5"/><circle cx="9" cy="9" r="1.05" style="--d:6"/><circle cx="12" cy="9" r="1.05" style="--d:7"/><circle cx="15" cy="9" r="1.05" style="--d:8"/></svg></a>
+      </div>
+      <h1 class="wordmark-sr">Prompt</h1>
+      <canvas class="wordmark" id="wordmark" aria-hidden="true"></canvas>
+    </header>
+
+    <main class="sheet">
+      <div class="toolbar fade" id="toolbar" style="--i:1">
+        <div class="seg seg--cat" id="cats" role="group" aria-label="Category" data-i18n-attr="aria-label:category">
+          <span class="seg__pill" aria-hidden="true"></span>
+        </div>
+        <div class="toolbar__right">
+          <div class="seg" id="layouts" role="group" aria-label="Layout">
+            <span class="seg__pill" aria-hidden="true"></span>
+          </div>
+          <div class="seg seg--text" id="density" role="group" aria-label="Size">
+            <span class="seg__pill" aria-hidden="true"></span>
+          </div>
+        </div>
+      </div>
+
+      <section class="grid" id="grid" aria-label="Gallery"></section>
+    </main>
+
+    <footer class="foot">
+      <span data-i18n="foot">© <span data-year></span> <span data-site-name></span> // All images AI-generated</span>
+      <a class="foot__link" data-x href="#" target="_blank" rel="noopener" data-i18n="follow">Follow <span data-handle></span> on X ↗</a>
+      <a class="foot__legal" href="/legal" data-i18n="legal">Terms &amp; Privacy</a>
+    </footer>
+  </div>
+
+  <section class="view tool chooser" data-view="generate" hidden>
+    <div class="masthead__bar masthead__bar--min fade" style="--i:0">
+      <a class="back" href="#" data-go="home" aria-label="Index" data-i18n-attr="aria-label:index"><svg class="back__ico" viewBox="0 0 18 18" aria-hidden="true"><circle cx="3" cy="9" r="1.05" style="--d:0"/><circle cx="6" cy="6" r="1.05" style="--d:1"/><circle cx="6" cy="12" r="1.05" style="--d:2"/><circle cx="9" cy="3" r="1.05" style="--d:3"/><circle cx="9" cy="15" r="1.05" style="--d:4"/><circle cx="6" cy="9" r="1.05" style="--d:5"/><circle cx="9" cy="9" r="1.05" style="--d:6"/><circle cx="12" cy="9" r="1.05" style="--d:7"/><circle cx="15" cy="9" r="1.05" style="--d:8"/></svg></a>
+    </div>
+    <h1 class="wordmark-sr">Generate</h1>
+    <canvas class="wordmark" data-word="Generate" aria-hidden="true"></canvas>
+
+    <nav class="pair" aria-label="Two ways to generate">
+      <div class="fade" style="--i:1">
+        <a class="win" href="#studio" data-go="studio">
+          <canvas class="win__frame" aria-hidden="true"></canvas>
+          <span class="win__bar"><span class="win__no">02.1</span><span class="win__state"><span data-i18n="here">Here</span> // <span data-i18n="live">Live</span><i class="win__led win__led--on"></i></span></span>
+          <span class="win__view win__view--con" data-console aria-hidden="true"><span class="con"></span><span class="win__slot">02.1 // <span data-i18n="points">Points</span></span></span>
+          <span class="win__body">
+            <span class="win__name" data-i18n="onHere">On True JPEG</span>
+            <span class="win__desc" data-i18n="hereDesc">No API key, no foreign card. Top up and go.</span>
+            <span class="win__spec">
+              <span><b data-i18n="enter">Enter</b><span data-i18n="startGo">Start <i>→</i></span></span>
+            </span>
+          </span>
+        </a>
+      </div>
+      <div class="fade" style="--i:1" data-tool-wrap="higgsfield">
+        <a class="win win--higgs" data-tool href="#" target="_blank" rel="sponsored noopener">
+          <canvas class="win__frame" aria-hidden="true"></canvas>
+          <span class="win__bar"><span class="win__no">02.1</span><span class="win__state"><span data-tool-name></span> // <span data-i18n="external">External</span><i class="win__led win__led--on"></i></span></span>
+          <span class="win__view win__view--empty" aria-hidden="true"><canvas class="win__num win__num--logo" data-logo="higgsfield"></canvas><span class="win__slot">02.1 // <span data-i18n="imgVideo">Image · Video</span></span></span>
+          <span class="win__body">
+            <span class="win__name" data-i18n="onHiggs">On Higgsfield</span>
+            <span class="win__desc" data-i18n="higgsDesc">Image and video models, all in one app.</span>
+            <span class="win__spec">
+              <span><b data-i18n="visit">Visit</b><span>higgsfield.ai <i>↗</i></span></span>
+              <span><b data-i18n="makes">Makes</b><span data-i18n="imgVideo">Image · Video</span></span>
+            </span>
+            <span class="win__fine" data-i18n="toolFine">Affiliate link</span>
+          </span>
+        </a>
+      </div>
+      <div class="fade" style="--i:2" data-tool-wrap="yir">
+        <a class="win" data-tool href="#" target="_blank" rel="sponsored noopener">
+          <canvas class="win__frame" aria-hidden="true"></canvas>
+          <span class="win__bar"><span class="win__no">02.2</span><span class="win__state"><span data-tool-name></span> // <span data-i18n="external">External</span><i class="win__led win__led--on"></i></span></span>
+          <span class="win__view win__view--empty" aria-hidden="true"><canvas class="win__num win__num--logo" data-logo="yir"></canvas><span class="win__slot">02.2 // <span data-i18n="apiKey">API key</span></span></span>
+          <span class="win__body">
+            <span class="win__name" data-i18n="onYir">On Yir</span>
+            <span class="win__desc" data-i18n="toolDesc">Same models, up to <em>88% cheaper</em> than official prices.</span>
+            <span class="win__spec">
+              <span><b data-i18n="visit">Visit</b><span>yir.ai <i>↗</i></span></span>
+              <!-- where to make images once signed in: Yir's sidebar entry, with the same line flask it uses -->
+              <span><b data-i18n="toolWhere">Generate in</b><span class="win__where"><span data-i18n="toolSide">Sidebar</span> › <svg class="win__flask" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2v7.5a2 2 0 0 1-.2.9L4.7 20.6a1 1 0 0 0 .9 1.4h12.8a1 1 0 0 0 .9-1.4l-5.1-10.2a2 2 0 0 1-.2-.9V2"/><path d="M8.5 2h7M7 16h10"/></svg><span data-i18n="toolPlace">Playground</span></span></span>
+            </span>
+            <span class="win__fine" data-i18n="toolFine">Affiliate link</span>
+          </span>
+        </a>
+      </div>
+    </nav>
+
+    <footer class="foot fade" style="--i:3">
+      <span data-i18n="foot">© <span data-year></span> <span data-site-name></span> // All images AI-generated</span>
+      <a class="foot__link" data-x href="#" target="_blank" rel="noopener" data-i18n="follow">Follow <span data-handle></span> on X ↗</a>
+      <a class="foot__legal" href="/legal" data-i18n="legal">Terms &amp; Privacy</a>
+    </footer>
+  </section>
+
+  <section class="view tool" data-view="studio" hidden>
+    <div class="masthead__bar masthead__bar--min fade" style="--i:0">
+      <a class="back" href="#generate" data-go="generate" aria-label="Back" data-i18n-attr="aria-label:back"><svg class="back__ico" viewBox="0 0 18 18" aria-hidden="true"><circle cx="3" cy="9" r="1.05" style="--d:0"/><circle cx="6" cy="6" r="1.05" style="--d:1"/><circle cx="6" cy="12" r="1.05" style="--d:2"/><circle cx="9" cy="3" r="1.05" style="--d:3"/><circle cx="9" cy="15" r="1.05" style="--d:4"/><circle cx="6" cy="9" r="1.05" style="--d:5"/><circle cx="9" cy="9" r="1.05" style="--d:6"/><circle cx="12" cy="9" r="1.05" style="--d:7"/><circle cx="15" cy="9" r="1.05" style="--d:8"/></svg></a>
+    </div>
+    <h1 class="wordmark-sr">Generate</h1>
+    <canvas class="wordmark" data-word="Generate" aria-hidden="true"></canvas>
+
+    <div class="soon__body fade" style="--i:1">
+      <div>
+        <p class="soon__lead" data-i18n="lead">Make an image. Pay per image.</p>
+        <p class="tool__intro" data-i18n="studioIntro">Closed models from OpenAI, Google, ByteDance, xAI and Recraft. Each image costs a fixed number of points. If the model declines your prompt or the job fails, the points come back.</p>
+      </div>
+      <dl class="spec">
+        <div><dt data-i18n="account">Account</dt><dd class="tool__who" id="t-who"><button class="tool__barbtn" type="button" data-signin data-i18n="signIn">Sign in</button></dd></div>
+        <div><dt data-i18n="balance">Balance</dt><dd class="mono"><span id="t-balance">—</span> <span data-i18n="ptsUnit">pts</span></dd></div>
+        <div><dt data-i18n="expires">Expires</dt><dd class="mono" id="t-expiry">—</dd></div>
+        <div><dt data-i18n="points">Points</dt><dd class="mono"><a class="tool__link" href="#t-packs" data-scroll="t-packs" data-i18n="buyPointsGo">Buy points <i>→</i></a></dd></div>
+      </dl>
+    </div>
+
+    <div class="studio fade" style="--i:3">
+      <form class="gen" id="t-form" autocomplete="off">
+        <div class="gen__row">
+          <label class="gen__label" for="t-model" data-i18n="model">Model</label>
+          <div class="field field--select"><select id="t-model"></select></div>
+        </div>
+        <div class="gen__row">
+          <span class="gen__label" id="t-res-l" data-i18n="size">Size</span>
+          <div class="opts" id="t-res" role="radiogroup" aria-labelledby="t-res-l"></div>
+        </div>
+        <div class="gen__row">
+          <span class="gen__label" id="t-aspect-l" data-i18n="aspect">Aspect</span>
+          <div class="opts opts--wrap" id="t-aspect" role="radiogroup" aria-labelledby="t-aspect-l"></div>
+        </div>
+        <div class="gen__row">
+          <label class="gen__label" for="t-prompt"><span data-i18n="prompt">Prompt</span><span class="mono" id="t-count"></span></label>
+          <textarea class="field field--area" id="t-prompt" data-native-scroll rows="7" placeholder="DESCRIBE THE IMAGE_" spellcheck="false" data-i18n-attr="placeholder:describePh"></textarea>
+        </div>
+        <button class="gen__go" id="t-go" type="submit"><span id="t-go-lbl">Generate</span><span class="mono" id="t-cost"></span></button>
+        <p class="gen__note mono" id="t-note"></p>
+      </form>
+
+      <div class="studio__side">
+        <div class="signin" id="t-signin" hidden>
+          <div class="block__label"><span data-i18n="signIn">Sign in</span><button class="tool__barbtn" type="button" id="t-signin-x" aria-label="Close sign in" data-i18n="close" data-i18n-attr="aria-label:closeSignin">Close</button></div>
+          <p class="signin__text" id="t-signin-text" data-i18n="signinText">Enter your email. We send a one-time link, no password.</p>
+          <form class="signin__form" id="t-signin-form">
+            <input class="field" id="t-email" type="email" placeholder="EMAIL_" autocomplete="email" required aria-label="Email address" data-i18n-attr="placeholder:emailPh,aria-label:emailAria">
+            <button class="signin__go" type="submit" data-i18n="sendLink">Send link</button>
+          </form>
+        </div>
+        <div class="hist__head"><span data-i18n="yourImages">Your images</span><span class="mono" id="t-hist-n"></span></div>
+        <div class="hist" id="t-hist"></div>
+        <p class="hist__empty mono" id="t-hist-empty" data-i18n="nothingYet">NOTHING YET // YOUR IMAGES APPEAR HERE</p>
+        <button class="linkbtn hist__more" id="t-more" type="button" hidden data-i18n="loadMore">Load more</button>
+      </div>
+    </div>
+
+    <div class="packs fade" id="t-packs" style="--i:4">
+      <div class="hist__head"><span data-i18n="points">Points</span><span class="mono" data-i18n="ptRate">1 PT = $0.01 // TAX INCLUDED</span></div>
+      <div class="packs__row" id="t-pack-row"></div>
+      <p class="gen__note mono" id="t-pack-note"></p>
+    </div>
+  </section>
+
+  <section class="view soon" data-view="other" hidden>
+    <div class="masthead__bar masthead__bar--min fade" style="--i:0">
+      <a class="back" href="#" data-go="home" aria-label="Index" data-i18n-attr="aria-label:index"><svg class="back__ico" viewBox="0 0 18 18" aria-hidden="true"><circle cx="3" cy="9" r="1.05" style="--d:0"/><circle cx="6" cy="6" r="1.05" style="--d:1"/><circle cx="6" cy="12" r="1.05" style="--d:2"/><circle cx="9" cy="3" r="1.05" style="--d:3"/><circle cx="9" cy="15" r="1.05" style="--d:4"/><circle cx="6" cy="9" r="1.05" style="--d:5"/><circle cx="9" cy="9" r="1.05" style="--d:6"/><circle cx="12" cy="9" r="1.05" style="--d:7"/><circle cx="15" cy="9" r="1.05" style="--d:8"/></svg></a>
+    </div>
+    <h1 class="wordmark-sr">Other</h1>
+    <canvas class="wordmark" data-word="Other" aria-hidden="true"></canvas>
+    <div class="soon__body fade" style="--i:1">
+      <p class="soon__lead" data-i18n="inPrep">In preparation.</p>
+      <dl class="spec">
+        <div><dt data-i18n="section">Section</dt><dd class="mono">03 // Other</dd></div>
+        <div><dt data-i18n="status">Status</dt><dd class="mono" data-i18n="comingSoon">Coming soon</dd></div>
+      </dl>
+    </div>
+    <div class="soon__grid fade" style="--i:2">
+      <div class="card--slot"><span class="card__slot">03.1</span></div>
+      <div class="card--slot"><span class="card__slot">03.2</span></div>
+      <div class="card--slot"><span class="card__slot">03.3</span></div>
+    </div>
+  </section>
+
+  <div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-labelledby="v-title" aria-hidden="true" inert>
+    <div class="viewer__backdrop" data-close></div>
+    <div class="viewer__stage" id="v-stage" data-close>
+      <div class="viewer__frame" id="v-frame"><img id="v-img" alt="" draggable="false"></div>
+    </div>
+    <aside class="viewer__panel" data-native-scroll>
+      <div class="viewer__head">
+        <span class="viewer__index mono" aria-hidden="true">No.</span>
+        <div class="vlang" id="v-lang" role="group" aria-label="Language" data-i18n-attr="aria-label:language">
+          <button type="button" data-lang="en" lang="en">EN</button>
+          <button type="button" data-lang="ja" lang="ja">日本語</button>
+          <button type="button" data-lang="zh" lang="zh-Hans">中文</button>
+        </div>
+        <div class="viewer__nav">
+          <button class="iconbtn" id="v-theme" type="button" aria-label="Toggle theme (T)" title="Switch Paper / Ink theme (T)">
+            <svg viewBox="0 0 18 18" aria-hidden="true" style="fill:currentColor;stroke:none">
+              <circle cx="9" cy="9" r="2.2"/>
+              <circle cx="9" cy="2.8" r="1"/><circle cx="13.4" cy="4.6" r="1"/><circle cx="15.2" cy="9" r="1"/><circle cx="13.4" cy="13.4" r="1"/>
+              <circle cx="9" cy="15.2" r="1"/><circle cx="4.6" cy="13.4" r="1"/><circle cx="2.8" cy="9" r="1"/><circle cx="4.6" cy="4.6" r="1"/>
+            </svg>
+          </button>
+          <button class="iconbtn" id="v-prev" type="button" aria-label="Previous" data-i18n-attr="aria-label:prev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></button>
+          <button class="iconbtn" id="v-next" type="button" aria-label="Next" data-i18n-attr="aria-label:next"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg></button>
+          <button class="iconbtn" id="v-close" type="button" aria-label="Close" data-i18n-attr="aria-label:close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
+        </div>
+      </div>
+
+      <!-- model and size up top; the prompt stays folded until asked for -->
+      <div class="viewer__body" id="v-body">
+        <h2 class="sr" id="v-title"></h2>
+        <!-- the work number set in the same dot type as the wordmark, over a ruler -->
+        <div class="viewer__num" style="--i:0"><canvas class="viewer__no" id="v-no" role="img"></canvas><div class="ruler" aria-hidden="true"></div></div>
+        <dl class="meta" id="v-meta" style="--i:1"></dl>
+        <div class="viewer__acts" style="--i:2">
+          <div id="v-copy-wrap"></div>
+          <a class="act act--go" id="v-gen" href="#studio"><span data-i18n="genNow">Generate now</span><span class="act__end" aria-hidden="true"><span class="act__led"></span><i>→</i></span></a>
+          <button class="reveal" id="v-reveal" type="button" aria-expanded="false" aria-controls="v-fold"><span class="reveal__lbl"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg></button>
+        </div>
+        <div class="fold" id="v-fold" style="--i:3" inert><div class="fold__in"><p class="fold__text" id="v-prompt"></p></div></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="age" id="age" role="dialog" aria-modal="true" aria-labelledby="age-title" aria-describedby="age-text" hidden>
+    <!-- a black band across the screen, like a censor bar, with ruler ticks top and bottom -->
+    <div class="age__band">
+      <div class="age__tag" aria-hidden="true"><canvas class="age__r18" id="age-num"></canvas><i class="age__led"></i></div>
+      <div class="age__copy">
+        <h2 class="age__title" id="age-title" data-i18n="ageTitle">Adults only</h2>
+        <p class="age__text" id="age-text" data-i18n="ageText">This category contains sexually suggestive images. Please confirm you are 18 or older to continue.</p>
+      </div>
+      <div class="age__acts">
+        <button class="age__yes" type="button" data-age="yes" data-i18n="ageYes">I am 18 or older</button>
+        <button class="age__no" type="button" data-age="no"><span data-i18n="ageNo">Go back</span><span class="age__esc" aria-hidden="true"> / Esc</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast__ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+    <span class="toast__msg"></span>
+  </div>
+
+  <button class="totop" id="totop" type="button" aria-label="Back to top" data-i18n-attr="aria-label:backToTop" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4" r="1.35"/><circle cx="8" cy="8" r="1.35"/><circle cx="12" cy="8" r="1.35"/><circle cx="16" cy="8" r="1.35"/><circle cx="4" cy="12" r="1.35"/><circle cx="12" cy="12" r="1.35"/><circle cx="20" cy="12" r="1.35"/><circle cx="12" cy="16" r="1.35"/><circle cx="12" cy="20" r="1.35"/></svg></button>
+
+  <canvas class="wipe" id="wipe" aria-hidden="true"></canvas>
+
+  <script src="works.js?v=20261104t2"></script>
+  <script src="data.js?v=20261104t2"></script>
+  <script src="i18n.js?v=20261104t2"></script>
+  <script src="app.js?v=20261104t2"></script>
+  <script src="tool.js?v=20261104t2"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+# Local downloaded gallery images (104MB+); run `node sync_images.js` to populate locally
+images/
+sites/*/images/
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+node_modules/
