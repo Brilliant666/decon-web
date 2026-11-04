@@ -1,6 +1,8 @@
 # Local downloaded gallery images (104MB+); run `node sync_images.js` to populate locally
 images/
 sites/*/images/
+photos/
+sites/*/photos/
 favicon.ico
 legal
 

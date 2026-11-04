@@ -2,6 +2,27 @@
 
 All notable deconstruction milestones and architectural changes in `decon-web`.
 
+## [2026-11-04] — Specimen #03: Sam Becker Photos (`sites/03-sambecker-photos`)
+
+### Architecture & Real Data Layer
+- **Isolated Site Archive (`sites/03-sambecker-photos/`)**: Added Specimen #03 strictly inside `sites/03-sambecker-photos/` and `shared-ui/photo-vault-ui.js` with zero modifications to `sites/01-truejpeg/` or `sites/02-musicforprogramming/`.
+- **Local Mirror, Upstream Blob Proxy & Ingest Server (`server.js`, port `6062`)**: Supports `/shared-ui/*` cross-directory static routing, `/photos/*` local archive hosting with transparent upstream fallback to `wpz47wrhgzc7qaub.public.blob.vercel-storage.com`, `GET /api/user-photos`, `POST /api/ingest` local drag-and-drop photo persistence to `photos/user/`, and clean SPA routes (`/`, `/grid`, `/library`, `/lab`, `/p/:slug`, `/shot-on/:id`, `/lens/:id`, `/recipe/:id`, `/film/:id`, `/focal/:id`, `/tag/:tag`).
+- **Real 36-Work Photography Catalog & Binary EXIF Scanner (`catalog.js` & `sync_photos.js`)**:
+  - Synced **36 real photographs** from `photos.sambecker.com` (`sambecker/exif-photo-blog`) with embedded binary EXIF `blurData` progressive placeholders, AI visual descriptions (`semanticDescription`), `FUJIFILM X-T5` (`XF35mmF1.4 R` / `XF90mmF2 R LM WR`) & `Apple iPhone 17 Pro` capture telemetry, `oklch` perceptual color palettes (`colorData`), and 4 authentic Fujifilm in-camera recipes (`Classic Cuban`, `ACROS + R CUSTOM`, `KODAK PORTRA 400 V2`, `Classic Negative`).
+  - Added `sync_photos.js` CLI tool to sync upstream RSC metadata, sanitize Next.js `"$undefined"` tokens, pre-cache real JPEGs into `photos/` (ignored by Git), and parse local binary `0xFFE1` APP1 EXIF headers.
+
+### Features & Enhancements (`03-sambecker-photos`)
+- **1:1 Visual Architecture (`/`, `/grid`, `/library`, `/p/:slug`)**:
+  - **`Full (/)` Alternating Borderless Canvas**: `Instrument Serif` uppercase titles + `IBM Plex Mono` unlabeled EXIF sidebar, odd/even row horizontal alternation (`lg:flex-row-reverse` on even rows), signature `3px` `oklch` perceptual color strip (`70px` primary + 5×`6px` sub-colors), and floating dark frosted `[+]` Fujifilm recipe popover (with Highlight/Shadow S-curve, WB shift grid, and one-click copy).
+  - **`Grid (/grid)` & `Library (/library)` 3D `oklch` Folders**: Borderless 4-column adaptive grid matrix and centered archive library featuring interactive 3D `oklch`-tinted folders that fan out 4 preview thumbnails on hover.
+  - **Theme-Adaptive Lightbox (`/p/:slug`) & 3 Gallery Themes (`T`)**: Seamless switching across `GALLERY LIGHT` (`#ffffff`), `OBSIDIAN DARK` (`#000000`), and `WARM CONTACT` (`#f5f2eb`) on both the main gallery and fullscreen photo detail view.
+- **Zero Layout Shift (`CLS = 0`) & `RAW / PRO` Darkroom Suite (`P`)**:
+  - Locked geometric dimensions on topbar controls (`#btnThemeCycle`, `#btnModeToggle`) and `scrollbar-gutter: stable` on `html`, plus out-of-flow floating `#proToolbar` HUD and `.pv-pro-drawer` without full-DOM re-renders (`0.00px` horizontal/vertical layout shift).
+  - Unlocks 64-Bin Luma/RGB histogram + 5 copyable HEX swatches, `2.5×–4.5×` wheel-zoom optical loupe (`L`, `getBoundingClientRect` object-contain coordinate mapping), 5-mode SVG composition guides (`G`), local JPEG drag-and-drop binary EXIF ingest (`POST /api/ingest`), procedural Web Audio leaf-shutter & aperture clicks (strictly silent in `RAW` mode), and `⌘K` Command Palette with `28×20px` micro-thumbnails and `semanticDescription` AI semantic search.
+- **UI Kit Extraction (`shared-ui/photo-vault-ui.js` & `lab.html`)**: Extracted 8 zero-dependency ES6 modules (`createExifPlate`, `createFilmRecipeCard`, `parseExif`, `extractColorPalette`, `createCompositionOverlay`, `createOpticalLoupe`, `createCommandPalette`, `createShutterAudio`) into [`shared-ui/photo-vault-ui.js`](./shared-ui/photo-vault-ui.js) (byte-for-byte mirrored at `sites/03-sambecker-photos/photo-vault-ui.js`) with a 2×2 interactive workbench in [`lab.html`](./sites/03-sambecker-photos/lab.html).
+
+---
+
 ## [2026-11-04] — Specimen #02: `musicForProgramming();` (`sites/02-musicforprogramming`)
 
 ### Architecture & Data Layer

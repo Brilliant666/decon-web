@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="gallery-light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo Vault UI Lab · Specimen #03 (photos.sambecker.com)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .lab-wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 1rem 1rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.25rem;
+    }
+    .lab-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--sb-border-color);
+    }
+    .lab-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.85rem;
+      font-weight: 400;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .lab-sub {
+      color: var(--sb-text-medium);
+      font-size: 0.8rem;
+    }
+    .lab-grid-2x2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.5rem;
+    }
+    @media (max-width: 960px) {
+      .lab-grid-2x2 {
+        grid-template-columns: 1fr;
+      }
+    }
+    .lab-card {
+      border: 1px solid var(--sb-border-color);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      background: var(--sb-bg-main);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .lab-card-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--sb-border-color);
+      padding-bottom: 0.5rem;
+    }
+    .lab-card-num {
+      font-size: 0.72rem;
+      color: var(--sb-text-dim);
+    }
+    .lab-card-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.3rem;
+      text-transform: uppercase;
+      margin: 0;
+      font-weight: 400;
+    }
+    .lab-btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .lab-btn {
+      border: 1px solid var(--sb-border-color);
+      background: var(--sb-bg-dim);
+      color: var(--sb-text-main);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.74rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .lab-btn:hover,
+    .lab-btn.is-active {
+      background: var(--sb-text-main);
+      color: var(--sb-bg-main);
+    }
+    .lab-stage-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      overflow: hidden;
+      border-radius: 4px;
+      background: var(--sb-bg-dim);
+    }
+    .lab-stage-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .lab-sliders {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 1rem;
+      font-size: 0.74rem;
+      padding: 0.75rem;
+      background: var(--sb-bg-dim);
+      border-radius: 4px;
+    }
+    .lab-sliders label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .lab-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--sb-border-color);
+      border-radius: 0.5rem;
+    }
+    .lab-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .lab-table th,
+    .lab-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--sb-border-color);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .lab-table th {
+      background: var(--sb-bg-dim);
+      color: var(--sb-text-dim);
+      text-transform: uppercase;
+      font-size: 0.68rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="lab-wrap">
+    <header class="lab-header">
+      <div>
+        <h1 class="lab-title">Photo Vault UI Component Workbench</h1>
+        <div class="lab-sub">Specimen #03 · <code>shared-ui/photo-vault-ui.js</code> · Real Sam Becker Photographs & Binary Fujifilm EXIF</div>
+      </div>
+      <div class="lab-btn-row">
+        <a href="/" class="lab-btn">← Return to photos.sambecker.com (/)</a>
+        <button type="button" class="lab-btn" id="labBtnTheme">Theme (T)</button>
+        <button type="button" class="lab-btn" id="labBtnCmd">Command Palette (⌘K)</button>
+      </div>
+    </header>
+
+    <div class="lab-grid-2x2">
+      <!-- 01: createExifPlate -->
+      <section class="lab-card">
+        <div class="lab-card-head">
+          <h2 class="lab-card-title">01 · Unlabeled EXIF Sidebar &amp; OKLCH Strip</h2>
+          <span class="lab-card-num">createExifPlate()</span>
+        </div>
+        <div class="lab-btn-row" id="platePhotoBtns"></div>
+        <div class="lab-btn-row">
+          <button type="button" class="lab-btn" id="btnFlipSide">Toggle Odd/Even Alignment (Left / Right)</button>
+          <button type="button" class="lab-btn is-active" id="btnTogglePro">Toggle PRO Histogram Drawer</button>
+        </div>
+        <div id="demoExifMount" style="padding:0.75rem;padding-bottom:7.5rem;min-height:290px;border:1px dashed var(--sb-border-color);border-radius:4px"></div>
+      </section>
+
+      <!-- 02: createFilmRecipeCard -->
+      <section class="lab-card">
+        <div class="lab-card-head">
+          <h2 class="lab-card-title">02 · Fujifilm Film Recipe &amp; Tone S-Curve</h2>
+          <span class="lab-card-num">createFilmRecipeCard()</span>
+        </div>
+        <div class="lab-btn-row" id="recipePresetBtns"></div>
+        <div class="lab-sliders">
+          <label>Highlight (<span id="valH">-2</span>) <input type="range" id="rngH" min="-2" max="4" step="0.5" value="-2"/></label>
+          <label>Shadow (<span id="valS">+1</span>) <input type="range" id="rngS" min="-2" max="4" step="0.5" value="1"/></label>
+          <label>WB Red (<span id="valR">+4</span>) <input type="range" id="rngR" min="-9" max="9" step="1" value="4"/></label>
+          <label>WB Blue (<span id="valB">-5</span>) <input type="range" id="rngB" min="-9" max="9" step="1" value="-5"/></label>
+        </div>
+        <div id="demoRecipeMount"></div>
+      </section>
+
+      <!-- 03: createCompositionOverlay & createOpticalLoupe -->
+      <section class="lab-card">
+        <div class="lab-card-head">
+          <h2 class="lab-card-title">03 · Optical Loupe &amp; Composition Geometry</h2>
+          <span class="lab-card-num">createCompositionOverlay() + createOpticalLoupe()</span>
+        </div>
+        <div class="lab-btn-row">
+          <button type="button" class="lab-btn" data-guide="off">Off</button>
+          <button type="button" class="lab-btn is-active" data-guide="thirds">Rule of Thirds</button>
+          <button type="button" class="lab-btn" data-guide="phi">Golden Spiral (Phi)</button>
+          <button type="button" class="lab-btn" data-guide="diagonals">Diagonals</button>
+          <button type="button" class="lab-btn" data-guide="center">Center Reticle</button>
+          <button type="button" class="lab-btn is-active" id="btnLabLoupe">Loupe: ON</button>
+        </div>
+        <div class="lab-stage-box" id="labStageBox">
+          <img id="labStageImg" data-main-photo alt="Real Sam Becker Photo" />
+        </div>
+      </section>
+
+      <!-- 04: Binary EXIF Parser & Color Palette Extractor -->
+      <section class="lab-card">
+        <div class="lab-card-head">
+          <h2 class="lab-card-title">04 · Binary TIFF/IFD0 EXIF &amp; Palette Extractor</h2>
+          <span class="lab-card-num">parseExif() + extractColorPalette()</span>
+        </div>
+        <div class="lab-btn-row">
+          <button type="button" class="lab-btn" id="btnParseRealBlur">Parse Embedded Fujifilm Binary EXIF</button>
+          <label class="lab-btn" style="cursor:pointer">
+            Upload Local JPEG <input type="file" id="labFileInput" accept="image/jpeg,image/png,image/webp" hidden />
+          </label>
+          <button type="button" class="lab-btn" id="btnPlayShutter">Play Leaf Shutter Audio</button>
+        </div>
+        <pre id="labExifJson" style="margin:0;padding:0.75rem;background:var(--sb-bg-dim);border-radius:4px;font-size:0.72rem;overflow-x:auto"></pre>
+        <div id="labPaletteBar" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;height:28px"></div>
+      </section>
+    </div>
+
+    <!-- Real 36-Photo Catalog Matrix -->
+    <section class="lab-card">
+      <div class="lab-card-head">
+        <h2 class="lab-card-title">05 · Synced Sam Becker Catalog Matrix (36 Real Frames)</h2>
+        <span class="lab-card-num">catalog.js</span>
+      </div>
+      <div class="lab-table-wrap">
+        <table class="lab-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Camera</th>
+              <th>Lens</th>
+              <th>Exposure</th>
+              <th>Film / Recipe</th>
+              <th>OKLCH Primary</th>
+            </tr>
+          </thead>
+          <tbody id="labCatalogTbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { CURATED_PHOTOS, FILM_RECIPES } from '/catalog.js';
+    import {
+      createExifPlate,
+      createFilmRecipeCard,
+      parseExif,
+      extractColorPalette,
+      createCompositionOverlay,
+      createOpticalLoupe,
+      createCommandPalette,
+      createShutterAudio
+    } from '/shared-ui/photo-vault-ui.js';
+
+    const audio = createShutterAudio();
+    let currentPhoto = CURATED_PHOTOS[0];
+    let currentSide = 'right';
+    let proEnabled = true;
+
+    // 01: Exif Plate
+    const plateMount = document.getElementById('demoExifMount');
+    const plateBtns = document.getElementById('platePhotoBtns');
+    function renderDemoPlate() {
+      createExifPlate(plateMount, currentPhoto, {
+        metaSide: currentSide,
+        proMode: proEnabled
+      });
+    }
+    CURATED_PHOTOS.slice(0, 5).forEach((p, idx) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `lab-btn ${idx === 0 ? 'is-active' : ''}`;
+      b.textContent = p.title;
+      b.addEventListener('click', () => {
+        currentPhoto = p;
+        document.getElementById('labStageImg').src = p.url;
+        plateBtns.querySelectorAll('.lab-btn').forEach((x) => x.classList.remove('is-active'));
+        b.classList.add('is-active');
+        renderDemoPlate();
+      });
+      plateBtns.appendChild(b);
+    });
+    document.getElementById('btnFlipSide').addEventListener('click', () => {
+      currentSide = currentSide === 'right' ? 'left' : 'right';
+      renderDemoPlate();
+    });
+    document.getElementById('btnTogglePro').addEventListener('click', (e) => {
+      proEnabled = !proEnabled;
+      e.target.classList.toggle('is-active', proEnabled);
+      renderDemoPlate();
+    });
+    renderDemoPlate();
+
+    // 02: Recipe Card
+    const recipeMount = document.getElementById('demoRecipeMount');
+    const recipeBtns = document.getElementById('recipePresetBtns');
+    let activeRecipe = { ...(FILM_RECIPES[0] || CURATED_PHOTOS[0]) };
+
+    function renderDemoRecipe() {
+      createFilmRecipeCard(recipeMount, activeRecipe);
+    }
+    FILM_RECIPES.forEach((r, idx) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `lab-btn ${idx === 0 ? 'is-active' : ''}`;
+      b.textContent = r.name;
+      b.addEventListener('click', () => {
+        activeRecipe = JSON.parse(JSON.stringify(r));
+        document.getElementById('rngH').value = r.highlight;
+        document.getElementById('rngS').value = r.shadow;
+        document.getElementById('rngR').value = r.wbShift.r;
+        document.getElementById('rngB').value = r.wbShift.b;
+        document.getElementById('valH').textContent = r.highlight;
+        document.getElementById('valS').textContent = r.shadow;
+        document.getElementById('valR').textContent = r.wbShift.r;
+        document.getElementById('valB').textContent = r.wbShift.b;
+        recipeBtns.querySelectorAll('.lab-btn').forEach((x) => x.classList.remove('is-active'));
+        b.classList.add('is-active');
+        renderDemoRecipe();
+      });
+      recipeBtns.appendChild(b);
+    });
+
+    ['rngH', 'rngS', 'rngR', 'rngB'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', () => {
+        const h = Number(document.getElementById('rngH').value);
+        const s = Number(document.getElementById('rngS').value);
+        const r = Number(document.getElementById('rngR').value);
+        const b = Number(document.getElementById('rngB').value);
+        document.getElementById('valH').textContent = h > 0 ? `+${h}` : h;
+        document.getElementById('valS').textContent = s > 0 ? `+${s}` : s;
+        document.getElementById('valR').textContent = r > 0 ? `+${r}` : r;
+        document.getElementById('valB').textContent = b > 0 ? `+${b}` : b;
+        activeRecipe = {
+          ...activeRecipe,
+          highlight: h,
+          shadow: s,
+          wbShift: { r, b },
+          recipeData: {
+            ...(activeRecipe.recipeData || {}),
+            highlight: h,
+            shadow: s,
+            whiteBalance: { red: r, blue: b, type: 'auto' }
+          }
+        };
+        renderDemoRecipe();
+      });
+    });
+    renderDemoRecipe();
+
+    // 03: Stage Overlay & Loupe
+    const stageBox = document.getElementById('labStageBox');
+    const stageImg = document.getElementById('labStageImg');
+    stageImg.src = CURATED_PHOTOS[0].url;
+    const compCtrl = createCompositionOverlay(stageBox, { mode: 'thirds' });
+    const loupeCtrl = createOpticalLoupe(stageBox, stageImg, { enabled: true });
+
+    document.querySelectorAll('[data-guide]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        compCtrl.setMode(btn.getAttribute('data-guide'));
+        document.querySelectorAll('[data-guide]').forEach((x) => x.classList.remove('is-active'));
+        btn.classList.add('is-active');
+      });
+    });
+    document.getElementById('btnLabLoupe').addEventListener('click', (e) => {
+      const on = loupeCtrl.toggle();
+      e.target.classList.toggle('is-active', on);
+      e.target.textContent = `Loupe: ${on ? 'ON' : 'OFF'}`;
+    });
+
+    // 04: Binary EXIF Parser on Real Embedded Fujifilm blurData
+    function parseRealPhotoBlur(photo) {
+      const b64 = (photo.blurData || '').split(',')[1] || '';
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const parsed = parseExif(bytes.buffer);
+      document.getElementById('labExifJson').textContent = JSON.stringify(
+        { photoTitle: photo.title, binaryExifParsed: parsed },
+        null,
+        2
+      );
+      const palBar = document.getElementById('labPaletteBar');
+      palBar.innerHTML = (photo.palette || []).map((hex) => `<div style="background:${hex};border-radius:3px" title="${hex}"></div>`).join('');
+    }
+    parseRealPhotoBlur(CURATED_PHOTOS[0]);
+
+    let blurIdx = 0;
+    document.getElementById('btnParseRealBlur').addEventListener('click', () => {
+      blurIdx = (blurIdx + 1) % 12;
+      parseRealPhotoBlur(CURATED_PHOTOS[blurIdx]);
+      audio.playApertureClick();
+    });
+
+    document.getElementById('labFileInput').addEventListener('change', async (e) => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      const buf = await f.arrayBuffer();
+      const parsed = parseExif(buf);
+      const img = new Image();
+      img.src = URL.createObjectURL(f);
+      await new Promise((r) => { img.onload = r; img.onerror = r; });
+      const pal = extractColorPalette(img, 5);
+      document.getElementById('labExifJson').textContent = JSON.stringify({ file: f.name, parsed, exposureStats: pal.exposureStats }, null, 2);
+      document.getElementById('labPaletteBar').innerHTML = pal.palette.map((hex) => `<div style="background:${hex};border-radius:3px" title="${hex}"></div>`).join('');
+    });
+
+    document.getElementById('btnPlayShutter').addEventListener('click', () => audio.playShutter());
+
+    // 05: Catalog Table
+    const tbody = document.getElementById('labCatalogTbody');
+    tbody.innerHTML = CURATED_PHOTOS.map((p) => {
+      const ai = p.colorData?.ai || { l: 0.7, c: 0.12, h: 60 };
+      return `
+        <tr>
+          <td>${String(p.index).padStart(2, '0')}</td>
+          <td><code>${p.id}</code></td>
+          <td><strong>${p.title}</strong></td>
+          <td>${p.make} ${p.model}</td>
+          <td>${p.lensModel || '—'}</td>
+          <td>${p.focalLengthFormatted} · ${p.fNumberFormatted} · ${p.exposureTimeFormatted} · ${p.isoFormatted}</td>
+          <td>${p.filmLabel || '—'} ${p.recipeLabel ? `/ ${p.recipeLabel}` : ''}</td>
+          <td><span style="display:inline-block;width:44px;height:6px;background:oklch(${ai.l} ${ai.c} ${ai.h});vertical-align:middle;margin-right:6px"></span>oklch(${ai.l} ${ai.c} ${ai.h})</td>
+        </tr>
+      `;
+    }).join('');
+
+    // Theme & Command Palette
+    const themes = ['gallery-light', 'obsidian-dark', 'warm-contact'];
+    let tIdx = 0;
+    document.getElementById('labBtnTheme').addEventListener('click', () => {
+      tIdx = (tIdx + 1) % themes.length;
+      document.documentElement.setAttribute('data-theme', themes[tIdx]);
+    });
+
+    const cmd = createCommandPalette(
+      CURATED_PHOTOS.map((p) => ({
+        label: p.title,
+        thumb: p.blurData || p.url,
+        meta: `${p.make} ${p.model} · ${p.lensModel || ''}`,
+        section: 'PHOTOS',
+        keywords: p.semanticDescription,
+        action: () => {
+          currentPhoto = p;
+          stageImg.src = p.url;
+          renderDemoPlate();
+          parseRealPhotoBlur(p);
+        }
+      }))
+    );
+    document.getElementById('labBtnCmd').addEventListener('click', () => cmd.open());
+  </script>
+</body>
+</html>

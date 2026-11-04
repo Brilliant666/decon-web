@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="gallery-light" data-mode="raw">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sam Becker Photos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="sb-page-shell">
+    <!-- Sticky Frosted Top Navigation Header -->
+    <header class="sb-sticky-header" id="stickyHeader">
+      <nav class="sb-top-nav" aria-label="Primary Navigation">
+        <div class="sb-top-nav-left">
+          <a href="/" class="sb-site-link" id="navHomeLink">photos.sambecker.com</a>
+        </div>
+
+        <div class="sb-top-nav-right">
+          <!-- 1. Sort Menu Button -->
+          <div class="sb-sort-dropdown-wrap">
+            <button type="button" class="sb-nav-icon-btn" id="btnSortMenu" aria-label="Sort Photos" title="Sort Photos (Newest / Oldest / Color)">
+              <svg width="20" height="19" viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sb-icon-translate">
+                <path d="M17 3v18M17 3l-3 3M17 3l3 3" />
+                <path d="M7 4v14M4 15l3 3 3-3" opacity="0.45" />
+              </svg>
+              <span class="sb-sort-dot" id="sortActiveDot" hidden></span>
+            </button>
+            <div class="sb-sort-popover" id="sortPopover" hidden>
+              <button type="button" class="sb-sort-option is-active" data-sort="newest">
+                <span>Newest First</span>
+                <span class="sb-sort-check">✓</span>
+              </button>
+              <button type="button" class="sb-sort-option" data-sort="oldest">
+                <span>Oldest First</span>
+                <span class="sb-sort-check"></span>
+              </button>
+              <button type="button" class="sb-sort-option" data-sort="color">
+                <span>Color (OKLCH Hue)</span>
+                <span class="sb-sort-check"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Full View (/) -->
+          <a href="/" class="sb-nav-icon-btn is-active" id="btnViewFull" aria-label="Full View" title="Full View (/)">
+            <svg width="22" height="19" viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="sb-icon-translate">
+              <rect x="3.125" y="4.125" width="21.75" height="15.75" rx="1" />
+              <line x1="21" y1="4.875" x2="21" y2="19.875" stroke-dasharray="1.5 2.25" stroke-linecap="butt" stroke-width="2" />
+            </svg>
+          </a>
+
+          <!-- 3. Grid View (/grid) -->
+          <a href="/grid" class="sb-nav-icon-btn" id="btnViewGrid" aria-label="Grid View" title="Grid View (/grid)">
+            <svg width="22" height="19" viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="sb-icon-translate">
+              <rect x="3.125" y="4.125" width="21.75" height="15.75" rx="1" />
+              <line x1="3.125" y1="12" x2="24.875" y2="12" stroke-width="2" />
+              <line x1="10.375" y1="4.125" x2="10.375" y2="19.875" stroke-width="2" />
+              <line x1="17.625" y1="4.125" x2="17.625" y2="19.875" stroke-width="2" />
+            </svg>
+          </a>
+
+          <!-- 4. Library View (/library) -->
+          <a href="/library" class="sb-nav-icon-btn" id="btnViewLibrary" aria-label="Library View" title="Library Archive (/library)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18.366 2H5.634c-.575 0-1.08.387-1.224.944l-2.369 9.152c-.027.105-.041.213-.041.322v7.295C2 20.976 3.024 22 4.288 22h15.424C20.976 22 22 20.976 22 19.712v-7.295c0-.109-.014-.217-.041-.322l-2.369-9.152C19.446 2.387 18.941 2 18.366 2Z" />
+              <path d="M2.288 12H7.6c.495 0 .909.354.987.843.229 1.43 1.666 2.532 3.404 2.532h.019c1.738 0 3.175-1.102 3.404-2.532.078-.489.491-.843.987-.843h5.312" />
+              <path d="M6.489 6h11.022" />
+              <path d="M5.792 9h12.416" />
+            </svg>
+          </a>
+
+          <!-- 5. Search (⌘K Command Palette) -->
+          <button type="button" class="sb-nav-icon-btn" id="btnSearchCmd" aria-label="Command Palette" title="Search Photos, Gear & Recipes (⌘K)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" class="sb-icon-search">
+              <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+              <path d="M21 21l-6 -6" />
+            </svg>
+          </button>
+
+          <span class="sb-nav-divider" aria-hidden="true"></span>
+
+          <!-- 6. Theme Switcher (T) integrated into topbar -->
+          <button type="button" class="sb-nav-pill-btn" id="btnThemeCycle" title="Cycle Theme: Light / Dark / Warm Contact Sheet (Shortcut: T)">
+            <span id="cornerThemeIcon">☀</span>
+            <span id="cornerThemeText" class="sb-nav-pill-text">LIGHT</span>
+          </button>
+
+          <!-- 7. RAW / PRO Mode Switcher (P) integrated into topbar -->
+          <button type="button" class="sb-nav-pill-btn" id="btnModeToggle" title="Toggle RAW 1:1 vs PRO Darkroom Telemetry (Shortcut: P)">
+            <span id="cornerModeText">RAW</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- PRO Mode Workbench Bar (Sticky directly below top nav when PRO mode is active) -->
+      <div class="sb-pro-toolbar" id="proToolbar" hidden>
+        <div class="sb-pro-toolbar-inner">
+          <div class="sb-pro-badge-group">
+            <span class="sb-pro-indicator">PRO DARKROOM</span>
+            <button type="button" class="sb-pro-tool-btn" id="btnGuideCycle" title="Cycle Composition Geometry Guides (G)">
+              Guides (G): <strong id="lblGuideMode">OFF</strong>
+            </button>
+            <button type="button" class="sb-pro-tool-btn" id="btnLoupeToggle" title="Toggle 2.5x–4x Optical Loupe (L)">
+              Loupe (L): <strong id="lblLoupeMode">OFF</strong>
+            </button>
+            <button type="button" class="sb-pro-tool-btn" id="btnAudioToggle" title="Toggle Mechanical Shutter Audio">
+              Shutter Audio: <strong id="lblAudioMode">ON</strong>
+            </button>
+          </div>
+          <div class="sb-pro-actions">
+            <button type="button" class="sb-pro-ingest-btn" id="btnOpenIngest">
+              + Ingest Local JPEG
+            </button>
+            <a href="/lab" class="sb-pro-lab-link">Component Lab ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Filter Header Banner (Shown only when filtered by Camera / Lens / Recipe / Film / Focal / Tag) -->
+      <div class="sb-filter-banner" id="activeFilterBanner" hidden>
+        <div class="sb-filter-banner-inner">
+          <div class="sb-filter-title-group">
+            <span class="sb-filter-kind" id="filterKindLabel">CAMERA</span>
+            <span class="sb-filter-value" id="filterValueLabel">FUJIFILM X-T5</span>
+            <span class="sb-filter-count" id="filterCountLabel">× 33</span>
+          </div>
+          <button type="button" class="sb-filter-clear-btn" id="btnClearFilter">Clear Filter ×</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Viewport -->
+    <main class="sb-main">
+      <!-- 1. Full View (/) — Alternating Odd/Even Floating Canvas + Unlabeled EXIF Sidebar -->
+      <section id="viewFull" class="sb-view-full"></section>
+
+      <!-- 2. Grid View (/grid) — Borderless Square-Cell Adaptive Grid (max-w-[1100px] mx-auto) -->
+      <section id="viewGrid" class="sb-view-grid" hidden></section>
+
+      <!-- 3. Library View (/library) — Centered Archive & Interactive 3D OKLCH Folders (max-w-[800px] mx-auto) -->
+      <section id="viewLibrary" class="sb-view-library" hidden></section>
+    </main>
+
+    <!-- Minimal Centered Footer (max-w-[800px] mx-auto) -->
+    <footer class="sb-footer">
+      <div class="sb-footer-inner">
+        <div class="sb-footer-left">
+          <span>Made with <a href="https://github.com/sambecker/exif-photo-blog" target="_blank" rel="noopener">exif-photo-blog</a></span>
+          <span class="sb-footer-sep">·</span>
+          <a href="/lab">Photo Vault UI Lab</a>
+        </div>
+        <div class="sb-footer-right">
+          <button type="button" class="sb-footer-btn" id="footerThemeBtn" title="Cycle Theme (T)">Theme: <span id="footerThemeLabel">LIGHT</span></button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Fullscreen Photo Detail / Lightbox Modal -->
+  <div class="sb-lightbox" id="lightboxModal" hidden role="dialog" aria-modal="true" aria-label="Fullscreen Photo Lightbox">
+    <div class="sb-lightbox-topbar">
+      <div class="sb-lightbox-counter" id="lbCounter">01 / 36</div>
+      <div class="sb-lightbox-controls">
+        <button type="button" class="sb-lb-btn" id="lbBtnGuide" title="Cycle Composition Guides (G)">Guides: OFF</button>
+        <button type="button" class="sb-lb-btn" id="lbBtnLoupe" title="Toggle Optical Loupe (L)">Loupe: OFF</button>
+        <span class="sb-nav-divider" aria-hidden="true"></span>
+        <button type="button" class="sb-lb-btn" id="lbBtnTheme" title="Cycle Theme: Light / Dark / Warm (T)">
+          <span id="lbThemeIcon">☀</span>
+          <span class="sb-nav-pill-text" id="lbThemeText">LIGHT</span>
+        </button>
+        <button type="button" class="sb-lb-btn" id="lbBtnMode" title="Toggle RAW 1:1 / PRO Darkroom Telemetry (P)">
+          <span id="lbModeText">RAW</span>
+        </button>
+        <span class="sb-nav-divider" aria-hidden="true"></span>
+        <button type="button" class="sb-lb-btn" id="lbBtnPrev" title="Previous Photo (← / K)">←</button>
+        <button type="button" class="sb-lb-btn" id="lbBtnNext" title="Next Photo (→ / J)">→</button>
+        <button type="button" class="sb-lb-btn" id="lbBtnClose" title="Close Lightbox (ESC)">✕</button>
+      </div>
+    </div>
+    <div class="sb-lightbox-body" id="lbBody">
+      <div class="sb-lightbox-stage" id="lbStage">
+        <img id="lbImage" data-main-photo alt="" />
+      </div>
+      <aside class="sb-lightbox-meta" id="lbMetaPlate"></aside>
+    </div>
+  </div>
+
+  <!-- Local Drag-and-Drop JPEG Ingest Modal (PRO Mode) -->
+  <div class="sb-ingest-modal" id="ingestModal" hidden role="dialog" aria-modal="true" aria-label="Ingest Local JPEG">
+    <div class="sb-ingest-card">
+      <div class="sb-ingest-header">
+        <span>INGEST LOCAL PHOTOGRAPH (BINARY EXIF PARSER)</span>
+        <button type="button" class="sb-ingest-close" id="btnCloseIngest">✕</button>
+      </div>
+      <label class="sb-ingest-dropzone" id="ingestDropzone">
+        <input type="file" id="ingestFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" hidden />
+        <div class="sb-ingest-drop-title">Drop .JPG / .JPEG / .PNG / .WEBP here or click to browse</div>
+        <div class="sb-ingest-drop-sub">Automatically parses binary TIFF/IFD0/SubIFD EXIF headers, extracts 5-color OKLCH palette, and persists to /photos/user/</div>
+      </label>
+      <div class="sb-ingest-preview" id="ingestPreview" hidden>
+        <div class="sb-ingest-prev-row">
+          <img id="ingestPrevImg" alt="Preview" />
+          <div class="sb-ingest-prev-fields">
+            <input type="text" id="ingestTitleInput" class="sb-ingest-input" placeholder="Photograph Title (e.g. AUTUMN LIGHT #1)" />
+            <div id="ingestExifReadout" class="sb-ingest-exif-summary"></div>
+            <div class="sb-ingest-field-grid">
+              <select id="ingestRecipeSelect" class="sb-ingest-select">
+                <option value="classic-cuban">Recipe: Classic Cuban (Classic Neg.)</option>
+                <option value="pacific-blue">Recipe: Pacific Blue (Classic Neg.)</option>
+                <option value="arizona">Recipe: Arizona (Classic Chrome)</option>
+                <option value="nurture-nature">Recipe: Nurture Nature (PROVIA/Std)</option>
+              </select>
+              <input type="text" id="ingestTagsInput" class="sb-ingest-input" placeholder="Tags (comma separated)" value="ingested, local" />
+            </div>
+          </div>
+        </div>
+        <div class="sb-ingest-footer">
+          <button type="button" class="sb-ingest-submit" id="btnSubmitIngest">Save to Local Photo Vault</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="sb-toast" id="sbToast" hidden></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

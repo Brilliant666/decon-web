@@ -10,7 +10,8 @@
 本项目仅作为**前端视觉工程、Canvas/Web Audio 物理交互与 UI 架构的拆解学习仓库（Educational Deconstruction & UI Study）**：
 - **Specimen #01 (`True JPEG`)**：原始网站设计、前端架构与 AI 图像/提示词作品版权均归原作者 **TJ ([@RTJLDR](https://x.com/RTJLDR))** 及官方站点 **[truejpeg.com](https://truejpeg.com/)** 所有。
 - **Specimen #02 (`musicForProgramming();`)**：原始网站设计、理念宣言与混音电台企划版权均归原作者 **Datassette ([datassette.net](https://datassette.net/))**、各期客座艺术家及官方站点 **[musicforprogramming.net](https://musicforprogramming.net/)** 所有。
-- 为保持 Git 仓库轻量与合规，本仓库**不包含**原站的大体积媒体资产（`images/` 目录已在 `.gitignore` 中忽略，MP3 音频采用官方直链流式播放 + 本地 Web Audio 合成器离线兜底）。
+- **Specimen #03 (`Sam Becker Photos`)**：原始网站极简摄影博客排版与开源项目创意归原作者 **Sam Becker ([sambecker/exif-photo-blog](https://github.com/sambecker/exif-photo-blog))** 及官方站点 **[photos.sambecker.com](https://photos.sambecker.com/)** 所有。
+- 为保持 Git 仓库轻量与合规，本仓库**不包含**原站的大体积媒体资产（`images/` 与 `photos/` 目录已在 `.gitignore` 中忽略，音频与相片均内置本地程序化合成/显影兜底）。
 
 ---
 
@@ -20,6 +21,7 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **#01** | **[True JPEG](https://truejpeg.com/)** (`@RTJLDR`) | 点阵工业风 / 半色调显影 / 硬件标尺 / Vanilla JS + OffscreenCanvas | [`sites/01-truejpeg/`](./sites/01-truejpeg/) (或 `truejpeg` 分支) | [`shared-ui/truejpeg-ui.js`](./shared-ui/truejpeg-ui.js) | [`PROMPTS_CATALOG.md`](./sites/01-truejpeg/PROMPTS_CATALOG.md) · [`lab.html`](./sites/01-truejpeg/lab.html) |
 | **#02** | **[musicForProgramming();](https://musicforprogramming.net/)** (`Datassette`) | 代码编辑器 IDE 美学 / 纯 ASCII 控件 / Web Audio 频谱与环境合成器 | [`sites/02-musicforprogramming/`](./sites/02-musicforprogramming/) | [`shared-ui/mfp-ui.js`](./shared-ui/mfp-ui.js) | [`episodes.js`](./sites/02-musicforprogramming/episodes.js) · [`lab.html`](./sites/02-musicforprogramming/lab.html) |
+| **#03** | **[Sam Becker Photos](https://photos.sambecker.com/)** (`sambecker`) | 奇偶交错无框画廊 / `oklch` 3px 色彩条 / 3D 文件夹归档 / 二进制 EXIF 解析与 `CLS=0` 暗房套件 | [`sites/03-sambecker-photos/`](./sites/03-sambecker-photos/) | [`shared-ui/photo-vault-ui.js`](./shared-ui/photo-vault-ui.js) | [`catalog.js`](./sites/03-sambecker-photos/catalog.js) · [`lab.html`](./sites/03-sambecker-photos/lab.html) |
 
 ---
 
@@ -88,6 +90,37 @@ node sites/02-musicforprogramming/sync_rss.js
 
 ---
 
+## 📷 Specimen #03: Sam Becker Photos (`photos.sambecker.com`) 深度解析
+
+### 1. 视觉与摄影工程亮点
+1. **真实数据集 (`catalog.js` & `sync_photos.js`)**：
+   - 同步自 `photos.sambecker.com` Next.js RSC Flight 数据流的 **36 幅真实摄影作品**（含完整二进制 EXIF 元数据嵌入的 `blurData` 渐进占位缩略图、AI 视觉语义描述 `semanticDescription`、`FUJIFILM X-T5` + `XF35mmF1.4 R` / `XF90mmF2 R LM WR` 与 `Apple iPhone 17 Pro` 实拍参数，以及 4 套真实富士机内配方：`Classic Cuban` / `ACROS + R CUSTOM` / `KODAK PORTRA 400 V2` / `Classic Negative`）。
+   - `server.js`（端口 `6062`）支持 `/photos/*` 本地静态托管与上游 Vercel Blob 原图透明回源缓存，确保高清真图秒开与离线兜底。
+2. **1:1 视觉与三视图架构 (`/`, `/grid`, `/library`)**：
+   - **`Full (/)` 奇偶交错无框画册流**：`Instrument Serif` 大写衬线标题 + `IBM Plex Mono` 无标签 EXIF 侧边栏、奇偶行左右交错（Odd/Even Alternating）无框悬浮画布、原站标志性 **`3px` `oklch` 感知色彩条**（`70px` AI 主色 + 5×`6px` 辅色）、以及脱离文档流的 `[+]` 暗色毛玻璃富士胶片配方浮层（含高光/阴影 S 曲线、白平衡偏移二维坐标网与一键复制）。
+   - **`Grid (/grid)` 无框方格矩阵 & `Library (/library)` 3D `oklch` 文件夹归档**：`Grid` 视图以 4 列自适应方格展示原图比例；`Library` 视图 1:1 复刻原站档案统计卡与 **交互式 3D `oklch` 动态着色文件夹**（Hover 时前盖 3D 翻转并扇形弹出 4 张预览图，点击直达 `/shot-on/:camera`、`/lens/:lens`、`/recipe/:recipe`、`/film/:film`、`/focal/:mm`、`/tag/:tag` 过滤视图）。
+3. **零布局偏移 (`CLS = 0`) 与 `RAW / PRO` 双轨暗房套件**：
+   - **固定几何尺寸吸顶顶栏（`CLS = 0.00px`）**：锁死 `#btnThemeCycle`（`LIGHT` / `DARK` / `WARM`，快捷键 `T`）与 `#btnModeToggle`（`RAW` / `PRO`，快捷键 `P`）槽位宽度及全局滚动条槽位（`scrollbar-gutter: stable`），全屏详情页（`/p/:slug`）同步响应三套深浅主题，切换过程零抖动、零闪屏重绘。
+   - **`PRO` 暗房遥测与本地入库套件**：开启 `PRO` 模式后，以脱离文档流的悬浮毛玻璃胶囊 `#proToolbar` 与 `.pv-pro-drawer` 呈现 **64-Bin Luma/RGB 直方图 + 5 色卡抽屉**、**`2.5×–4.5×` 滚轮变焦光学放大镜 (`createOpticalLoupe`, `L`)**、**5 态几何构图辅助网格 (`createCompositionOverlay`, `G`)**、**本地 JPEG 拖拽入库与二进制 `0xFFE1` EXIF 解析 (`POST /api/ingest`)**、**纯 Web Audio 机械镜间快门与光圈环音效 (`createShutterAudio`)**，以及带 `28×20px` 微缩略图与 `semanticDescription` AI 视觉语义检索的 **`⌘K` 全局命令面板 (`createCommandPalette`)**。
+4. **跨站复用组件库 8 大导出模块 (`shared-ui/photo-vault-ui.js`)**：
+   - `createExifPlate`、`createFilmRecipeCard`、`parseExif`、`extractColorPalette`、`createCompositionOverlay`、`createOpticalLoupe`、`createCommandPalette`、`createShutterAudio`。
+
+### 2. 如何本地运行 Specimen #03
+
+```bash
+# 1. 启动本地 1:1 镜像与个人摄影资料库服务器（默认监听 http://127.0.0.1:6062/）
+node sites/03-sambecker-photos/server.js
+
+# 2. （可选）从线上同步真实元数据 / 扫描本地二进制 EXIF JPEG 样本并输出汇总清单
+node sites/03-sambecker-photos/sync_photos.js
+```
+
+启动后可访问：
+- **1:1 完整复刻站（含 `Full / Grid / Library` 三视图、`RAW / PRO` 暗房套件、`⌘K` 语义检索与拖拽入库）**：`http://127.0.0.1:6062/`
+- **2×2 组件交互实验室 & 二进制 EXIF / 胶片配方工作台**：`http://127.0.0.1:6062/lab`
+
+---
+
 ## 📦 仓库目录与分支说明 (Clean Multi-Site Architecture)
 
 ```text
@@ -97,10 +130,12 @@ decon-web (main 分支)
 ├── CHANGELOG.md                     # 精简演进与版本记录
 ├── shared-ui/                       # 提炼出的跨项目可复用零依赖组件库
 │   ├── truejpeg-ui.js               # Specimen #01 点阵/半色调/光学放大镜组件库
-│   └── mfp-ui.js                    # Specimen #02 ASCII 进度条/双模频谱/环境合成器/番茄钟组件库
+│   ├── mfp-ui.js                    # Specimen #02 ASCII 进度条/双模频谱/环境合成器/番茄钟组件库
+│   └── photo-vault-ui.js            # Specimen #03 二进制 EXIF 解析/胶片配方铭牌/构图叠层/色彩基因组件库
 └── sites/                           # 各神级网站独立自包含归档目录
     ├── 01-truejpeg/                 # Specimen #01: True JPEG 完整复刻、server 与 Prompt 手册
-    └── 02-musicforprogramming/      # Specimen #02: musicForProgramming(); 完整复刻、server 与交互实验室
+    ├── 02-musicforprogramming/      # Specimen #02: musicForProgramming(); 完整复刻、server 与交互实验室
+    └── 03-sambecker-photos/         # Specimen #03: Sam Becker Photos 完整复刻、二进制 EXIF 入库与交互实验室
 ```
 
 - **`main` 分支**：保持根目录纯粹干净，仅包含总览文档、`shared-ui/` 通用组件库以及 `sites/` 下按编号归档的各个独立站点文件夹。
