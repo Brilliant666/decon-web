@@ -44,19 +44,29 @@
 
 ```bash
 # 1. 启动本地 1:1 镜像服务器（默认监听 http://127.0.0.1:6060/）
-node server.js
+node sites/01-truejpeg/server.js
 
-# 2. （可选）全量下载 727 个图像文件到本地 images/ 目录以实现 100% 离线秒开
-node sync_images.js
+# 2. （可选）全量下载 777 个图像文件到本地 sites/01-truejpeg/images/ 目录以实现 100% 离线秒开
+node sites/01-truejpeg/sync_images.js
 ```
 
 启动后可访问：
-- **1:1 完整复刻站（含 `INK / PAPER` 主题切换）**：`http://127.0.0.1:6060/`
+- **1:1 完整复刻站（含 `RAW / PRO` 暗房套件与 `INK / PAPER` 主题切换）**：`http://127.0.0.1:6060/`
 - **抽离组件交互实验室 & 154 组 Prompt 检索库**：`http://127.0.0.1:6060/lab.html`
 
 ---
 
-## 📦 仓库分支说明 (Hybrid Architecture)
+## 📦 仓库目录与分支说明 (Clean Multi-Site Architecture)
 
-- **`main` 分支**：作为 `decon-web` 的总览门户，按 `sites/01-truejpeg/`、`sites/02-.../` 归档各个神级网站的复刻实现，并在 `shared-ui/` 中沉淀抽离出的零依赖原生组件。
-- **`truejpeg` 分支**：纯粹对应 `True JPEG` 单站点的独立分支。
+```text
+decon-web (main 分支)
+├── .gitignore
+├── README.md                  # 博物馆总览门户文档
+├── shared-ui/                 # 提炼出的跨项目可复用零依赖组件库
+│   └── truejpeg-ui.js
+└── sites/                     # 各神级网站独立自包含归档目录
+    └── 01-truejpeg/           # Specimen #01: True JPEG 完整复刻、server 与 Prompt 手册
+```
+
+- **`main` 分支**：保持根目录纯粹干净，仅包含总览文档、`shared-ui/` 通用组件库以及 `sites/` 下按编号归档的各个独立站点文件夹。
+- **`truejpeg` 分支**：根目录直接作为 `True JPEG` 单站点的独立分支快照。
