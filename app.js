@@ -1197,6 +1197,7 @@
   }
 
   function updateLoupePos(e) {
+    if (document.documentElement.getAttribute('data-pro') !== '1') return;
     const rect = frame.getBoundingClientRect();
     loupeX = clamp(e.clientX - rect.left, 0, rect.width);
     loupeY = clamp(e.clientY - rect.top, 0, rect.height);
@@ -1205,7 +1206,7 @@
   }
 
   frame.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || !vOpen) return;
+    if (e.button !== 0 || !vOpen || document.documentElement.getAttribute('data-pro') !== '1') return;
     e.preventDefault();
     loupeActive = true;
     frame.setPointerCapture(e.pointerId);
@@ -1222,10 +1223,11 @@
   frame.addEventListener('pointerup', stopLoupe);
   frame.addEventListener('pointercancel', stopLoupe);
   frame.addEventListener('pointerenter', () => {
+    if (document.documentElement.getAttribute('data-pro') !== '1') return;
     if (!loupeActive && vLoupeHud) vLoupeHud.textContent = `${tx('loupeHint')} (${loupeZoom.toFixed(1)}×)`;
   });
   frame.addEventListener('wheel', (e) => {
-    if (!vOpen) return;
+    if (!vOpen || document.documentElement.getAttribute('data-pro') !== '1') return;
     e.preventDefault();
     loupeZoom = clamp(loupeZoom + (e.deltaY < 0 ? 0.5 : -0.5), 1.5, 6.0);
     if (loupeActive) drawLoupe();
@@ -1486,7 +1488,11 @@
       return;
     }
     const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
-    if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && LAYOUTS[+e.key - 1]) setLayout(LAYOUTS[+e.key - 1][0], density);
+    if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && LAYOUTS[+e.key - 1]) {
+      const targetLayout = LAYOUTS[+e.key - 1][0];
+      if (targetLayout === 'sheet' && document.documentElement.getAttribute('data-pro') !== '1') return;
+      setLayout(targetLayout, density);
+    }
   });
 
   // partner marks drawn as dots like the numerals, in a w x h box
@@ -2071,7 +2077,8 @@ onmessage = async (e) => {
     function build() {
       const menu = $('.lang__menu', langEl);
       const tBtn = $('#theme-toggle');
-      const tw = tBtn ? tBtn.offsetWidth : 0;
+      const pBtn = $('#pro-toggle');
+      const tw = (tBtn ? tBtn.offsetWidth : 0) + (pBtn ? pBtn.offsetWidth : 0);
       W = Math.ceil(menu.offsetWidth + 4 + langToggle.offsetWidth + tw + 24);
       dpr = Math.min(2, devicePixelRatio || 1);
       cv.style.width = `${W}px`;
@@ -2100,7 +2107,8 @@ onmessage = async (e) => {
       if (P > 0.001) {
         const paper = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim();
         const tBtn = $('#theme-toggle');
-        const tw = tBtn ? tBtn.offsetWidth : 0;
+        const pBtn = $('#pro-toggle');
+        const tw = (tBtn ? tBtn.offsetWidth : 0) + (pBtn ? pBtn.offsetWidth : 0);
         const edge = W - tw - langToggle.offsetWidth - 4 - $('.lang__menu', langEl).offsetWidth;
         const g = ctx.createLinearGradient(edge - 20, 0, edge + 6, 0);
         g.addColorStop(0, 'transparent'); g.addColorStop(1, paper);
@@ -2365,6 +2373,62 @@ onmessage = async (e) => {
   addEventListener('keydown', (e) => {
     if ((e.key === 't' || e.key === 'T') && !e.metaKey && !e.ctrlKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
       toggleTheme(vOpen ? vThemeBtn : themeBtn, null);
+    }
+  });
+
+  /* ---------- PRO / RAW mode switch (Hardware LED + Shortcut P) ---------- */
+  const proBtn = $('#pro-toggle');
+  const vProBtn = $('#v-pro');
+  const proLbl = $('#pro-lbl');
+  const PRO_KEY = 'tj.pro';
+
+  function applyPro(on, silent) {
+    if (on) document.documentElement.setAttribute('data-pro', '1');
+    else document.documentElement.removeAttribute('data-pro');
+    const txt = on ? 'PRO' : 'RAW';
+    if (proBtn) proBtn.setAttribute('aria-pressed', String(on));
+    if (vProBtn) {
+      vProBtn.setAttribute('aria-pressed', String(on));
+      vProBtn.textContent = txt;
+      if (!silent && !REDUCE && vOpen) scramble(vProBtn, 0);
+    }
+    if (proLbl) {
+      proLbl.textContent = txt;
+      if (!silent && !REDUCE) scramble(proLbl, 0);
+    }
+    if (!on) {
+      stopLoupe();
+      if (mode === 'sheet') setLayout('masonry', density);
+    } else if (vOpen && labOpen && lastHistBins) {
+      requestAnimationFrame(() => drawHistCanvas(lastHistBins));
+    }
+    requestAnimationFrame(() => {
+      movePill(true);
+      globe.build(true);
+      placeLang();
+    });
+  }
+
+  try {
+    if (localStorage.getItem(PRO_KEY) === '1') applyPro(true, true);
+    else if (mode === 'sheet') {
+      mode = 'masonry';
+      grid.dataset.layout = 'masonry';
+    }
+  } catch (_) {}
+
+  function togglePro() {
+    const next = document.documentElement.getAttribute('data-pro') !== '1';
+    try { localStorage.setItem(PRO_KEY, next ? '1' : '0'); } catch (_) {}
+    applyPro(next, false);
+    toast(next ? 'PRO DARKROOM // ON' : 'RAW 1:1 MODE // ON');
+  }
+
+  if (proBtn) proBtn.addEventListener('click', togglePro);
+  if (vProBtn) vProBtn.addEventListener('click', togglePro);
+  addEventListener('keydown', (e) => {
+    if ((e.key === 'p' || e.key === 'P') && !e.metaKey && !e.ctrlKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
+      togglePro();
     }
   });
 

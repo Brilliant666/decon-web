@@ -115,6 +115,62 @@
   text-align: left;
 }
 
+/* PRO / RAW Mode Switch (Hardware 3x3 Dot LED + Readout) */
+.pro-toggle {
+  order: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 2px 0 6px;
+  color: var(--fg-2);
+  transition: color .25s ease;
+}
+.pro-toggle:hover { color: var(--fg); }
+.pro-toggle__led {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  background: radial-gradient(circle, var(--fg-3) 1px, transparent 1.3px) 0 0 / 3px 3px;
+  transition: filter .25s ease;
+}
+:root[data-pro="1"] .pro-toggle__led {
+  background: radial-gradient(circle, var(--led-on) 1px, transparent 1.3px) 0 0 / 3px 3px;
+}
+.pro-toggle__lbl {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  color: var(--fg-2);
+  min-width: 2.8ch;
+  text-align: left;
+}
+:root[data-pro="1"] .pro-toggle__lbl { color: var(--fg); }
+
+.pro-vbtn {
+  width: auto !important;
+  padding: 0 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  color: var(--ink-fg-3);
+}
+:root[data-pro="1"] .pro-vbtn {
+  color: var(--led-on);
+}
+
+/* When in RAW mode (default 1:1 original), hide all PRO darkroom additions */
+:root:not([data-pro="1"]) #layouts .seg__btn[data-layout="sheet"],
+:root:not([data-pro="1"]) #v-lab-toggle,
+:root:not([data-pro="1"]) #v-lab-fold,
+:root:not([data-pro="1"]) #v-loupe,
+:root:not([data-pro="1"]) #v-loupe-hud {
+  display: none !important;
+}
+:root:not([data-pro="1"]) .viewer__frame {
+  cursor: default;
+}
+
 /* Japanese and Chinese fall back to their own system fonts (Inter and Plex Mono have no CJK) */
 :root:lang(ja) {
   --sans: "Inter", "Helvetica Neue", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
@@ -1168,7 +1224,11 @@ input.field { height: 36px; }
 }
 
 /* 3. Live Dot-Matrix Histogram & 5-Chip Color Gene Swatches (Folded by default like Prompt) */
-.reveal--lab { margin-top: -12px; }
+#v-fold.is-open {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ink-line);
+}
+.reveal--lab { margin-top: -6px; }
 .reveal__right { display: inline-flex; align-items: center; gap: 8px; }
 .v-lab {
   display: grid;

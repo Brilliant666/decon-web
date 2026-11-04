@@ -51,6 +51,11 @@
       </svg>
       <span class="theme-toggle__lbl mono" id="theme-lbl">INK</span>
     </button>
+    <button class="pro-toggle" id="pro-toggle" type="button" aria-pressed="false" aria-label="Toggle PRO darkroom mode (P)" title="Switch RAW (1:1 Original) / PRO (Darkroom Suite) · Shortcut: P">
+      <span class="theme-toggle__sep" aria-hidden="true"></span>
+      <i class="pro-toggle__led" aria-hidden="true"></i>
+      <span class="pro-toggle__lbl mono" id="pro-lbl">RAW</span>
+    </button>
   </div>
 
   <section class="view home" id="view-home" data-view="home" hidden>
@@ -310,6 +315,7 @@
           <button type="button" data-lang="zh" lang="zh-Hans">中文</button>
         </div>
         <div class="viewer__nav">
+          <button class="iconbtn pro-vbtn mono" id="v-pro" type="button" aria-pressed="false" aria-label="Toggle PRO mode (P)" title="Switch RAW / PRO mode (P)">RAW</button>
           <button class="iconbtn" id="v-theme" type="button" aria-label="Toggle theme (T)" title="Switch Paper / Ink theme (T)">
             <svg viewBox="0 0 18 18" aria-hidden="true" style="fill:currentColor;stroke:none">
               <circle cx="9" cy="9" r="2.2"/>
@@ -333,24 +339,24 @@
           <div id="v-copy-wrap"></div>
           <a class="act act--go" id="v-gen" href="#studio"><span data-i18n="genNow">Generate now</span><span class="act__end" aria-hidden="true"><span class="act__led"></span><i>→</i></span></a>
           <button class="reveal" id="v-reveal" type="button" aria-expanded="false" aria-controls="v-fold"><span class="reveal__lbl"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg></button>
+          <div class="fold" id="v-fold" inert><div class="fold__in"><p class="fold__text" id="v-prompt"></p></div></div>
           <button class="reveal reveal--lab" id="v-lab-toggle" type="button" aria-expanded="false" aria-controls="v-lab-fold">
             <span class="reveal__lbl" data-i18n="histogram">Exposure</span>
             <span class="reveal__right"><span class="v-lab__sub mono" id="v-ev-stat">LOW-KEY // —</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg></span>
           </button>
-        </div>
-        <div class="fold" id="v-lab-fold" style="--i:2.5" inert>
-          <div class="fold__in">
-            <div class="v-lab" id="v-lab">
-              <canvas class="v-lab__hist" id="v-hist" aria-hidden="true"></canvas>
-              <div class="v-lab__axis mono" aria-hidden="true"><span>00 // SHD</span><span>MID</span><span>255 // HLT</span></div>
-              <div class="v-lab__tones">
-                <span class="v-lab__title" data-i18n="tones">Tones</span>
-                <div class="v-swatches" id="v-swatches"></div>
+          <div class="fold" id="v-lab-fold" inert>
+            <div class="fold__in">
+              <div class="v-lab" id="v-lab">
+                <canvas class="v-lab__hist" id="v-hist" aria-hidden="true"></canvas>
+                <div class="v-lab__axis mono" aria-hidden="true"><span>00 // SHD</span><span>MID</span><span>255 // HLT</span></div>
+                <div class="v-lab__tones">
+                  <span class="v-lab__title" data-i18n="tones">Tones</span>
+                  <div class="v-swatches" id="v-swatches"></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div class="fold" id="v-fold" style="--i:3" inert><div class="fold__in"><p class="fold__text" id="v-prompt"></p></div></div>
       </div>
     </aside>
   </div>
