@@ -589,3 +589,173 @@ if (document.readyState === 'loading') {
 } else {
   initIglooProHud();
 }
+
+// ============================================================================
+// 3. PORTAL CARD EMBED BRIDGE (?embed=card) — LIVE 3D HOVER, VISIBILITY & READY SIGNAL
+// ============================================================================
+(function initPortalCardEmbedBridge() {
+  const isCardEmbed = window.location.search.includes('embed=card');
+  if (!isCardEmbed) return;
+
+  // Hide the initial ASCII loader overlay in card embed mode so the portal backdrop transitions cleanly into the 3D scene
+  const embedStyle = document.createElement('style');
+  embedStyle.textContent = `
+    div#loader { opacity: 0 !important; pointer-events: none !important; display: none !important; }
+    .igloo-pro-root, .igloo-hw-capsule { display: none !important; }
+  `;
+  document.head.appendChild(embedStyle);
+
+  const nativeRaf = window.requestAnimationFrame.bind(window);
+  const nativeCancelRaf = window.cancelAnimationFrame.bind(window);
+  let cardEmbedPaused = false;
+  let readySent = false;
+  let syntheticRafId = 900000;
+  const pendingRafCallbacks = new Map();
+
+  // Intercept window.requestAnimationFrame in ?embed=card mode so decon:card-visibility can suspend/wake WebGL2 in 0ms
+  window.requestAnimationFrame = function (cb) {
+    if (typeof cb !== 'function') return 0;
+    if (cardEmbedPaused && readySent) {
+      const id = ++syntheticRafId;
+      pendingRafCallbacks.set(id, cb);
+      return id;
+    }
+    return nativeRaf(cb);
+  };
+
+  window.cancelAnimationFrame = function (id) {
+    if (pendingRafCallbacks.has(id)) {
+      pendingRafCallbacks.delete(id);
+      return;
+    }
+    return nativeCancelRaf(id);
+  };
+
+  // Notify parent portal as soon as WebGL2 3D Igloo scene draws its first geometry frames
+  function check3DReady() {
+    if (readySent) return;
+    const canvas = document.querySelector('#app canvas') || document.querySelector('canvas');
+    if (
+      canvas &&
+      (glTelemetry.drawCallsPerFrame > 2 || glTelemetry.lastFrameDrawCalls > 2)
+    ) {
+      readySent = true;
+      try {
+        window.parent.postMessage({ type: 'decon:igloo-ready' }, '*');
+      } catch (_) {}
+      return;
+    }
+    nativeRaf(check3DReady);
+  }
+  nativeRaf(check3DReady);
+
+  // Receive visibility suspend/wake & normalized pointer coordinates from parent portal Card #04
+  window.addEventListener('message', (e) => {
+    const data = e.data;
+    if (!data || typeof data !== 'object') return;
+
+    if (data.type === 'decon:card-visibility') {
+      const nextPaused = !data.visible;
+      if (cardEmbedPaused === nextPaused) return;
+      cardEmbedPaused = nextPaused;
+      if (!cardEmbedPaused && pendingRafCallbacks.size > 0) {
+        const queued = Array.from(pendingRafCallbacks.values());
+        pendingRafCallbacks.clear();
+        for (let i = 0; i < queued.length; i += 1) {
+          nativeRaf(queued[i]);
+        }
+      }
+      return;
+    }
+
+    if (data.type !== 'decon:igloo-pointer' || cardEmbedPaused) return;
+    const x = Math.round(Number(data.nx) * window.innerWidth);
+    const y = Math.round(Number(data.ny) * window.innerHeight);
+    const target =
+      document.querySelector('#app canvas') ||
+      document.getElementById('app') ||
+      document.body ||
+      window;
+
+    const evInit = {
+      clientX: x,
+      clientY: y,
+      screenX: x,
+      screenY: y,
+      bubbles: true,
+      cancelable: true,
+      view: window,
+    };
+
+    try {
+      target.dispatchEvent(
+        new PointerEvent('pointermove', { ...evInit, pointerId: 1, isPrimary: true })
+      );
+    } catch (_) {}
+    try {
+      target.dispatchEvent(new MouseEvent('mousemove', evInit));
+    } catch (_) {}
+  });
+})();
+
+/* --- Decon-Web Parent Stage Bridge (Progressive Back / Shortcuts / Top-Left Wake) --- */
+if (
+  window.parent &&
+  window.parent !== window &&
+  !window.location.search.includes('embed=card')
+) {
+  const notifyStageBack = (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    window.parent.postMessage({ type: 'decon:stage-back' }, '*');
+  };
+
+  // 1. 捕获键盘返回宏：Escape / BrowserBack / Alt+ArrowLeft / 非输入框 Backspace
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      const tag = (e.target && e.target.tagName) || '';
+      const isInput =
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        (e.target && e.target.isContentEditable);
+      if (e.key === 'Escape') {
+        // 若处于 PRO 模式，按 Escape 优先由子站自身监听器切回 RAW 模式，不直接关闭舞台
+        if (document.documentElement.getAttribute('data-igloo-mode') === 'PRO') {
+          return;
+        }
+        notifyStageBack(e);
+      } else if (
+        e.key === 'BrowserBack' ||
+        (e.altKey && e.key === 'ArrowLeft') ||
+        (!isInput && e.key === 'Backspace')
+      ) {
+        notifyStageBack(e);
+      }
+    },
+    true
+  );
+
+  // 2. 捕获鼠标侧键返回（Mouse Button 4 / XButton1: e.button === 3）
+  const onMouseBackBtn = (e) => {
+    if (e.button === 3) {
+      notifyStageBack(e);
+    }
+  };
+  window.addEventListener('mouseup', onMouseBackBtn, true);
+  window.addEventListener('auxclick', onMouseBackBtn, true);
+
+  // 3. 同步左上角指针靠近状态给父窗口（双重保障唤醒左上角 Logo）
+  let lastTopLeftState = false;
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      const inTopLeft = e.clientX <= 260 && e.clientY <= 105;
+      if (inTopLeft !== lastTopLeftState) {
+        lastTopLeftState = inTopLeft;
+        window.parent.postMessage({ type: 'decon:stage-top-left', active: inTopLeft }, '*');
+      }
+    },
+    { passive: true }
+  );
+}

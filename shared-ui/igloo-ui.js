@@ -238,6 +238,7 @@ export function createFrostCutShader(canvas, options = {}) {
   let frostDensity = typeof options.frostDensity === 'number' ? options.frostDensity : 1.0;
   let detailProgress = typeof options.detailProgress === 'number' ? options.detailProgress : 0.0;
   let destroyed = false;
+  let paused = false;
   let rafId = null;
 
   const vsSource = `#version 300 es
@@ -721,7 +722,10 @@ export function createFrostCutShader(canvas, options = {}) {
   const startTime = performance.now();
 
   function renderFrame(now) {
-    if (destroyed) return;
+    if (destroyed || paused) {
+      rafId = null;
+      return;
+    }
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.max(1, Math.floor((canvas.clientWidth || canvas.width || 640) * dpr));
     const h = Math.max(1, Math.floor((canvas.clientHeight || canvas.height || 380) * dpr));
@@ -795,11 +799,27 @@ export function createFrostCutShader(canvas, options = {}) {
         targetProgress,
         velocity,
         chromaticStrength,
-        frostDensity
+        frostDensity,
+        paused
       };
+    },
+    pause() {
+      paused = true;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    },
+    resume() {
+      if (destroyed || !paused) return;
+      paused = false;
+      if (!rafId) {
+        rafId = requestAnimationFrame(renderFrame);
+      }
     },
     destroy() {
       destroyed = true;
+      paused = true;
       if (rafId) cancelAnimationFrame(rafId);
       canvas.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
@@ -835,6 +855,7 @@ export function createCryoCubeWebGL(canvas, options = {}) {
   let targetRotY = rotY;
   let zoom = 3.55;
   let destroyed = false;
+  let paused = false;
   let rafId = null;
 
   const vsSource = `#version 300 es
@@ -1184,7 +1205,10 @@ export function createCryoCubeWebGL(canvas, options = {}) {
   const startTime = performance.now();
 
   function renderFrame(now) {
-    if (destroyed) return;
+    if (destroyed || paused) {
+      rafId = null;
+      return;
+    }
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.max(1, Math.floor((canvas.clientWidth || canvas.width || 640) * dpr));
     const h = Math.max(1, Math.floor((canvas.clientHeight || canvas.height || 380) * dpr));
@@ -1249,10 +1273,25 @@ export function createCryoCubeWebGL(canvas, options = {}) {
       coreTemp = Number(tempC) || 0;
     },
     getState() {
-      return { specimenId, ior, frostThickness, explodeProgress: targetExplode, coreTemp };
+      return { specimenId, ior, frostThickness, explodeProgress: targetExplode, coreTemp, paused };
+    },
+    pause() {
+      paused = true;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    },
+    resume() {
+      if (destroyed || !paused) return;
+      paused = false;
+      if (!rafId) {
+        rafId = requestAnimationFrame(renderFrame);
+      }
     },
     destroy() {
       destroyed = true;
+      paused = true;
       if (rafId) cancelAnimationFrame(rafId);
       canvas.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
@@ -1367,6 +1406,9 @@ export function createAsciiWaveLoader(el, options = {}) {
     play() {
       paused = false;
     },
+    resume() {
+      paused = false;
+    },
     getFrames() {
       return ASCII_WAVE_FRAMES_100.slice();
     },
@@ -1469,7 +1511,10 @@ export function createPolarReticleHud(containerEl, options = {}) {
     markerEl.textContent = `◄ ${sign}${altMeters}m (${tempVal})`;
   }
 
+  let paused = false;
+
   function onPointerMove(e) {
+    if (paused) return;
     const rect = containerEl.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     const nx = (e.clientX - rect.left) / rect.width;
@@ -1498,6 +1543,12 @@ export function createPolarReticleHud(containerEl, options = {}) {
       if (label) altEl.textContent = label;
       if (tempStr) tempEl.textContent = tempStr;
     },
+    pause() {
+      paused = true;
+    },
+    resume() {
+      paused = false;
+    },
     destroy() {
       window.removeEventListener('pointermove', onPointerMove);
       if (hudRoot.parentNode) hudRoot.parentNode.removeChild(hudRoot);
@@ -1524,6 +1575,7 @@ export function createBlurTextCylinder(canvas, options = {}) {
   let tilt = typeof options.tilt === 'number' ? options.tilt : -0.16;
   let angleOffset = 0;
   let destroyed = false;
+  let paused = false;
   let rafId = null;
 
   const rings = [
@@ -1535,7 +1587,10 @@ export function createBlurTextCylinder(canvas, options = {}) {
   let lastTime = performance.now();
 
   function render(now) {
-    if (destroyed) return;
+    if (destroyed || paused) {
+      rafId = null;
+      return;
+    }
     const dt = Math.min(0.05, (now - lastTime) * 0.001);
     lastTime = now;
     angleOffset += dt * speed;
@@ -1602,23 +1657,35 @@ export function createBlurTextCylinder(canvas, options = {}) {
 
     glyphs.sort((a, b) => a.z - b.z);
 
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Zero ctx.filter hardware-accelerated 3D Depth-of-Field glyph pass
     for (let i = 0; i < glyphs.length; i++) {
       const g = glyphs[i];
-      // Depth-of-field blur is minimal at front focal plane (z ~ 0.85) and higher towards back (z < 0)
+      // Depth-of-field defocus is minimal at front focal plane (z ~ 0.85) and higher towards back (z < 0)
       const defocus = Math.abs(0.85 - g.z) * 0.55;
-      const blurPx = Math.max(0, defocus * maxBlur);
-      const alpha = Math.max(0.1, Math.min(0.96, 0.25 + (g.z + 1.0) * 0.36));
+      const blurStrength = Math.max(0, defocus * maxBlur);
+      const alpha = Math.max(0.08, Math.min(0.96, 0.22 + (g.z + 1.0) * 0.37));
       const fontSize = Math.round(17 * g.ringScale * (0.78 + (g.z + 1.0) * 0.22));
 
       ctx.save();
       ctx.translate(g.x, g.y);
       ctx.scale(g.scaleX, 1);
-      ctx.filter = blurPx > 0.35 ? `blur(${blurPx.toFixed(1)}px)` : 'none';
       ctx.font = `600 ${fontSize}px "IBMPlexMono-Medium", "IBM Plex Mono", monospace`;
-      ctx.fillStyle = g.z > 0.4 ? `rgba(235, 246, 255, ${alpha.toFixed(2)})` : `rgba(138, 174, 214, ${alpha.toFixed(2)})`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(g.ch, 0, 0);
+      ctx.fillStyle = g.z > 0.4 ? '#EBF6FF' : '#8AAED6';
+
+      if (defocus > 0.25 && blurStrength > 1.0) {
+        const spread = Math.min(3.2, blurStrength * 0.28);
+        ctx.globalAlpha = alpha * 0.28;
+        ctx.fillText(g.ch, spread, spread * 0.55);
+        ctx.fillText(g.ch, -spread, -spread * 0.55);
+        ctx.globalAlpha = alpha * 0.55;
+        ctx.fillText(g.ch, 0, 0);
+      } else {
+        ctx.globalAlpha = alpha;
+        ctx.fillText(g.ch, 0, 0);
+      }
       ctx.restore();
     }
 
@@ -1647,10 +1714,26 @@ export function createBlurTextCylinder(canvas, options = {}) {
       tilt = Number(val) || 0;
     },
     getState() {
-      return { speed, maxBlur, depthProgress, textRing };
+      return { speed, maxBlur, depthProgress, textRing, paused };
+    },
+    pause() {
+      paused = true;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    },
+    resume() {
+      if (destroyed || !paused) return;
+      paused = false;
+      lastTime = performance.now();
+      if (!rafId) {
+        rafId = requestAnimationFrame(render);
+      }
     },
     destroy() {
       destroyed = true;
+      paused = true;
       if (rafId) cancelAnimationFrame(rafId);
     }
   };

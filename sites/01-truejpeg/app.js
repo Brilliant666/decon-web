@@ -2566,9 +2566,29 @@ onmessage = async (e) => {
   }
 
   try {
-    const savedTheme = localStorage.getItem(THEME_KEY);
-    if (savedTheme === 'light') applyTheme('light', true);
+    const urlTheme = new URLSearchParams(location.search).get('theme');
+    if (urlTheme === 'light' || urlTheme === 'dark') {
+      localStorage.setItem(THEME_KEY, urlTheme);
+      applyTheme(urlTheme, true);
+    } else {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme === 'light') applyTheme('light', true);
+    }
   } catch (_) {}
+
+  // Ensure /legal links carry current theme & avoid polluting parent iframe session history
+  $$('a[href="/legal"]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      const curTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      const dest = `/legal?theme=${curTheme}`;
+      if (window.parent && window.parent !== window) {
+        e.preventDefault();
+        location.replace(dest);
+      } else {
+        link.setAttribute('href', dest);
+      }
+    });
+  });
 
   async function toggleTheme(originEl, e) {
     if (themeBusy || going) return;
@@ -2704,4 +2724,85 @@ onmessage = async (e) => {
       if (r.cell) openViewer(r.cell, false);
     }, REDUCE ? 0 : 500);
   })();
+
+  /* --- Decon-Web Parent Stage Bridge (Progressive Back / Shortcuts / Top-Left Wake) --- */
+  if (window.parent && window.parent !== window) {
+    const notifyStageBack = (e) => {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      window.parent.postMessage({ type: 'decon:stage-back' }, '*');
+    };
+
+    const handleProgressiveBack = (e, isEscape = false) => {
+      // 1. 若大图查看器打开，优先关闭大图查看器
+      if (document.getElementById('viewer')?.classList.contains('is-open') || vOpen) {
+        if (!isEscape) {
+          e.preventDefault();
+          e.stopPropagation();
+          document.getElementById('v-close')?.click();
+        }
+        return;
+      }
+      // 2. 若年龄确认弹窗打开，优先关闭弹窗
+      if (document.getElementById('gate')?.classList.contains('is-open') || gate?.open) {
+        if (!isEscape) {
+          e.preventDefault();
+          e.stopPropagation();
+          document.getElementById('gate-no')?.click();
+        }
+        return;
+      }
+      // 3. 若语言菜单打开且按 Escape，交给内部关闭
+      if (isEscape && document.getElementById('lang')?.classList.contains('is-open')) {
+        return;
+      }
+      // 4. 若当前不在 #home 顶层视图且按下的是返回键（鼠标侧键 / BrowserBack / Alt+Left / Backspace），先退回 #home
+      if (
+        !isEscape &&
+        ((location.hash && location.hash !== '#' && location.hash !== '#home') || view !== 'home')
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        const homeTrigger = document.querySelector('.brand[data-go="home"], [data-go="home"]');
+        if (homeTrigger) homeTrigger.click();
+        else go('home', null);
+        return;
+      }
+      // 5. 已在顶层或无弹窗时按 Escape，丝滑退回总站
+      notifyStageBack(e);
+    };
+
+    // 1. 捕获键盘返回宏：Escape / BrowserBack / Alt+ArrowLeft / 非输入框 Backspace
+    window.addEventListener('keydown', (e) => {
+      const tag = (e.target && e.target.tagName) || '';
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable);
+      if (e.key === 'Escape') {
+        handleProgressiveBack(e, true);
+      } else if (
+        e.key === 'BrowserBack' ||
+        (e.altKey && e.key === 'ArrowLeft') ||
+        (!isInput && e.key === 'Backspace')
+      ) {
+        handleProgressiveBack(e, false);
+      }
+    }, true);
+
+    // 2. 捕获鼠标侧键返回（Mouse Button 4 / XButton1: e.button === 3）
+    const onMouseBackBtn = (e) => {
+      if (e.button === 3) {
+        handleProgressiveBack(e, false);
+      }
+    };
+    window.addEventListener('mouseup', onMouseBackBtn, true);
+    window.addEventListener('auxclick', onMouseBackBtn, true);
+
+    // 3. 同步左上角指针靠近状态给父窗口（双重保障唤醒左上角 Logo）
+    let lastTopLeftState = false;
+    window.addEventListener('pointermove', (e) => {
+      const inTopLeft = e.clientX <= 260 && e.clientY <= 105;
+      if (inTopLeft !== lastTopLeftState) {
+        lastTopLeftState = inTopLeft;
+        window.parent.postMessage({ type: 'decon:stage-top-left', active: inTopLeft }, '*');
+      }
+    }, { passive: true });
+  }
 })();

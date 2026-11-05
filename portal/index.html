@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-view="grid">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lusion Labs // Decon-Web Exhibition</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="prefetch" href="/lab" />
+  <link rel="prefetch" href="/lab.js" />
+</head>
+<body>
+  <!-- 1. Lusion Labs Authentic 8° Slanted 3-Layer Parallelogram Curtain Transition (TransitionCover) -->
+  <canvas id="transition-cover" class="transition-cover" aria-hidden="true"></canvas>
+
+  <!-- Fullscreen Honeycomb Dot-Wave Wipe Canvas (for SB-05 TrueJpegUI.createWipe sandbox) -->
+  <canvas id="portal-wipe-canvas" class="portal-wipe" aria-hidden="true"></canvas>
+
+  <!-- 2. Lusion Labs Authentic Inverted Disc Cursor (.cursor) -->
+  <div class="cursor" id="lusion-cursor" aria-hidden="true"></div>
+
+  <!-- Floating Real-Time Canvas Preview for list Chronicle View -->
+  <div class="list-preview-floater" id="list-preview-floater" aria-hidden="true">
+    <canvas id="list-preview-canvas" width="460" height="288"></canvas>
+  </div>
+
+  <!-- 3. 1:1 labs.lusion.co Fixed Top Navbar (#navbar — Identical Across / & /lab) -->
+  <nav id="navbar" class="navbar" aria-label="Primary Navigation">
+    <!-- Top-Left: 120fps Pure GPU Capsule + Interactive Lucy Mascot Logo -->
+    <div class="navbar__left header__logo">
+      <button type="button" class="logo-btn" id="lucy-logo-btn" aria-label="Lusion Labs Home">
+        <span class="logo-btn__wordmark" aria-hidden="true">
+          <span class="logo-btn__lusion">LUSION</span>
+          <span class="logo-btn__labs">LABS</span>
+        </span>
+        <svg class="lucy-face-svg" id="lucy-svg" viewBox="0 0 50 50" width="50" height="50" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g id="lucy-face">
+            <circle id="lucy-eye-l" cx="18" cy="21" r="3.2" fill="currentColor" />
+            <circle id="lucy-eye-r" cx="32" cy="21" r="3.2" fill="currentColor" />
+            <path id="lucy-mouth" d="M 20.5 31.5 A 4.8 4.8 0 0 0 29.5 31.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none" />
+          </g>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Right-Center (left: 68vw): Unified 3-Way Sliding Capsule (grid | list | lab) -->
+    <div class="navbar__views">
+      <div class="view-switch" id="view-switch" role="tablist" aria-label="View & Lab Switcher">
+        <div class="view-switch__option-background" id="view-switch-bg"></div>
+        <button type="button" class="view-switch__option is-active" data-view-mode="grid">grid</button>
+        <button type="button" class="view-switch__option" data-view-mode="list">list</button>
+        <button type="button" class="view-switch__option" data-view-mode="lab">lab</button>
+      </div>
+    </div>
+
+    <!-- Far Right: 1:1 .theme-switcher (W / B + 0.8rem dot) -->
+    <div class="navbar__theme">
+      <button type="button" class="theme-switcher" id="btn-theme-toggle" aria-label="Toggle Light/Dark Theme">
+        <span class="theme-switcher__init">
+          <span class="theme-switcher__roller" id="theme-roller">
+            <span>W</span>
+            <span>B</span>
+          </span>
+        </span>
+        <span class="theme-switcher__point"></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 4. 1:1 labs.lusion.co Pure Hero Section (#header) -->
+  <header id="header" class="header">
+    <div class="header__title">
+      <h1 class="header__h1" id="hero-h1">
+        <span class="hero-line-mask"><span class="hero-line">PLAY GROUND</span></span>
+        <span class="hero-line-mask"><span class="hero-line">R&amp;D COLLECTION</span></span>
+        <span class="hero-line-mask"><span class="hero-line">EXPERIMENTS</span></span>
+      </h1>
+    </div>
+
+    <div class="header__description">
+      <p>
+        A space dedicated to deconstructing how god-tier websites are engineered and how we interact with them through WebGL2, Canvas &amp; Audio R&amp;D.
+      </p>
+    </div>
+
+    <div class="header__scroll-down">
+      <button type="button" class="scroll-down-btn" id="btn-scroll-down">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3.5 3.5L12.5 12.5M12.5 12.5V4.5M12.5 12.5H4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="t-title-mono">SCROLL DOWN</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- =======================================================================
+       SECTION I: 1:1 labs.lusion.co STAGGERED EDITORIAL GALLERY (.cards-wrapper)
+       ======================================================================= -->
+  <section class="specimens-section view-panel" id="specimens-section" aria-label="Flagship Specimen Gallery">
+    <div class="cards-wrapper projects__grid" id="specimens-cards-grid">
+      <!-- ================= EXP 001: TRUE JPEG (1:1 Replica of :6060 #view-home Cover) ================= -->
+      <article class="card card--01" id="specimen-card-01" data-specimen-id="01" data-site-id="01-truejpeg">
+        <div class="card__img card__img--truejpeg" id="card-stage-01">
+          <div class="card__media tj-facade">
+            <!-- :6060 Top-Right Status Readout (EN · Globe · PAPER/INK · RAW) -->
+            <div class="tj-home-topbar" aria-hidden="true">
+              <span class="tj-home-topbar__lang">EN ▾</span>
+              <span class="tj-home-topbar__sep"></span>
+              <span class="tj-home-topbar__theme" id="tj-facade-theme-lbl">PAPER</span>
+              <span class="tj-home-topbar__sep"></span>
+              <i class="tj-home-topbar__led"></i>
+              <span class="tj-home-topbar__raw">RAW</span>
+            </div>
+
+            <!-- :6060 Full-Width Interactive Dot-Matrix Wordmark (TRUE JPEG) -->
+            <div class="tj-facade__wordmark" id="tj-facade-wordmark">
+              <canvas id="card-01-wordmark" class="tj-dot"></canvas>
+            </div>
+
+            <!-- :6060 3-Column Floating Entries Row (01 Prompt | 02 Generate | 03 Other) -->
+            <div class="tj-entries" aria-hidden="true">
+              <!-- Window 01: Prompt // Live -->
+              <div class="tj-win">
+                <div class="tj-win__bar">
+                  <span class="tj-win__no">01</span>
+                  <span class="tj-win__state">Prompt // Live <i class="tj-win__led tj-win__led--on"></i></span>
+                </div>
+                <div class="tj-win__ticks"></div>
+                <div class="tj-win__view tj-win__view--reel">
+                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/148.jpg" alt="" loading="lazy" /></span>
+                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/149.jpg" alt="" loading="lazy" /></span>
+                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/160.jpg" alt="" loading="lazy" /></span>
+                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/168.jpg" alt="" loading="lazy" /></span>
+                  <span class="tj-win__slot">01.0 // 144 works</span>
+                </div>
+                <div class="tj-win__body">
+                  <span class="tj-win__name">Prompt</span>
+                  <span class="tj-win__desc">Images with their full prompts. Copy one, paste it into your generator.</span>
+                  <div class="tj-win__spec">
+                    <span><b>Section</b><span>01 // Prompt</span></span>
+                    <span><b>Enter</b><span>144 works <i>→</i></span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Window 02: Generate // Live -->
+              <div class="tj-win">
+                <div class="tj-win__bar">
+                  <span class="tj-win__no">02</span>
+                  <span class="tj-win__state">Generate // Live <i class="tj-win__led tj-win__led--on"></i></span>
+                </div>
+                <div class="tj-win__ticks"></div>
+                <div class="tj-win__view tj-win__view--con">
+                  <div class="tj-con">
+                    <div class="tj-con__row"><b>model</b><span id="tj-con-model">SeeDream 5.0</span></div>
+                    <div class="tj-con__row"><b>ratio</b><span id="tj-con-ratio">4:5</span></div>
+                    <div class="tj-con__row"><b>size</b><span id="tj-con-size">1024 × 1280</span></div>
+                    <div class="tj-con__row"><b>seed</b><span id="tj-con-seed">48291</span></div>
+                    <div class="tj-con__run">
+                      <span class="tj-con__bar" id="tj-con-bar"></span>
+                      <span class="tj-con__n is-done" id="tj-con-step">DONE</span>
+                    </div>
+                  </div>
+                  <span class="tj-win__slot">02.0 // Two ways</span>
+                </div>
+                <div class="tj-win__body">
+                  <span class="tj-win__name">Generate</span>
+                  <span class="tj-win__desc">Make images with closed models. Here with points, or with your own API key.</span>
+                  <div class="tj-win__spec">
+                    <span><b>Section</b><span>02 // Generate</span></span>
+                    <span><b>Enter</b><span>Two ways <i>→</i></span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Window 03: Other // Soon -->
+              <div class="tj-win tj-win--off">
+                <div class="tj-win__bar">
+                  <span class="tj-win__no">03</span>
+                  <span class="tj-win__state">Other // Soon <i class="tj-win__led tj-win__led--off"></i></span>
+                </div>
+                <div class="tj-win__ticks"></div>
+                <div class="tj-win__view tj-win__view--empty">
+                  <canvas class="tj-win__soon-cv" id="tj-win-soon-cv"></canvas>
+                  <span class="tj-win__slot">03.0 // Empty</span>
+                </div>
+                <div class="tj-win__body">
+                  <span class="tj-win__name">Other</span>
+                  <span class="tj-win__desc">Notes, experiments and everything else.</span>
+                  <div class="tj-win__spec">
+                    <span><b>Section</b><span>03 // Other</span></span>
+                    <span><b>Status</b><span>In preparation <i>→</i></span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card__text">
+          <div class="card__bottom">
+            <h2 class="card__title">
+              <span class="card__title-track">
+                <span class="card__title--top">True JPEG</span>
+                <span class="card__title--bottom">True JPEG</span>
+              </span>
+            </h2>
+            <div class="tags">OPTICAL HALFTONE · 3D GLOBE</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ================= EXP 003: SAM BECKER PHOTOS (1:1 Replica of :6062 Editorial Full-View + EXIF Plate) ================= -->
+      <article class="card card--03" id="specimen-card-03" data-specimen-id="03" data-site-id="03-sam-becker">
+        <div class="card__img card__img--photos" id="card-stage-03">
+          <div class="card__media sbp-facade">
+            <!-- :6062 Sticky Frosted Top Navigation Bar -->
+            <div class="sbp-topbar" aria-hidden="true">
+              <span class="sbp-topbar__brand">photos.sambecker.com</span>
+              <div class="sbp-topbar__right">
+                <span class="sbp-topbar__icons">
+                  <!-- Full View Icon (Active) -->
+                  <i class="sbp-icon is-active" title="Full View">
+                    <svg width="13" height="11" viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                      <rect x="3" y="4" width="22" height="16" rx="1.5" />
+                      <line x1="20.5" y1="4.8" x2="20.5" y2="19.2" stroke-dasharray="2 2" />
+                    </svg>
+                  </i>
+                  <!-- Grid View Icon -->
+                  <i class="sbp-icon" title="Grid View">
+                    <svg width="13" height="11" viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                      <rect x="3" y="4" width="22" height="16" rx="1.5" />
+                      <line x1="3" y1="12" x2="25" y2="12" />
+                      <line x1="10.5" y1="4" x2="10.5" y2="20" />
+                      <line x1="17.5" y1="4" x2="17.5" y2="20" />
+                    </svg>
+                  </i>
+                </span>
+                <span class="sbp-topbar__sep"></span>
+                <span class="sbp-topbar__pill" id="sbp-facade-theme-pill">☀ LIGHT</span>
+                <span class="sbp-topbar__pill sbp-topbar__pill--raw">RAW</span>
+              </div>
+            </div>
+
+            <!-- :6062 Full-View Split Stage: Left Floating Hero Photograph + Right Unlabeled EXIF Plate -->
+            <div class="sbp-workspace" aria-hidden="true">
+              <!-- Left Column: Floating Hero Photograph + Composition Guides + Contact Strip -->
+              <div class="sbp-stage-col">
+                <div class="sbp-hero-frame" id="sbp-hero-frame">
+                  <img
+                    id="sbp-hero-img"
+                    class="sbp-hero-img"
+                    src="/sites/03-sambecker-photos/photos/photo-xGnIrl5DjT3Nurp3.jpg"
+                    alt="Aerial Gourds #1 — Fujifilm X-T5"
+                    loading="lazy"
+                  />
+                  <!-- Subtle Rule-of-Thirds & Reticle Viewfinder Overlay on Hover -->
+                  <div class="sbp-hero-guides">
+                    <span class="sbp-guide-v1"></span>
+                    <span class="sbp-guide-v2"></span>
+                    <span class="sbp-guide-h1"></span>
+                    <span class="sbp-guide-h2"></span>
+                    <i class="sbp-hero-crosshair" id="sbp-hero-crosshair"></i>
+                  </div>
+                  <span class="sbp-hero-counter" id="sbp-hero-counter">01 / 36</span>
+                </div>
+
+                <!-- 4-Frame Contact Sheet Strip -->
+                <div class="sbp-contact-strip" id="sbp-contact-strip">
+                  <div class="sbp-thumb is-active" data-sbp-idx="0">
+                    <img src="/sites/03-sambecker-photos/photos/photo-xGnIrl5DjT3Nurp3.jpg" alt="" loading="lazy" />
+                    <span>01</span>
+                  </div>
+                  <div class="sbp-thumb" data-sbp-idx="1">
+                    <img src="/sites/03-sambecker-photos/photos/photo-IluPcUDtQJDKT42M.jpeg" alt="" loading="lazy" />
+                    <span>02</span>
+                  </div>
+                  <div class="sbp-thumb" data-sbp-idx="2">
+                    <img src="/sites/03-sambecker-photos/photos/photo-sKjgaHDvSur4KvrJ.jpeg" alt="" loading="lazy" />
+                    <span>03</span>
+                  </div>
+                  <div class="sbp-thumb" data-sbp-idx="3">
+                    <img src="/sites/03-sambecker-photos/photos/photo-Akbgou84jNGg7ezB.jpeg" alt="" loading="lazy" />
+                    <span>04</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: :6062 Authentic Unlabeled EXIF Plate (Instrument Serif + IBM Plex Mono + OKLCH Gene) -->
+              <aside class="sbp-exif-plate">
+                <div class="sbp-exif__title" id="sbp-exif-title">AERIAL GOURDS #1</div>
+
+                <div class="sbp-exif__gear">
+                  <div class="sbp-exif__row">
+                    <i class="sbp-exif__ico">⌖</i>
+                    <span id="sbp-exif-camera">FUJIFILM X-T5</span>
+                  </div>
+                  <div class="sbp-exif__row">
+                    <i class="sbp-exif__ico">◎</i>
+                    <span id="sbp-exif-lens">XF35mmF1.4 R</span>
+                  </div>
+                </div>
+
+                <div class="sbp-exif__exposure">
+                  <span id="sbp-exif-focal">35mm <em>53mm</em></span>
+                  <span id="sbp-exif-fnum">ƒ/1.4</span>
+                  <span id="sbp-exif-shutter">1/4700s</span>
+                  <span id="sbp-exif-iso">ISO 500</span>
+                </div>
+
+                <div class="sbp-exif__recipe">
+                  <span class="sbp-recipe-film" id="sbp-exif-film">CLASSIC NEG.</span>
+                  <span class="sbp-recipe-tag" id="sbp-exif-recipe">CLASSIC CUBAN +</span>
+                </div>
+
+                <div class="sbp-exif__oklch">
+                  <div class="sbp-oklch-dots" id="sbp-oklch-dots">
+                    <i style="background:#e98b27"></i>
+                    <i style="background:#9c3400"></i>
+                    <i style="background:#f7b753"></i>
+                    <i style="background:#fffccb"></i>
+                    <i style="background:#a08f7f"></i>
+                  </div>
+                  <div class="sbp-oklch-bar" id="sbp-oklch-bar"></div>
+                  <div class="sbp-exif__date" id="sbp-exif-date">18 OCT 2026 · OKLCH</div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+
+        <div class="card__text">
+          <div class="card__bottom">
+            <h2 class="card__title">
+              <span class="card__title-track">
+                <span class="card__title--top">Sam Becker Photos</span>
+                <span class="card__title--bottom">Sam Becker Photos</span>
+              </span>
+            </h2>
+            <div class="tags">OKLCH OPTICS · FILM ARCHIVE</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ================= EXP 002: MUSICFORPROGRAMMING (Theme-Adaptive Dual-Column IDE & Live Spectrum) ================= -->
+      <article class="card card--02" id="specimen-card-02" data-specimen-id="02" data-site-id="02-mfp">
+        <div class="card__img card__img--mfp" id="card-stage-02">
+          <div class="card__media mfp-facade">
+            <!-- Left: IDE Track Code Tree -->
+            <div class="mfp-facade__editor">
+              <div class="mfp-facade__tabs">
+                <span class="mfp-tab--active">episodes.js</span>
+                <span>synth.dsp</span>
+                <span>lpf.cfg</span>
+              </div>
+              <pre class="mfp-facade__code" aria-hidden="true"><i>01</i><span class="mfp-c-kw">import</span> { <span class="mfp-c-fn">focusStream</span> } <span class="mfp-c-kw">from</span> <span class="mfp-c-str">'@mfp/core'</span>;
+<i>02</i><span class="mfp-c-dim">// Episode 69 · Ambient DSP</span>
+<i>03</i><span class="mfp-c-kw">const</span> deck = <span class="mfp-c-fn">focusStream</span>({
+<i>04</i>  bpm: <span class="mfp-c-num">118</span>, lpf: <span class="mfp-c-str">'24dB'</span>,
+<i>05</i>  fftBins: <span class="mfp-c-num">32</span>, gain: <span class="mfp-c-num">0.88</span>
+<i>06</i>});</pre>
+            </div>
+
+            <!-- Center/Right: Track Player & Live ASCII Progress + Wave -->
+            <div class="mfp-facade__player">
+              <div class="mfp-facade__player-head">
+                <span class="mfp-c-dim">// NOW PLAYING</span>
+                <span class="mfp-facade__badge">LPF 24dB · 118 BPM</span>
+              </div>
+              <div class="mfp-facade__track">69: Chaos &amp; Clean Code</div>
+              <div class="mfp-facade__controls">
+                <span class="mfp-ctrl mfp-ctrl--active">[PLAYING]</span>
+                <span class="mfp-ctrl">[STOP]</span>
+                <span class="mfp-ctrl">[-30s]</span>
+                <span class="mfp-ctrl">[+30s]</span>
+              </div>
+              <div class="mfp-facade__bar-row">
+                <span class="mfp-facade__asciibar" id="mfp-facade-asciibar">[||||||||||||......] 64%</span>
+                <span class="mfp-facade__clock" id="mfp-facade-clock">00:18:42</span>
+              </div>
+              <pre class="mfp-facade__asciiwave" id="mfp-facade-asciiwave" aria-hidden="true"></pre>
+            </div>
+
+            <!-- Bottom Full-Span: 4-Track Sine Interference + 32-Band Peak-Hold LED Spectrum -->
+            <canvas class="mfp-facade__spectrum" id="mfp-facade-spectrum" aria-hidden="true"></canvas>
+          </div>
+        </div>
+
+        <div class="card__text">
+          <div class="card__bottom">
+            <h2 class="card__title">
+              <span class="card__title-track">
+                <span class="card__title--top">musicForProgramming();</span>
+                <span class="card__title--bottom">musicForProgramming();</span>
+              </span>
+            </h2>
+            <div class="tags">FFT SPECTRUM · AMBIENT SYNTH</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ================= EXP 004: IGLOO INC (Authentic Live :6063 Lusion 3D WebGL Stage) ================= -->
+      <article class="card card--04" id="specimen-card-04" data-specimen-id="04" data-site-id="04-igloo">
+        <div class="card__img card__img--igloo" id="card-stage-04">
+          <!-- Instant Zero-Latency Polar Igloo Backdrop (Top 62% of social.jpg, zero text) -->
+          <div class="igloo-stage-backdrop" aria-hidden="true">
+            <img src="/sites/04-igloo-inc/assets/images/social.jpg" alt="" loading="eager" />
+          </div>
+          <!-- Live Authentic :6063 Lusion 3D WebGL2 Engine Stage -->
+          <iframe
+            id="card-04-igloo-iframe"
+            class="card__igloo-iframe"
+            data-src="http://127.0.0.1:6063/?embed=card"
+            title="Igloo Inc Live 3D WebGL Specimen"
+            tabindex="-1"
+            aria-hidden="true"
+          ></iframe>
+        </div>
+
+        <div class="card__text">
+          <div class="card__bottom">
+            <h2 class="card__title">
+              <span class="card__title-track">
+                <span class="card__title--top">Igloo Inc</span>
+                <span class="card__title--bottom">Igloo Inc</span>
+              </span>
+            </h2>
+            <div class="tags">WEBGL2 PRISM · FROST SHADER</div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- =======================================================================
+       SECTION II: 1:1 labs.lusion.co .exp-list CHRONICLE VIEW (list mode · 4 Specimens)
+       ======================================================================= -->
+  <section class="exp-list-section view-panel view-panel--inactive" id="exp-list-section" aria-label="Experiment List View">
+    <div class="exp-list" id="exp-list-rows"></div>
+  </section>
+
+  <!-- =======================================================================
+       SECTION III: SHARED-UI COMPONENT ARSENAL (lab mode · 16 Bento Sandboxes · 30 Primitives)
+       ======================================================================= -->
+  <section class="lab-view-section view-panel view-panel--inactive" id="lab-view-section" aria-label="Shared-UI Component Lab">
+    <!-- Minimal Specimen Filter Bar (#tools-bar) -->
+    <div class="tools-bar" id="tools-bar">
+      <div class="filter" role="tablist" aria-label="Sandbox Specimen Filter">
+        <button type="button" class="filter__btn is-active" data-filter="all">
+          <span>All (16)</span>
+        </button>
+        <button type="button" class="filter__btn" data-filter="01">
+          <span>True JPEG</span>
+        </button>
+        <button type="button" class="filter__btn" data-filter="02">
+          <span>musicForProgramming</span>
+        </button>
+        <button type="button" class="filter__btn" data-filter="03">
+          <span>Sam Becker Photos</span>
+        </button>
+        <button type="button" class="filter__btn" data-filter="04">
+          <span>Igloo Inc</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 2-COLUMN EDITORIAL BENTO GALLERY (16 Interactive Sandboxes · 30 Primitives) -->
+    <div class="arsenal-section" id="arsenal-section" aria-label="Shared-UI Component Arsenal">
+      <div class="bento-grid" id="arsenal-bento-grid">
+        <!-- SB-01: TrueJpegUI.dotType -->
+        <article class="bento-card" id="sb-01" data-sandbox-id="SB-01" data-categories="01 canvas">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">01 · TRUE JPEG</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { TrueJpegUI } from '/shared-ui/truejpeg-ui.js';\nconst api = TrueJpegUI.dotType(canvas, 'TRUE JPEG', { maxH: 0.16 });">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">TrueJpegUI.dotType — Interactive Repulsion Dot Wordmark</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--dark" id="sb01-host">
+            <canvas id="sb01-canvas" class="sb-dottype-canvas"></canvas>
+          </div>
+          <div class="bento-card__controls">
+            <label class="bento-ctrl-label">
+              <span>TEXT</span>
+              <input type="text" id="sb01-input" class="bento-input" value="LUSION LABS" maxlength="18" />
+            </label>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb01-preset="TRUE JPEG">TRUE JPEG</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb01-preset="LUSION LABS">LUSION LABS</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb01-preset="CRAFT ARCHIVE">CRAFT ARCHIVE</button>
+          </div>
+        </article>
+
+        <!-- SB-02: TrueJpegUI.renderHalftone -->
+        <article class="bento-card" id="sb-02" data-sandbox-id="SB-02" data-categories="01 canvas photo">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">01 · TRUE JPEG</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { TrueJpegUI } from '/shared-ui/truejpeg-ui.js';\nTrueJpegUI.renderHalftone(imgEl, canvas, 6, '#ececea', '#111110');">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">TrueJpegUI.renderHalftone — Dot-Screen Developer</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--dark">
+            <canvas id="sb02-canvas" class="sb-canvas-full" width="380" height="210"></canvas>
+          </div>
+          <div class="bento-card__controls">
+            <label class="bento-ctrl-label">
+              <span>STEP <strong id="sb02-step-val">6px</strong></span>
+              <input type="range" id="sb02-step" min="3" max="14" step="1" value="6" />
+            </label>
+            <button type="button" class="pill-btn pill-btn--sm" id="sb02-invert-btn">INVERT POLARITY</button>
+            <button type="button" class="pill-btn pill-btn--sm" id="sb02-scene-btn">NEXT SUBJECT</button>
+          </div>
+        </article>
+
+        <!-- SB-03: TrueJpegUI.createGlobe -->
+        <article class="bento-card" id="sb-03" data-sandbox-id="SB-03" data-categories="01 webgl canvas">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">01 · TRUE JPEG</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { TrueJpegUI } from '/shared-ui/truejpeg-ui.js';\nconst globe = TrueJpegUI.createGlobe(canvas, 160);\nglobe.spin(Math.PI * 1.25, 1000);">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">TrueJpegUI.createGlobe — 3D Spherical Projection</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--center bento-stage--dark" id="sb03-stage">
+            <canvas id="sb03-canvas" width="164" height="164"></canvas>
+            <div class="sb03-telemetry">
+              <div>TILT: 0.42 rad</div>
+              <div>SAMPLES: 74 PTS</div>
+              <div id="sb03-angle-readout">ORBIT READY</div>
+            </div>
+          </div>
+          <div class="bento-card__controls">
+            <button type="button" class="pill-btn pill-btn--sm" id="sb03-spin-btn">SPIN +225°</button>
+            <button type="button" class="pill-btn pill-btn--sm" id="sb03-fast-btn">ORBIT +720°</button>
+            <button type="button" class="pill-btn pill-btn--sm is-active" id="sb03-auto-btn">AUTO ORBIT</button>
+          </div>
+        </article>
+
+        <!-- SB-04: TrueJpegUI.drawDotHistogram + analyzeImage -->
+        <article class="bento-card" id="sb-04" data-sandbox-id="SB-04" data-categories="01 photo">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">01 · TRUE JPEG</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { TrueJpegUI } from '/shared-ui/truejpeg-ui.js';\nconst stats = TrueJpegUI.analyzeImage(imgEl, { histCanvas, cols: 40, rows: 10 });">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">TrueJpegUI.drawDotHistogram &amp; analyzeImage</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--hist bento-stage--dark">
+            <div class="sb04-top">
+              <canvas id="sb04-thumb" width="96" height="68" class="sb04-thumb"></canvas>
+              <div class="sb04-meta">
+                <div class="sb04-stat" id="sb04-stat">LOW-KEY · SHD 68%</div>
+                <div class="sb04-swatches" id="sb04-swatches"></div>
+              </div>
+            </div>
+            <canvas id="sb04-hist" width="340" height="76" class="sb04-hist-cv"></canvas>
+          </div>
+          <div class="bento-card__controls">
+            <button type="button" class="pill-btn pill-btn--sm is-active" data-sb04-preset="0">NOCTURNE</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb04-preset="1">GOLDEN DUNE</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb04-preset="2">ARCTIC KEY</button>
+          </div>
+        </article>
+
+        <!-- SB-05: TrueJpegUI.winFrame + createWipe + scramble -->
+        <article class="bento-card" id="sb-05" data-sandbox-id="SB-05" data-categories="01 canvas">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">01 · TRUE JPEG</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { TrueJpegUI } from '/shared-ui/truejpeg-ui.js';\nTrueJpegUI.winFrame(winEl);\nTrueJpegUI.scramble(el, 'DARKROOM', 'en');">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">winFrame, createWipe &amp; Matrix Scramble</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--dark">
+            <div class="sb05-win" id="sb05-win">
+              <div class="win__bar sb05-win__bar">
+                <span>PERIMETER GLINT · 2600ms</span>
+                <span>RULER TICKS · 8px</span>
+              </div>
+              <div class="sb05-win__body">
+                <div class="sb05-scramble-text" id="sb05-scramble-target">OPTICAL HALFTONE DARKROOM</div>
+                <p class="sb05-sub">Hover frame to ignite perimeter glint or trigger radial honeycomb dot-wave transition.</p>
+              </div>
+            </div>
+          </div>
+          <div class="bento-card__controls">
+            <button type="button" class="pill-btn pill-btn--sm" data-sb05-lang="en">DECODE EN</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb05-lang="ja">DECODE JA</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb05-lang="zh">DECODE ZH</button>
+            <button type="button" class="pill-btn pill-btn--sm pill-btn--solid" id="sb05-wipe-btn">HONEYCOMB WIPE</button>
+          </div>
+        </article>
+
+        <!-- SB-06: MfpUI.createAsciiBar + scrambleText -->
+        <article class="bento-card" id="sb-06" data-sandbox-id="SB-06" data-categories="02 canvas">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">02 · MFP</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { MfpUI } from '/shared-ui/mfp-ui.js';\nconst bar = MfpUI.createAsciiBar(el, { width: 28, value: 0.65 });\nMfpUI.scrambleText(titleEl, 'Episode 79: Corticyte');">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">MfpUI.createAsciiBar &amp; scrambleText</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--mfp">
+            <div class="sb06-episode-title" id="sb06-title">Episode 79: Corticyte (58:24)</div>
+            <div id="sb06-bar-progress" class="sb06-bar"></div>
+            <div id="sb06-bar-volume" class="sb06-bar"></div>
+          </div>
+          <div class="bento-card__controls">
+            <button type="button" class="pill-btn pill-btn--sm" data-sb06-ep="Episode 01: Datassette (61:12)">EP 01 DATASETTE</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb06-ep="Episode 42: Com Truise (54:08)">EP 42 COM TRUISE</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb06-ep="Episode 79: Corticyte (58:24)">EP 79 CORTICYTE</button>
+          </div>
+        </article>
+
+        <!-- SB-07: MfpUI.createSpectrum + createAmbientPad -->
+        <article class="bento-card" id="sb-07" data-sandbox-id="SB-07" data-categories="02 audio">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">02 · MFP</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { MfpUI } from '/shared-ui/mfp-ui.js';\nconst pad = MfpUI.createAmbientPad({ preset: 0, cutoff: 520 });\nconst spec = MfpUI.createSpectrum(hostEl, { analyser: pad.getAnalyser(), mode: 'ascii', simulated: true });\nspec.start();">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">MfpUI.createSpectrum &amp; createAmbientPad — 6-Chord Drone Synth</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--mfp-wide">
+            <div class="sb07-top-row">
+              <span id="sb07-chord-name" class="sb07-chord-label">Dmaj9 · Hypnagogic Warmth</span>
+              <pre id="sb07-wave-out" class="sb07-wave-out">_.-+:*^~'       _.-+:*^~'</pre>
+            </div>
+            <div id="sb07-spectrum-host" class="sb07-spectrum-host"></div>
+          </div>
+          <div class="bento-card__controls">
+            <button type="button" class="pill-btn pill-btn--sm pill-btn--solid" id="sb07-play-btn">START AMBIENT PAD</button>
+            <button type="button" class="pill-btn pill-btn--sm" id="sb07-mode-btn">ASCII / LED DOTS</button>
+            <select id="sb07-chord-select" class="bento-select" aria-label="Ambient Chord Preset">
+              <option value="0">01: Dmaj9 · Hypnagogic Warmth</option>
+              <option value="1">02: F#m11 · Subterranean Flow</option>
+              <option value="2">03: Cmaj9#11 · Lydian Horizon</option>
+              <option value="3">04: Em9 · Nocturnal Compiler</option>
+              <option value="4">05: Asus2/F · Tape Memory</option>
+              <option value="5">06: Bbmaj9 · Stratosphere Drift</option>
+            </select>
+            <label class="bento-ctrl-label">
+              <span>LPF <strong id="sb07-cutoff-val">520Hz</strong></span>
+              <input type="range" id="sb07-cutoff" min="160" max="2200" value="520" />
+            </label>
+          </div>
+        </article>
+
+        <!-- SB-08: MfpUI.createFlowTimer -->
+        <article class="bento-card" id="sb-08" data-sandbox-id="SB-08" data-categories="02 audio">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">02 · MFP</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { MfpUI } from '/shared-ui/mfp-ui.js';\nconst sound = MfpUI.createSoundEngine();\nconst timer = MfpUI.createFlowTimer(el, { sound });">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">MfpUI.createFlowTimer — Pomodoro &amp; Overtone Chime</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--mfp">
+            <div id="sb08-timer-host" class="sb08-timer-host"></div>
+            <div class="sb08-note">Harmonic Overtone Chime: 528Hz (C5) + 792Hz (G5)</div>
+          </div>
+          <div class="bento-card__controls">
+            <button type="button" class="pill-btn pill-btn--sm" id="sb08-demo3s-btn">3s SPRINT DEMO</button>
+            <button type="button" class="pill-btn pill-btn--sm pill-btn--solid" id="sb08-chime-btn">AUDITION 528Hz CHIME</button>
+          </div>
+        </article>
+
+        <!-- SB-09: createFilmRecipeCard + createExifPlate -->
+        <article class="bento-card" id="sb-09" data-sandbox-id="SB-09" data-categories="03 photo">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">03 · SAM BECKER</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { createExifPlate, createFilmRecipeCard } from '/shared-ui/photo-vault-ui.js';\ncreateExifPlate(plateEl, photoData, { proMode: true });\ncreateFilmRecipeCard(recipeEl, photoData);">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">createFilmRecipeCard &amp; createExifPlate — Fujifilm Recipe &amp; OKLCH Strip</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--photo-split">
+            <div id="sb09-exif-host" class="sb09-exif-col"></div>
+            <div id="sb09-recipe-host" class="sb09-recipe-col"></div>
+          </div>
+          <div class="bento-card__controls">
+            <button type="button" class="pill-btn pill-btn--sm is-active" data-sb09-recipe="0">CLASSIC CUBAN</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb09-recipe="1">PORTRA 400 V2</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb09-recipe="2">ACROS + R</button>
+            <button type="button" class="pill-btn pill-btn--sm" id="sb09-pro-btn">TOGGLE PRO DRAWER</button>
+          </div>
+        </article>
+
+        <!-- SB-10: createOpticalLoupe + createCompositionOverlay -->
+        <article class="bento-card" id="sb-10" data-sandbox-id="SB-10" data-categories="03 photo">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">03 · SAM BECKER</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { createOpticalLoupe, createCompositionOverlay } from '/shared-ui/photo-vault-ui.js';\nconst loupe = createOpticalLoupe(stageEl, imgEl, { enabled: true, zoom: 2.5 });\nconst comp = createCompositionOverlay(stageEl, { mode: 'phi' });">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">createOpticalLoupe &amp; createCompositionOverlay</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--loupe" id="sb10-stage">
+            <img id="sb10-img" data-main-photo alt="Darkroom Optical Specimen" class="sb10-img" />
+            <div class="sb10-hud-pill" id="sb10-hud-pill">HOVER &amp; WHEEL TO ZOOM LOUPE · GRID: PHI</div>
+          </div>
+          <div class="bento-card__controls">
+            <button type="button" class="pill-btn pill-btn--sm is-active" id="sb10-loupe-btn">LOUPE ON</button>
+            <button type="button" class="pill-btn pill-btn--sm" id="sb10-grid-btn">GRID: PHI SPIRAL</button>
+            <button type="button" class="pill-btn pill-btn--sm" id="sb10-shutter-btn">SHUTTER CLICK</button>
+          </div>
+        </article>
+
+        <!-- SB-11: parseExif + extractColorPalette -->
+        <article class="bento-card" id="sb-11" data-sandbox-id="SB-11" data-categories="03 photo">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">03 · SAM BECKER</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { parseExif, extractColorPalette } from '/shared-ui/photo-vault-ui.js';\nconst exif = parseExif(jpegArrayBuffer);\nconst { palette } = extractColorPalette(imgEl, 5);">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">parseExif &amp; extractColorPalette — Binary 0xFFE1 Inspector</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--exif-bin" id="sb11-dropzone">
+            <div class="sb11-hex-bar" id="sb11-hex-bar">FF D8 FF E1 00 9A 45 78 69 66 00 00 49 49 2A 00 08 00 00 00</div>
+            <div class="sb11-kv-grid" id="sb11-kv-grid"></div>
+            <div class="sb11-palette-row" id="sb11-palette-row"></div>
+          </div>
+          <div class="bento-card__controls">
+            <button type="button" class="pill-btn pill-btn--sm is-active" data-sb11-bin="0">X-T5 35mm</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb11-bin="1">LEICA M11</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb11-bin="2">GR IIIx</button>
+            <label class="pill-btn pill-btn--sm" style="cursor:pointer">
+              DROP .JPG
+              <input type="file" id="sb11-file-input" accept="image/jpeg,image/png,image/webp" hidden />
+            </label>
+          </div>
+        </article>
+
+        <!-- SB-12: createFrostCutShader (igloo-ui.js) -->
+        <article class="bento-card" id="sb-12" data-sandbox-id="SB-12" data-categories="04 webgl">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">04 · IGLOO INC</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { createFrostCutShader } from '/shared-ui/igloo-ui.js';\nconst shader = createFrostCutShader(canvas, { initialProgress: 0.46, chromaticStrength: 1.15 });">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">createFrostCutShader — Diagonal Frost-Cut &amp; CA_ITERATIONS = 5</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--webgl">
+            <canvas id="sb12-canvas" class="sb-webgl-canvas"></canvas>
+          </div>
+          <div class="bento-card__controls">
+            <label class="bento-ctrl-label">
+              <span>PROGRESS <strong id="sb12-prog-val">0.46</strong></span>
+              <input type="range" id="sb12-progress" min="0" max="1" step="0.01" value="0.46" />
+            </label>
+            <label class="bento-ctrl-label">
+              <span>CHROMATIC <strong id="sb12-ca-val">1.15</strong></span>
+              <input type="range" id="sb12-ca" min="0" max="2.4" step="0.05" value="1.15" />
+            </label>
+            <label class="bento-ctrl-label">
+              <span>FROST <strong id="sb12-frost-val">1.00</strong></span>
+              <input type="range" id="sb12-frost" min="0.2" max="2.2" step="0.05" value="1.0" />
+            </label>
+            <button type="button" class="pill-btn pill-btn--sm pill-btn--solid" id="sb12-sweep-btn">SWEEP TRANSITION</button>
+          </div>
+        </article>
+
+        <!-- SB-13: createCryoCubeWebGL (igloo-ui.js) -->
+        <article class="bento-card" id="sb-13" data-sandbox-id="SB-13" data-categories="04 webgl">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">04 · IGLOO INC</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { createCryoCubeWebGL } from '/shared-ui/igloo-ui.js';\nconst cube = createCryoCubeWebGL(canvas, { specimen: 0, ior: 1.31, frostThickness: 0.42 });">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">createCryoCubeWebGL — 3D SDF Raymarched Frozen Monolith</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--webgl">
+            <canvas id="sb13-canvas" class="sb-webgl-canvas"></canvas>
+          </div>
+          <div class="bento-card__controls">
+            <button type="button" class="pill-btn pill-btn--sm is-active" data-sb13-spec="0">PUDGY 0°C</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb13-spec="1">OVERPASS -3°C</button>
+            <button type="button" class="pill-btn pill-btn--sm" data-sb13-spec="2">IGLOO DOME -15°C</button>
+            <label class="bento-ctrl-label">
+              <span>FROST <strong id="sb13-frost-val">0.42</strong></span>
+              <input type="range" id="sb13-frost" min="0" max="1" step="0.02" value="0.42" />
+            </label>
+            <label class="bento-ctrl-label">
+              <span>IOR <strong id="sb13-ior-val">1.31</strong></span>
+              <input type="range" id="sb13-ior" min="1.05" max="1.60" step="0.01" value="1.31" />
+            </label>
+            <button type="button" class="pill-btn pill-btn--sm pill-btn--solid" id="sb13-explode-btn">EXPLODE LATTICE</button>
+          </div>
+        </article>
+
+        <!-- SB-14: createAsciiWaveLoader + createBlurTextCylinder (igloo-ui.js) -->
+        <article class="bento-card" id="sb-14" data-sandbox-id="SB-14" data-categories="04 webgl">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">04 · IGLOO INC</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { createAsciiWaveLoader, createBlurTextCylinder } from '/shared-ui/igloo-ui.js';\ncreateAsciiWaveLoader(loaderEl);\ncreateBlurTextCylinder(canvas, { blurRadius: 6.5 });">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">createAsciiWaveLoader &amp; createBlurTextCylinder</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--cylinder">
+            <div id="sb14-loader-host" class="sb14-loader-bar"></div>
+            <canvas id="sb14-cylinder-canvas" class="sb14-cylinder-cv" width="380" height="165"></canvas>
+          </div>
+          <div class="bento-card__controls">
+            <label class="bento-ctrl-label">
+              <span>DoF DEFOCUS <strong id="sb14-blur-val">6.5px</strong></span>
+              <input type="range" id="sb14-blur" min="0" max="14" step="0.5" value="6.5" />
+            </label>
+            <button type="button" class="pill-btn pill-btn--sm" id="sb14-decode-btn">SCRAMBLE MANIFESTO</button>
+          </div>
+        </article>
+
+        <!-- SB-15: createPolarReticleHud + IGLOO_ASSET_INDEX -->
+        <article class="bento-card" id="sb-15" data-sandbox-id="SB-15" data-categories="04 webgl photo">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">04 · IGLOO INC</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { createPolarReticleHud, IGLOO_PORTFOLIO_DATA } from '/shared-ui/igloo-ui.js';\nconst hud = createPolarReticleHud(containerEl, { depthProgress: 0.35 });">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">createPolarReticleHud &amp; IGLOO_ASSET_INDEX</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--hud" id="sb15-hud-stage">
+            <div class="sb15-asset-readout" id="sb15-asset-readout"></div>
+          </div>
+          <div class="bento-card__controls">
+            <label class="bento-ctrl-label">
+              <span>DEPTH <strong id="sb15-depth-val">+32.0m</strong></span>
+              <input type="range" id="sb15-depth" min="0" max="1" step="0.01" value="0.0" />
+            </label>
+            <button type="button" class="pill-btn pill-btn--sm" id="sb15-grid-btn">TOGGLE RETICLE GRID</button>
+          </div>
+        </article>
+
+        <!-- SB-16: Cross-Site Web Audio Synthesizer Master Console (Sound Matrix) -->
+        <article class="bento-card bento-card--full" id="sb-16" data-sandbox-id="SB-16" data-categories="03 audio">
+          <div class="bento-card__head">
+            <div class="bento-card__meta">
+              <span class="t-title-mono">ALL 04 SPECIMENS · WEB AUDIO MASTER CONSOLE</span>
+              <button type="button" class="copy-esm-btn" data-copy-code="import { TrueJpegUI } from '/shared-ui/truejpeg-ui.js';\nimport { MfpUI } from '/shared-ui/mfp-ui.js';\nimport { createShutterAudio } from '/shared-ui/photo-vault-ui.js';\nimport { createCryoAudioEngine } from '/shared-ui/igloo-ui.js';">Copy ESM</button>
+            </div>
+            <h3 class="bento-card__title">Cross-Site Procedural Web Audio Synthesizer Matrix</h3>
+          </div>
+          <div class="bento-card__stage bento-stage--sound-matrix">
+            <div class="sound-matrix-grid">
+              <div class="sound-bank">
+                <div class="t-title-mono sound-bank__title">01 · TRUEJPEG DARKROOM</div>
+                <div class="sound-bank__pads">
+                  <button type="button" class="sound-pad" data-sound="tj-tick">Ratchet Tick</button>
+                  <button type="button" class="sound-pad" data-sound="tj-switch">Detent Switch</button>
+                  <button type="button" class="sound-pad" data-sound="tj-shutter">Curtain Shutter</button>
+                  <button type="button" class="sound-pad" data-sound="tj-copy">E6/A6 Copy Chime</button>
+                  <button type="button" class="sound-pad" id="pad-tj-ambient" data-sound="tj-ambient">Darkroom Hum: Off</button>
+                </div>
+              </div>
+
+              <div class="sound-bank">
+                <div class="t-title-mono sound-bank__title">02 · MFP IDE SYNTH</div>
+                <div class="sound-bank__pads">
+                  <button type="button" class="sound-pad" data-sound="mfp-beep">5555Hz IDE Beep</button>
+                  <button type="button" class="sound-pad" data-sound="mfp-tick">ASCII Slider Tick</button>
+                  <button type="button" class="sound-pad" data-sound="mfp-switch">Latch Toggle</button>
+                  <button type="button" class="sound-pad" data-sound="mfp-chime">528Hz Flow Chime</button>
+                </div>
+              </div>
+
+              <div class="sound-bank">
+                <div class="t-title-mono sound-bank__title">03 · SAM BECKER SHUTTER</div>
+                <div class="sound-bank__pads">
+                  <button type="button" class="sound-pad" data-sound="sb-shutter">Leaf Shutter Blade</button>
+                  <button type="button" class="sound-pad" data-sound="sb-aperture">Aperture Ring Click</button>
+                </div>
+              </div>
+
+              <div class="sound-bank">
+                <div class="t-title-mono sound-bank__title">04 · IGLOO CRYO SPATIAL</div>
+                <div class="sound-bank__pads">
+                  <button type="button" class="sound-pad" data-sound="ig-beep1">Telemetry Pulse</button>
+                  <button type="button" class="sound-pad" data-sound="ig-shard">Ice Shard Fracture</button>
+                  <button type="button" class="sound-pad" data-sound="ig-dive">Sub-Zero Cube Dive</button>
+                  <button type="button" class="sound-pad" id="pad-ig-wind" data-sound="ig-wind">Arctic Blizzard: Off</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="sound-osc-bar">
+              <canvas id="sb16-osc-canvas" width="760" height="54"></canvas>
+              <div class="t-title-mono sound-osc-meta" id="sb16-last-triggered">READY · 100% PROCEDURAL WEB AUDIO SYNTHESIS</div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- =======================================================================
+       SECTION IV: 100% FULL-VIEWPORT LIVE STAGE (#fullscreen-stage)
+       ======================================================================= -->
+  <section class="fullscreen-stage" id="fullscreen-stage" hidden aria-label="Fullscreen Specimen Live Stage">
+    <!-- 100vw x 100vh Fullscreen Borderless Live Iframe -->
+    <iframe id="stage-iframe" class="stage-iframe" title="Fullscreen Specimen Live Stage" allow="autoplay; clipboard-write"></iframe>
+
+    <!-- Offline Server Wake Overlay -->
+    <div class="stage-offline-overlay" id="stage-offline-overlay" hidden>
+      <div class="offline-box">
+        <div class="t-title-mono offline-box__code" id="offline-box-code">SPECIMEN ENGINE STANDBY</div>
+        <p class="offline-box__desc">
+          Waking the native specimen engine in the background and mounting the fullscreen stage...
+        </p>
+        <button type="button" class="pill-btn pill-btn--solid" id="btn-offline-start">
+          WAKE SPECIMEN ENGINE
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Minimal Gallery Footer -->
+  <footer class="portal-footer" id="portal-footer">
+    <div class="t-title-mono">DECON-WEB · R&amp;D COLLECTION &amp; EXHIBITION ARCHIVE</div>
+    <div class="portal-footer__links t-title-mono">
+      <a href="/lab">SHARED-UI LAB ARSENAL (30) ↗</a>
+      <a href="https://labs.lusion.co/" target="_blank" rel="noopener">LABS.LUSION.CO</a>
+      <a href="https://truejpeg.com/" target="_blank" rel="noopener">TRUEJPEG.COM</a>
+      <a href="https://musicforprogramming.net/" target="_blank" rel="noopener">MUSICFORPROGRAMMING.NET</a>
+      <a href="https://photos.sambecker.com/" target="_blank" rel="noopener">PHOTOS.SAMBECKER.COM</a>
+      <a href="https://www.igloo.inc/" target="_blank" rel="noopener">IGLOO.INC</a>
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div class="portal-toast" id="portal-toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

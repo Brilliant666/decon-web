@@ -110,10 +110,13 @@ export const TrueJpegUI = (() => {
         ctx.arc(x, y, r, 0, Math.PI * 2);
       }
       ctx.fill();
-      if (moving) raf = requestAnimationFrame(frame);
+      if (moving && !paused) raf = requestAnimationFrame(frame);
     }
 
-    const kick = () => { if (!raf && built) raf = requestAnimationFrame(frame); };
+    let paused = false;
+    const kick = () => {
+      if (!raf && built && !paused) raf = requestAnimationFrame(frame);
+    };
 
     host.addEventListener('pointermove', (e) => {
       const b = cv.getBoundingClientRect();
@@ -125,8 +128,9 @@ export const TrueJpegUI = (() => {
 
     let lastW = 0;
     new ResizeObserver(() => {
-      if (cv.clientWidth === lastW || !built) return;
-      lastW = cv.clientWidth;
+      const cw = cv.clientWidth;
+      if (!cw || cw === lastW || !built) return;
+      lastW = cw;
       build();
       t0 = -1e9;
       kick();
@@ -134,10 +138,35 @@ export const TrueJpegUI = (() => {
 
     const api = {
       play(newWord) {
+        paused = false;
         if (typeof newWord === 'string') text = newWord.toUpperCase();
         build();
         lastW = W;
         t0 = performance.now();
+        kick();
+      },
+      pause() {
+        paused = true;
+        if (raf) {
+          cancelAnimationFrame(raf);
+          raf = 0;
+        }
+      },
+      resume() {
+        if (!paused) return;
+        paused = false;
+        if (!built && cv.clientWidth > 0) {
+          build();
+          lastW = W;
+          t0 = -1e9;
+        }
+        kick();
+      },
+      setText(newWord) {
+        if (typeof newWord === 'string') text = newWord.toUpperCase();
+        build();
+        lastW = W;
+        t0 = -1e9;
         kick();
       },
     };

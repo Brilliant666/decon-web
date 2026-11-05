@@ -22,7 +22,9 @@ import {
 const THEMES = ['gallery-light', 'obsidian-dark', 'warm-contact'];
 const THEME_LABELS = {
   'gallery-light': { icon: '☀', text: 'LIGHT' },
+  light: { icon: '☀', text: 'LIGHT' },
   'obsidian-dark': { icon: '☾', text: 'DARK' },
+  dark: { icon: '☾', text: 'DARK' },
   'warm-contact': { icon: '◐', text: 'WARM' }
 };
 
@@ -39,6 +41,11 @@ const state = {
   stageControllers: [],
   pendingIngest: null
 };
+
+const urlTheme = new URLSearchParams(window.location.search).get('theme');
+if (urlTheme === 'dark' || urlTheme === 'light') {
+  state.theme = urlTheme;
+}
 
 const shutterAudio = createShutterAudio();
 let cmdPalette = null;
@@ -120,7 +127,13 @@ function getFilteredAndSortedPhotos() {
 }
 
 function applyTheme(themeName) {
-  state.theme = THEMES.includes(themeName) ? themeName : 'gallery-light';
+  const normalized =
+    themeName === 'dark'
+      ? 'obsidian-dark'
+      : themeName === 'light'
+        ? 'gallery-light'
+        : themeName;
+  state.theme = THEMES.includes(normalized) ? normalized : 'gallery-light';
   document.documentElement.setAttribute('data-theme', state.theme);
   localStorage.setItem('sb_theme', state.theme);
 
@@ -1131,3 +1144,84 @@ initIngestWorkflow();
 applyProMode(state.proMode);
 renderActiveView();
 loadPersistedUserPhotos();
+
+/* --- Decon-Web Parent Stage Bridge (Progressive Back / Shortcuts / Top-Left Wake) --- */
+if (window.parent && window.parent !== window) {
+  const notifyStageBack = (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    window.parent.postMessage({ type: 'decon:stage-back' }, '*');
+  };
+
+  const handleProgressiveBack = (e, isEscape = false) => {
+    // 1. 若全屏灯箱打开，优先关闭灯箱，绝不直接退出子站
+    if (!document.getElementById('lightboxModal')?.hidden || state.lightboxIndex >= 0) {
+      if (!isEscape) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeLightbox();
+      }
+      return;
+    }
+    // 2. 若上传弹窗打开，优先关闭上传弹窗
+    const ingestModal = document.getElementById('ingestModal');
+    if (ingestModal && !ingestModal.hidden) {
+      e.preventDefault();
+      e.stopPropagation();
+      ingestModal.hidden = true;
+      return;
+    }
+    // 3. 若命令面板打开，优先关闭命令面板
+    const cmdBackdrop = document.querySelector('.pv-cmd-backdrop.is-open');
+    if (cmdBackdrop) {
+      if (!isEscape) {
+        e.preventDefault();
+        e.stopPropagation();
+        cmdPalette?.close?.();
+      }
+      return;
+    }
+    // 4. 若当前有筛选条件且按下的是返回快捷键/鼠标侧键，先清除筛选
+    if (!isEscape && state.filter !== null) {
+      e.preventDefault();
+      e.stopPropagation();
+      setFilter(null, null);
+      return;
+    }
+    // 5. 无任何内部弹窗时，调用 notifyStageBack 返回总站
+    notifyStageBack(e);
+  };
+
+  // 1. 捕获键盘返回宏：Escape / BrowserBack / Alt+ArrowLeft / 非输入框 Backspace
+  window.addEventListener('keydown', (e) => {
+    const tag = (e.target && e.target.tagName) || '';
+    const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable);
+    if (e.key === 'Escape') {
+      handleProgressiveBack(e, true);
+    } else if (
+      e.key === 'BrowserBack' ||
+      (e.altKey && e.key === 'ArrowLeft') ||
+      (!isInput && e.key === 'Backspace')
+    ) {
+      handleProgressiveBack(e, false);
+    }
+  }, true);
+
+  // 2. 捕获鼠标侧键返回（Mouse Button 4 / XButton1: e.button === 3）
+  const onMouseBackBtn = (e) => {
+    if (e.button === 3) {
+      handleProgressiveBack(e, false);
+    }
+  };
+  window.addEventListener('mouseup', onMouseBackBtn, true);
+  window.addEventListener('auxclick', onMouseBackBtn, true);
+
+  // 3. 同步左上角指针靠近状态给父窗口（双重保障唤醒左上角 Logo）
+  let lastTopLeftState = false;
+  window.addEventListener('pointermove', (e) => {
+    const inTopLeft = e.clientX <= 260 && e.clientY <= 105;
+    if (inTopLeft !== lastTopLeftState) {
+      lastTopLeftState = inTopLeft;
+      window.parent.postMessage({ type: 'decon:stage-top-left', active: inTopLeft }, '*');
+    }
+  }, { passive: true });
+}

@@ -37,6 +37,14 @@ import { MfpUI } from '/shared-ui/mfp-ui.js';
   let favourites = loadJson(STORAGE_KEYS.FAVS, []);
   let volume = clamp(Number(localStorage.getItem(STORAGE_KEYS.VOL) || 0.8), 0.05, 1.0);
   let themeIdx = Math.max(0, THEMES.findIndex((t) => t.id === localStorage.getItem(STORAGE_KEYS.THEME)));
+  const urlTheme = new URLSearchParams(window.location.search).get('theme');
+  if (urlTheme === 'light') {
+    const paperIdx = THEMES.findIndex((t) => t.id === 'paper-light');
+    if (paperIdx >= 0) themeIdx = paperIdx;
+  } else if (urlTheme === 'dark') {
+    const paperIdx = THEMES.findIndex((t) => t.id === 'paper-light');
+    if (themeIdx === paperIdx) themeIdx = 0;
+  }
   let isPro = localStorage.getItem(STORAGE_KEYS.PRO) === '1';
 
   // Marquee state (1:1 Original MFP)
@@ -996,4 +1004,57 @@ import { MfpUI } from '/shared-ui/mfp-ui.js';
   }
 
   init();
+
+  /* --- Decon-Web Parent Stage Bridge (Progressive Back / Shortcuts / Top-Left Wake) --- */
+  if (window.parent && window.parent !== window) {
+    const notifyStageBack = (e) => {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      window.parent.postMessage({ type: 'decon:stage-back' }, '*');
+    };
+
+    const handleProgressiveBack = (e) => {
+      if (currentView !== 'episodes') {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        switchView('episodes', true);
+        return;
+      }
+      notifyStageBack(e);
+    };
+
+    // 1. 捕获键盘返回宏：Escape / BrowserBack / Alt+ArrowLeft / 非输入框 Backspace
+    window.addEventListener('keydown', (e) => {
+      const tag = (e.target && e.target.tagName) || '';
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable);
+      if (
+        e.key === 'Escape' ||
+        e.key === 'BrowserBack' ||
+        (e.altKey && e.key === 'ArrowLeft') ||
+        (!isInput && e.key === 'Backspace')
+      ) {
+        handleProgressiveBack(e);
+      }
+    }, true);
+
+    // 2. 捕获鼠标侧键返回（Mouse Button 4 / XButton1: e.button === 3）
+    const onMouseBackBtn = (e) => {
+      if (e.button === 3) {
+        handleProgressiveBack(e);
+      }
+    };
+    window.addEventListener('mouseup', onMouseBackBtn, true);
+    window.addEventListener('auxclick', onMouseBackBtn, true);
+
+    // 3. 同步左上角指针靠近状态给父窗口（双重保障唤醒左上角 Logo）
+    let lastTopLeftState = false;
+    window.addEventListener('pointermove', (e) => {
+      const inTopLeft = e.clientX <= 260 && e.clientY <= 105;
+      if (inTopLeft !== lastTopLeftState) {
+        lastTopLeftState = inTopLeft;
+        window.parent.postMessage({ type: 'decon:stage-top-left', active: inTopLeft }, '*');
+      }
+    }, { passive: true });
+  }
 })();

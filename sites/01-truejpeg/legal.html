@@ -20,11 +20,16 @@
       --pad: clamp(16px, 3.4vw, 64px);
       color-scheme: dark;
     }
+    :root[data-theme="light"] {
+      --paper: #f4f3ee; --sunk: #eae8e1; --line: #dcdad2; --line-2: #c5c3ba;
+      --fg: #141413; --fg-2: #5c5b57; --fg-3: #8e8d88;
+      color-scheme: light;
+    }
     :root:lang(ja) { --sans: "Inter", "Helvetica Neue", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif; }
     :root:lang(zh-Hans) { --sans: "Inter", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif; }
     *, *::before, *::after { box-sizing: border-box; }
-    html { background: var(--paper); -webkit-text-size-adjust: 100%; scroll-padding-top: 88px; }
-    body { margin: 0; min-height: 100vh; background: var(--paper); color: var(--fg); font: 400 15px/1.75 var(--sans); }
+    html { background: var(--paper); -webkit-text-size-adjust: 100%; scroll-padding-top: 88px; transition: background-color .22s ease, color .22s ease; }
+    body { margin: 0; min-height: 100vh; background: var(--paper); color: var(--fg); font: 400 15px/1.75 var(--sans); transition: background-color .22s ease, color .22s ease; }
     a { color: inherit; }
     .doc { display: none; }
     html[data-lang="en"] .doc[data-l="en"], html[data-lang="ja"] .doc[data-l="ja"], html[data-lang="zh"] .doc[data-l="zh"] { display: block; }
@@ -32,11 +37,15 @@
     .bar {
       position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between;
       height: 56px; padding: 0 var(--pad); background: rgba(17,17,16,.88); backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--line); transition: background-color .22s ease, border-color .22s ease;
+    }
+    :root[data-theme="light"] .bar {
+      background: rgba(244, 243, 238, .88);
     }
     .bar__home { display: flex; align-items: center; gap: 12px; text-decoration: none; font: 700 13px/1 var(--sans); letter-spacing: .14em; }
     .bar__home span { font: 400 11px/1 var(--mono); letter-spacing: .04em; color: var(--fg-3); text-transform: none; transition: color .2s; }
     .bar__home:hover span { color: var(--fg-2); }
+    .bar__right { display: flex; align-items: center; gap: 10px; }
     .bar__lang { display: flex; gap: 2px; }
     .bar__lang button {
       height: 28px; padding: 0 9px; border: 0; border-radius: 6px; background: none; cursor: pointer;
@@ -44,6 +53,13 @@
     }
     .bar__lang button:hover { color: var(--fg); }
     .bar__lang button[aria-pressed="true"] { color: var(--fg); background: var(--sunk); }
+    .bar__sep { width: 1px; height: 14px; background: var(--line); }
+    .bar__theme {
+      height: 28px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--sunk);
+      cursor: pointer; font: 400 11px/1 var(--mono); letter-spacing: .08em; color: var(--fg);
+      transition: color .2s, background .2s, border-color .2s;
+    }
+    .bar__theme:hover { border-color: var(--fg); }
 
     .head { padding: 72px var(--pad) 40px; border-bottom: 2px solid var(--fg); margin: 0 var(--pad); padding-left: 0; padding-right: 0; }
     .head__meta { display: flex; gap: 24px; margin: 0 0 18px; font: 400 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-3); }
@@ -86,11 +102,15 @@
 </head>
 <body>
   <div class="bar">
-    <a class="bar__home" href="/">TRUE JPEG <span data-back>← Back to the site</span></a>
-    <div class="bar__lang" role="group" aria-label="Language">
-      <button type="button" data-lang="en" lang="en">EN</button>
-      <button type="button" data-lang="ja" lang="ja">日本語</button>
-      <button type="button" data-lang="zh" lang="zh-Hans">中文</button>
+    <a class="bar__home" id="legal-home-link" href="/">TRUE JPEG <span data-back>← Back to the site</span></a>
+    <div class="bar__right">
+      <div class="bar__lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en" lang="en">EN</button>
+        <button type="button" data-lang="ja" lang="ja">日本語</button>
+        <button type="button" data-lang="zh" lang="zh-Hans">中文</button>
+      </div>
+      <span class="bar__sep" aria-hidden="true"></span>
+      <button type="button" class="bar__theme" id="legal-theme-btn" title="Switch Paper / Ink theme (Shortcut: T)">INK</button>
     </div>
   </div>
   <main>
@@ -107,6 +127,61 @@
       const saved = (() => { try { return JSON.parse(localStorage.getItem('tj.lang')); } catch (_) { return null; } })();
       const guess = (navigator.languages || [navigator.language || 'en']).map((l) => String(l).slice(0, 2).toLowerCase()).find((l) => LANGS.includes(l));
       const root = document.documentElement;
+      const themeBtn = document.getElementById('legal-theme-btn');
+      const homeLink = document.getElementById('legal-home-link');
+      const THEME_KEY = 'tj.theme';
+
+      function applyLegalTheme(mode, persist) {
+        const isLight = mode === 'light';
+        if (isLight) root.setAttribute('data-theme', 'light');
+        else root.removeAttribute('data-theme');
+        if (themeBtn) themeBtn.textContent = isLight ? 'PAPER' : 'INK';
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) metaTheme.content = isLight ? '#f4f3ee' : '#111110';
+        if (persist) {
+          try { localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark'); } catch (_) {}
+        }
+      }
+
+      const initialTheme = (() => {
+        try {
+          const urlTheme = new URLSearchParams(location.search).get('theme');
+          if (urlTheme === 'light' || urlTheme === 'dark') {
+            localStorage.setItem(THEME_KEY, urlTheme);
+            return urlTheme;
+          }
+          return localStorage.getItem(THEME_KEY) || 'dark';
+        } catch (_) {
+          return 'dark';
+        }
+      })();
+      applyLegalTheme(initialTheme, false);
+
+      function toggleLegalTheme() {
+        const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        applyLegalTheme(next, true);
+      }
+
+      if (themeBtn) themeBtn.addEventListener('click', toggleLegalTheme);
+      addEventListener('keydown', (e) => {
+        if ((e.key === 't' || e.key === 'T') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          toggleLegalTheme();
+        }
+      });
+
+      if (homeLink) {
+        homeLink.addEventListener('click', (e) => {
+          const curTheme = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+          const dest = `/?theme=${curTheme}`;
+          if (window.parent && window.parent !== window) {
+            e.preventDefault();
+            location.replace(dest);
+          } else {
+            homeLink.setAttribute('href', dest);
+          }
+        });
+      }
+
       if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
       function set(l, keep) {
         root.dataset.lang = l;
@@ -141,6 +216,44 @@
       addEventListener('scroll', mark, { passive: true });
       set(LANGS.includes(saved) ? saved : guess || 'en', false);
       go(false);
+
+      /* --- Decon-Web Parent Stage Bridge (Back Macro / Shortcuts / Top-Left Wake) --- */
+      if (window.parent && window.parent !== window) {
+        const notifyStageBack = (e) => {
+          if (e && typeof e.preventDefault === 'function') e.preventDefault();
+          window.parent.postMessage({ type: 'decon:stage-back' }, '*');
+        };
+
+        window.addEventListener('keydown', (e) => {
+          const tag = (e.target && e.target.tagName) || '';
+          const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable);
+          if (
+            e.key === 'Escape' ||
+            e.key === 'BrowserBack' ||
+            (e.altKey && e.key === 'ArrowLeft') ||
+            (!isInput && e.key === 'Backspace')
+          ) {
+            notifyStageBack(e);
+          }
+        }, true);
+
+        const onMouseBackBtn = (e) => {
+          if (e.button === 3) {
+            notifyStageBack(e);
+          }
+        };
+        window.addEventListener('mouseup', onMouseBackBtn, true);
+        window.addEventListener('auxclick', onMouseBackBtn, true);
+
+        let lastTopLeftState = false;
+        window.addEventListener('pointermove', (e) => {
+          const inTopLeft = e.clientX <= 260 && e.clientY <= 105;
+          if (inTopLeft !== lastTopLeftState) {
+            lastTopLeftState = inTopLeft;
+            window.parent.postMessage({ type: 'decon:stage-top-left', active: inTopLeft }, '*');
+          }
+        }, { passive: true });
+      }
     })();
   </script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"f7fb76a6ea8e4a6d8570d12e0a0b0c66","r":1,"spa":2}' crossorigin="anonymous"></script>
