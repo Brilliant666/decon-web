@@ -627,6 +627,7 @@ function updateHeroHeaderForView(mode) {
 function applyViewModeDOM(mode, { animate = false, deferResume = false } = {}) {
   forceResetFloatingOverlays();
   document.getElementById('navbar')?.classList.remove('is-navbar-scrolled-down');
+  document.documentElement.classList.remove('is-navbar-scrolled-down');
   clearTimeout(viewTransitionTimer);
   cancelAnimationFrame(viewEnterRaf1);
   cancelAnimationFrame(viewEnterRaf2);
@@ -1769,6 +1770,7 @@ function mountFullscreenStageDOM(id) {
   document.documentElement.setAttribute('data-stage-specimen', id);
   document.body.classList.add('is-stage-open');
   document.getElementById('navbar')?.classList.remove('is-navbar-scrolled-down');
+  document.documentElement.classList.remove('is-navbar-scrolled-down');
 
   // 1. Completely pause all gallery engines & unmount WebGL card iframe so stage gets 100% GPU/CPU
   pauseGalleryEngines({ unmountWebGL: true });
@@ -1915,13 +1917,23 @@ function getListPreviewImage(src) {
   return LIST_PREVIEW_IMAGES[src];
 }
 
-// Eagerly warm cache for the 4 authentic specimen covers
+// Eagerly warm cache for the authentic specimen covers used in list preview
 [
   '/sites/01-truejpeg/images/149.jpg',
   '/sites/01-truejpeg/images/168.jpg',
   '/sites/03-sambecker-photos/photos/photo-IluPcUDtQJDKT42M.jpeg',
-  '/sites/04-igloo-inc/assets/images/social.jpg',
 ].forEach(getListPreviewImage);
+
+// Pre-seeded 28 parallax snow particles for Specimen 04 procedural cryo-dome preview
+const CRYO_SNOW_PARTICLES = Array.from({ length: 28 }, (_, i) => ({
+  x: ((i * 73 + 19) % 100) / 100,
+  y: ((i * 41 + 7) % 100) / 100,
+  r: 0.9 + (i % 3) * 0.55,
+  speedY: 14 + (i % 5) * 6,
+  driftX: 8 + (i % 4) * 4,
+  phase: i * 0.7,
+  alpha: 0.28 + (i % 4) * 0.14,
+}));
 
 function drawImageCover2D(ctx, img, x, y, w, h) {
   if (!img || !img.complete || !img.naturalWidth) return false;
@@ -1942,18 +1954,28 @@ function startListPreviewCanvas(item) {
   const canvas = document.getElementById('list-preview-canvas');
   if (!floater || !canvas) return;
 
+  const W = 480;
+  const H = 300;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (canvas.width !== W * dpr || canvas.height !== H * dpr) {
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+  }
+
   floater.classList.add('is-visible');
   cancelAnimationFrame(previewLoopId);
 
   const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const start = performance.now();
 
   function renderPreview(now) {
     if (!previewActiveItem) return;
     const t = (now - start) * 0.001;
-    const w = canvas.width;
-    const h = canvas.height;
+    const w = W;
+    const h = H;
 
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
 
     if (item.specimenId === '01') {
@@ -2026,33 +2048,206 @@ function startListPreviewCanvas(item) {
       ctx.fillStyle = '#f4f5fa';
       ctx.fillText('CRANING · LEICA Q2 28MM', 142, h - 24);
     } else {
-      // Igloo Inc — Aspect-ratio preserved top-62% crop of social.jpg (zero horizontal compression!)
-      ctx.fillStyle = '#9fa5b2';
+      // Igloo Inc — 2x Retina Real-Time Procedural 3D Polar Geodesic Cryo-Dome & Frost Reticle
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+      bgGrad.addColorStop(0, '#090d14');
+      bgGrad.addColorStop(0.55, '#131b26');
+      bgGrad.addColorStop(1, '#1b2636');
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, w, h);
-      const img04 = getListPreviewImage('/sites/04-igloo-inc/assets/images/social.jpg');
-      if (img04 && img04.complete && img04.naturalWidth) {
-        const iw = img04.naturalWidth;
-        const safeH = img04.naturalHeight * 0.62; // Crop out bottom 38% white typography
-        const targetAspect = w / h;
-        let sh = safeH * 0.96;
-        let sw = sh * targetAspect;
-        if (sw > iw) {
-          sw = iw;
-          sh = sw / targetAspect;
-        }
-        const sx = (iw - sw) * 0.5;
-        const sy = safeH * 0.02;
-        ctx.drawImage(img04, sx, sy, sw, sh, 0, 0, w, h);
+
+      const cx = w * 0.5;
+      const cy = h * 0.58;
+      const domeR = 98;
+      const rotY = t * 0.52;
+      const tiltX = 0.34;
+      const cosX = Math.cos(tiltX);
+      const sinX = Math.sin(tiltX);
+
+      const project3D = (x, y, z) => {
+        const rx = x * Math.cos(rotY) - z * Math.sin(rotY);
+        const rz = x * Math.sin(rotY) + z * Math.cos(rotY);
+        const ry = y * cosX - rz * sinX;
+        const fz = y * sinX + rz * cosX;
+        const persp = 360 / (360 + fz * 0.45);
+        return {
+          x: cx + rx * persp,
+          y: cy + ry * persp,
+          z: fz,
+        };
+      };
+
+      // Polar subsurface volumetric glow behind the geodesic dome
+      const coreGlow = ctx.createRadialGradient(cx, cy - 18, 6, cx, cy - 12, domeR * 1.32);
+      coreGlow.addColorStop(0, 'rgba(165, 232, 255, 0.32)');
+      coreGlow.addColorStop(0.45, 'rgba(92, 178, 245, 0.14)');
+      coreGlow.addColorStop(1, 'rgba(19, 27, 38, 0)');
+      ctx.fillStyle = coreGlow;
+      ctx.fillRect(0, 0, w, h);
+
+      // Frozen lake reflection plane rings
+      ctx.save();
+      ctx.strokeStyle = 'rgba(155, 215, 255, 0.12)';
+      ctx.lineWidth = 1;
+      for (let gr = 1; gr <= 3; gr++) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 6, domeR * (0.65 + gr * 0.26), domeR * (0.65 + gr * 0.26) * sinX, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Helper to stroke paths with 5-Tap Chromatic Aberration dual-edge dispersion (±1.2px)
+      const strokeCryoPath = (buildPathFn, mainAlpha = 0.78, lineWidth = 1.15) => {
+        ctx.save();
+        ctx.lineWidth = lineWidth;
+
+        // Red/Magenta dispersion shift (-1.2px)
+        ctx.save();
+        ctx.translate(-1.2, 0);
+        ctx.strokeStyle = `rgba(255, 110, 145, ${mainAlpha * 0.34})`;
+        ctx.beginPath();
+        buildPathFn();
+        ctx.stroke();
+        ctx.restore();
+
+        // Cyan dispersion shift (+1.2px)
+        ctx.save();
+        ctx.translate(1.2, 0);
+        ctx.strokeStyle = `rgba(88, 232, 255, ${mainAlpha * 0.42})`;
+        ctx.beginPath();
+        buildPathFn();
+        ctx.stroke();
+        ctx.restore();
+
+        // Core crystalline ice highlight
+        ctx.strokeStyle = `rgba(210, 238, 255, ${mainAlpha})`;
+        ctx.beginPath();
+        buildPathFn();
+        ctx.stroke();
+        ctx.restore();
+      };
+
+      // 1. Geodesic Dome Latitudinal Ice Rings (5 elevations from base to crown)
+      const latLevels = [0, 0.22, 0.44, 0.66, 0.85];
+      const segs = 28;
+      latLevels.forEach((latFrac, idx) => {
+        const phi = latFrac * (Math.PI * 0.5);
+        const ringR = Math.cos(phi) * domeR;
+        const ringY = -Math.sin(phi) * domeR;
+        strokeCryoPath(
+          () => {
+            for (let s = 0; s <= segs; s++) {
+              const theta = (s / segs) * Math.PI * 2;
+              const p = project3D(Math.cos(theta) * ringR, ringY, Math.sin(theta) * ringR);
+              if (s === 0) ctx.moveTo(p.x, p.y);
+              else ctx.lineTo(p.x, p.y);
+            }
+          },
+          idx === 0 ? 0.82 : 0.62,
+          idx === 0 ? 1.35 : 1.0
+        );
+      });
+
+      // 2. Geodesic Meridian Ribs (12 longitudes)
+      const ribs = 12;
+      const ribSteps = 12;
+      for (let r = 0; r < ribs; r++) {
+        const theta = (r / ribs) * Math.PI * 2;
+        strokeCryoPath(
+          () => {
+            for (let s = 0; s <= ribSteps; s++) {
+              const phi = (s / ribSteps) * (Math.PI * 0.5);
+              const rad = Math.cos(phi) * domeR;
+              const y = -Math.sin(phi) * domeR;
+              const p = project3D(Math.cos(theta) * rad, y, Math.sin(theta) * rad);
+              if (s === 0) ctx.moveTo(p.x, p.y);
+              else ctx.lineTo(p.x, p.y);
+            }
+          },
+          0.54,
+          0.95
+        );
       }
 
-      // Subtle diagonal frost-cut light sweep
-      const sweepX = ((t * 140) % (w + 180)) - 90;
-      const frostGrad = ctx.createLinearGradient(sweepX - 55, 0, sweepX + 55, h);
-      frostGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
-      frostGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.24)');
-      frostGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = frostGrad;
-      ctx.fillRect(0, 0, w, h);
+      // 3. Internal Suspended Octahedral Cryo Core (counter-rotating)
+      const coreR = 34;
+      const coreCenterY = -domeR * 0.38 + Math.sin(t * 2.2) * 3.5;
+      const coreRot = -t * 1.15;
+      const projectCore = (x, y, z) => {
+        const rx = x * Math.cos(coreRot) - z * Math.sin(coreRot);
+        const rz = x * Math.sin(coreRot) + z * Math.cos(coreRot);
+        const ry = (y + coreCenterY) * cosX - rz * sinX;
+        const fz = (y + coreCenterY) * sinX + rz * cosX;
+        const persp = 360 / (360 + fz * 0.45);
+        return { x: cx + rx * persp, y: cy + ry * persp };
+      };
+      const topV = projectCore(0, -coreR * 1.18, 0);
+      const botV = projectCore(0, coreR * 1.18, 0);
+      const eqV = [
+        projectCore(coreR, 0, 0),
+        projectCore(0, 0, coreR),
+        projectCore(-coreR, 0, 0),
+        projectCore(0, 0, -coreR),
+      ];
+      strokeCryoPath(
+        () => {
+          for (let i = 0; i < 4; i++) {
+            const next = eqV[(i + 1) % 4];
+            ctx.moveTo(topV.x, topV.y);
+            ctx.lineTo(eqV[i].x, eqV[i].y);
+            ctx.lineTo(botV.x, botV.y);
+            ctx.moveTo(eqV[i].x, eqV[i].y);
+            ctx.lineTo(next.x, next.y);
+          }
+        },
+        0.92,
+        1.25
+      );
+
+      // 4. 28 Real-time Falling Parallax Snow Particles
+      ctx.fillStyle = 'rgba(228, 244, 255, 0.85)';
+      for (let i = 0; i < CRYO_SNOW_PARTICLES.length; i++) {
+        const sp = CRYO_SNOW_PARTICLES[i];
+        const px =
+          ((sp.x * w + Math.sin(t * 1.3 + sp.phase) * sp.driftX + t * 12) % w + w) % w;
+        const py = ((sp.y * h + t * sp.speedY) % h + h) % h;
+        ctx.globalAlpha = sp.alpha;
+        ctx.beginPath();
+        ctx.arc(px, py, sp.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // 5. Four-Corner Polar Optical Reticle Brackets
+      const m = 14;
+      const bLen = 12;
+      ctx.strokeStyle = 'rgba(210, 238, 255, 0.52)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      // Top-left
+      ctx.moveTo(m, m + bLen);
+      ctx.lineTo(m, m);
+      ctx.lineTo(m + bLen, m);
+      // Top-right
+      ctx.moveTo(w - m - bLen, m);
+      ctx.lineTo(w - m, m);
+      ctx.lineTo(w - m, m + bLen);
+      // Bottom-left
+      ctx.moveTo(m, h - m - bLen);
+      ctx.lineTo(m, h - m);
+      ctx.lineTo(m + bLen, h - m);
+      // Bottom-right
+      ctx.moveTo(w - m - bLen, h - m);
+      ctx.lineTo(w - m, h - m);
+      ctx.lineTo(w - m, h - m - bLen);
+      ctx.stroke();
+
+      // 6. Crisp 10px IBM Plex Mono Telemetry Readouts
+      ctx.font = '500 10px "IBM Plex Mono", monospace';
+      ctx.fillStyle = 'rgba(218, 240, 255, 0.86)';
+      ctx.fillText('SPECIMEN 04 // PROCEDURAL CRYO-DOME', 24, 29);
+      ctx.fillStyle = 'rgba(170, 212, 245, 0.72)';
+      ctx.fillText('LAT 78.22°N // TEMP -15.4°C // IOR 1.31', 24, h - 20);
     }
 
     previewLoopId = requestAnimationFrame(renderPreview);
@@ -2289,10 +2484,12 @@ function initGlobalControls() {
       const deltaY = curY - lastScrollY;
       lastScrollY = curY;
 
-      if (curY <= 80 || deltaY < -4) {
+      if (curY <= 48 || deltaY < -4) {
         navbarEl.classList.remove('is-navbar-scrolled-down');
-      } else if (curY > 90 && deltaY > 2) {
+        document.documentElement.classList.remove('is-navbar-scrolled-down');
+      } else if (curY > 48 && deltaY > 2) {
         navbarEl.classList.add('is-navbar-scrolled-down');
+        document.documentElement.classList.add('is-navbar-scrolled-down');
         lucyLogoBtn?.classList.remove('is-expanded');
         lucyLogoBtn?.blur();
       }
@@ -2306,6 +2503,7 @@ function initGlobalControls() {
     (e) => {
       if (!state.stageOpen && navbarEl && e.clientY <= 72) {
         navbarEl.classList.remove('is-navbar-scrolled-down');
+        document.documentElement.classList.remove('is-navbar-scrolled-down');
       }
       handleStageEdgeProximity(e.clientX, e.clientY);
     },

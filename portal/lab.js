@@ -1107,7 +1107,9 @@ function initBentoSandboxes() {
         const buf = createMinimalExifJpegBuffer(presetIdx);
         const parsed = parseExif(buf) || {};
         const sceneCv = createSyntheticCanvasScene(presetIdx, 180, 120);
-        const { palette } = extractColorPalette(sceneCv, 5);
+        const res = extractColorPalette(sceneCv, 5) || {};
+        const rawPalette = Array.isArray(res) ? res : (res.palette || []);
+        const defaultShares = [34, 24, 18, 14, 10];
 
         if (sb11Kv) {
           sb11Kv.innerHTML = `
@@ -1120,11 +1122,15 @@ function initBentoSandboxes() {
           `;
         }
         if (sb11Palette) {
-          sb11Palette.innerHTML = palette
-            .map(
-              (c) =>
-                `<div class="sb11-chip" style="background:${c.hex}">${c.share}%</div>`
-            )
+          sb11Palette.innerHTML = rawPalette
+            .map((c, idx) => {
+              const hex = typeof c === 'string' ? c : (c?.hex || '#64748B');
+              const share =
+                typeof c === 'object' && c?.share != null
+                  ? c.share
+                  : defaultShares[idx] || Math.round(100 / Math.max(1, rawPalette.length));
+              return `<div class="sb11-chip" style="background:${hex};" title="${hex}"><span>${hex}</span><b>${share}%</b></div>`;
+            })
             .join('');
         }
       }
@@ -1601,6 +1607,25 @@ function initGlobalControls() {
   document.getElementById('btn-scroll-down')?.addEventListener('click', () => {
     document.getElementById('tools-bar')?.scrollIntoView({ behavior: 'smooth' });
   });
+
+  // Scroll-down navbar avoidance for standalone /lab.html
+  let lastScrollY = window.scrollY;
+  window.addEventListener(
+    'scroll',
+    () => {
+      const curY = window.scrollY;
+      const navbar = document.getElementById('navbar');
+      if (curY > 48 && curY > lastScrollY + 4) {
+        navbar?.classList.add('is-navbar-scrolled-down');
+        document.documentElement.classList.add('is-navbar-scrolled-down');
+      } else if (curY < lastScrollY - 6 || curY <= 36) {
+        navbar?.classList.remove('is-navbar-scrolled-down');
+        document.documentElement.classList.remove('is-navbar-scrolled-down');
+      }
+      lastScrollY = curY;
+    },
+    { passive: true }
+  );
 
   window.addEventListener('keydown', (e) => {
     if (

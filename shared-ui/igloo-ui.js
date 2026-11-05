@@ -1608,12 +1608,8 @@ export function createBlurTextCylinder(canvas, options = {}) {
     const cw = w / dpr;
     const ch = h / dpr;
 
-    // Dark cryo chamber gradient
-    const bg = ctx.createLinearGradient(0, 0, 0, ch);
-    bg.addColorStop(0, '#0B0F17');
-    bg.addColorStop(0.5, '#121A27');
-    bg.addColorStop(1, '#090C12');
-    ctx.fillStyle = bg;
+    // Unified #12151c cryo stage surface (zero inner box seam)
+    ctx.fillStyle = '#12151c';
     ctx.fillRect(0, 0, cw, ch);
 
     // cubes/dot_pattern.ktx2 background matrix

@@ -248,19 +248,30 @@ html.is-transitioning-view #lusion-cursor {
   display: flex;
   align-items: center;
   pointer-events: none;
-  transition:
-    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.3s ease;
 }
 
-/* Scroll-down smart avoidance: hide top-left logo when scrolling down through cards */
-body:not(.is-stage-open) .navbar.is-navbar-scrolled-down .navbar__left {
-  transform: translate3d(0, -150%, 0);
+.navbar__left,
+.navbar__views,
+.navbar__theme {
+  transition:
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.28s ease;
+}
+
+/* Scroll-down smart avoidance: hide top-left logo & top-right view/theme capsules when scrolling down through cards */
+body:not(.is-stage-open) .navbar.is-navbar-scrolled-down .navbar__left,
+body:not(.is-stage-open) .navbar.is-navbar-scrolled-down .navbar__views,
+body:not(.is-stage-open) .navbar.is-navbar-scrolled-down .navbar__theme,
+html.is-navbar-scrolled-down body:not(.is-stage-open) .navbar__left,
+html.is-navbar-scrolled-down body:not(.is-stage-open) .navbar__views,
+html.is-navbar-scrolled-down body:not(.is-stage-open) .navbar__theme {
+  transform: translate3d(0, -140%, 0);
   opacity: 0;
   pointer-events: none;
 }
 
-body:not(.is-stage-open) .navbar.is-navbar-scrolled-down #lucy-logo-btn {
+body:not(.is-stage-open) .navbar.is-navbar-scrolled-down #lucy-logo-btn,
+html.is-navbar-scrolled-down body:not(.is-stage-open) #lucy-logo-btn {
   pointer-events: none;
 }
 
@@ -2816,10 +2827,11 @@ html[data-theme="dark"] .card--04 .card-button {
   left: 58%;
   top: 52%;
   transform: translate(-50%, -50%) scale(0.94);
-  width: 38rem;
+  width: 34rem;
+  aspect-ratio: 16 / 10;
   background: #111113;
   border: none;
-  border-radius: 18px;
+  border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 28px 64px rgba(0, 0, 0, 0.22);
   pointer-events: none;
@@ -2835,9 +2847,10 @@ html[data-theme="dark"] .card--04 .card-button {
   transform: translate(-50%, -50%) scale(1);
 }
 
+#list-preview-canvas,
 .list-preview-floater canvas {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   background: #111113;
 }
@@ -3122,9 +3135,12 @@ html[data-theme="dark"] .card--04 .card-button {
 }
 
 .bento-card__head {
+  height: 3.4rem;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  justify-content: space-between;
+  gap: 0.35rem;
 }
 
 .bento-card__meta {
@@ -3158,19 +3174,23 @@ html[data-theme="dark"] .card--04 .card-button {
 .bento-card__title {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 1.85rem;
+  font-size: clamp(1.02rem, 1.15vw, 1.22rem);
+  line-height: 1.3;
   font-weight: 400;
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bento-card__stage {
   position: relative;
   border-radius: 12px;
   overflow: hidden;
-  min-height: 19rem;
-  height: 21rem;
-  max-height: 24rem;
-  background: #2d3240;
+  min-height: 20rem;
+  height: 20rem;
+  max-height: 20rem;
+  background: #12151c;
   color: #f4f5fa;
   padding: 1.4rem;
   display: flex;
@@ -3180,6 +3200,17 @@ html[data-theme="dark"] .card--04 .card-button {
   transition:
     filter 0.55s cubic-bezier(0.16, 1, 0.3, 1),
     background 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:not(.bento-card--full) .bento-card__stage,
+.bento-card:not(.bento-card--full) .bento-stage--webgl {
+  height: 20rem !important;
+  min-height: 20rem !important;
+  max-height: 20rem !important;
+  flex: 0 0 20rem !important;
+  background: #12151c;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .bento-card:hover .bento-card__stage {
@@ -3238,14 +3269,7 @@ html[data-theme="dark"] .card--04 .card-button {
 
 .bento-stage--loupe {
   padding: 0;
-  min-height: 21rem;
-}
-
-.sb10-img {
-  width: 100%;
-  height: 21rem;
-  object-fit: cover;
-  display: block;
+  min-height: 20rem;
 }
 
 .sb10-hud-pill {
@@ -3263,37 +3287,89 @@ html[data-theme="dark"] .card--04 .card-button {
 
 .bento-stage--webgl {
   padding: 0;
-  min-height: 24rem;
+  min-height: 20rem;
 }
 
-.sb-webgl-canvas {
-  width: 100%;
-  height: 24rem;
-  display: block;
-}
-
+.sb-webgl-canvas,
+.sb10-img,
 .sb-dottype-canvas,
 .sb-canvas-full {
+  height: 100% !important;
   width: 100%;
-  height: 17rem;
   display: block;
+}
+
+.sb10-img {
+  object-fit: cover;
+}
+
+.bento-stage--cylinder {
+  background: #12151c !important;
+  justify-content: space-between;
+  gap: 0.6rem;
 }
 
 /* Bento Controls & Rounded Pill Buttons (Zero Square Brackets) */
 .bento-card__controls {
+  min-height: 5.2rem;
+  margin-top: auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.65rem;
+  align-content: center;
+  gap: 0.5rem 0.65rem;
 }
 
 .bento-ctrl-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.45rem;
   font-family: var(--font-mono);
-  font-size: 1rem;
+  font-size: 0.82rem;
   color: var(--color-muted);
+  white-space: nowrap;
+}
+
+.bento-card__controls input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 5.5rem;
+  height: 4px;
+  background: rgba(128, 134, 148, 0.28);
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+
+.bento-card__controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-black);
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.bento-card__controls input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.bento-card__controls input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-black);
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.bento-card__controls input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
 }
 
 .bento-input,
@@ -3472,19 +3548,25 @@ html[data-theme="dark"] .card--04 .card-button {
 
 .sb11-chip {
   flex: 1;
-  height: 2.2rem;
+  height: 2.1rem;
   border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  padding: 0 0.55rem;
   font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: #000;
+  font-size: 0.78rem;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.78);
 }
 
 .sb14-cylinder-cv {
   width: 100%;
-  height: 14rem;
+  flex: 1;
+  min-height: 0;
+  height: auto !important;
+  background: #12151c;
   display: block;
 }
 
