@@ -481,6 +481,17 @@ function toggleTheme() {
   updateViewSwitchGlider('lab');
 }
 
+function syncBentoOddTail() {
+  const allCards = Array.from(document.querySelectorAll('#arsenal-bento-grid .bento-card'));
+  allCards.forEach((c) => c.classList.remove('is-odd-tail'));
+  const visibleSingleCards = allCards.filter(
+    (c) => !c.hidden && !c.classList.contains('bento-card--full')
+  );
+  if (visibleSingleCards.length % 2 === 1) {
+    visibleSingleCards[visibleSingleCards.length - 1].classList.add('is-odd-tail');
+  }
+}
+
 function applyCategoryFilter(filterKey) {
   state.activeFilter = filterKey;
   playTick();
@@ -494,6 +505,8 @@ function applyCategoryFilter(filterKey) {
     const match = filterKey === 'all' || cats.includes(filterKey);
     card.hidden = !match;
   });
+
+  syncBentoOddTail();
 }
 
 function focusSandboxById(sandboxId) {
@@ -680,6 +693,7 @@ function initBentoSandboxes() {
   labInitialized = true;
 
   initPrimitiveIndexStrip();
+  syncBentoOddTail();
 
   document.querySelectorAll('.filter__btn').forEach((btn) => {
     if (btn.dataset.boundFilter === '1') return;
@@ -701,12 +715,22 @@ function initBentoSandboxes() {
         sb01Api = TrueJpegUI.dotType(sb01Cv, 'LUSION LABS', { maxH: 0.22 });
         observeVisibility(sb01Card || sb01Cv, (vis) => {
           sb01Vis = vis;
-          if (vis && labViewActive) sb01Api?.resume?.();
-          else sb01Api?.pause?.();
+          if (vis && labViewActive) {
+            if (sb01Cv.width <= 320 || !sb01Cv.dataset.sizedOnce) {
+              sb01Cv.dataset.sizedOnce = '1';
+              sb01Api?.setText((sb01Input?.value || 'LUSION LABS').trim().toUpperCase());
+            }
+            sb01Api?.resume?.();
+          } else {
+            sb01Api?.pause?.();
+          }
         });
         labPauseHooks.push(() => sb01Api?.pause?.());
         labResumeHooks.push(() => {
-          if (sb01Vis) sb01Api?.resume?.();
+          if (sb01Vis) {
+            sb01Api?.setText((sb01Input?.value || 'LUSION LABS').trim().toUpperCase());
+            sb01Api?.resume?.();
+          }
         });
       }
       sb01Input?.addEventListener('input', () => {
@@ -866,10 +890,22 @@ function initBentoSandboxes() {
       const sb06Vol = document.getElementById('sb06-bar-volume');
       const sb06Title = document.getElementById('sb06-title');
       if (sb06Prog) {
-        MfpUI.createAsciiBar(sb06Prog, { width: 24, value: 0.64, label: 'POS' });
+        MfpUI.createAsciiBar(sb06Prog, {
+          width: 24,
+          value: 0.64,
+          prefix: 'POS: ',
+          sound: mfpSound,
+          formatSuffix: (v) => `${Math.round(v * 58)}:24 / 58:24`,
+        });
       }
       if (sb06Vol) {
-        MfpUI.createAsciiBar(sb06Vol, { width: 24, value: 0.82, label: 'VOL' });
+        MfpUI.createAsciiBar(sb06Vol, {
+          width: 24,
+          value: 0.82,
+          prefix: 'VOL: ',
+          sound: mfpSound,
+          formatSuffix: (v) => `${Math.round(v * 100)}%`,
+        });
       }
       document.querySelectorAll('[data-sb06-ep]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -959,7 +995,7 @@ function initBentoSandboxes() {
         ? MfpUI.createFlowTimer(sb08Host, { sound: mfpSound, defaultMinutes: 25 })
         : null;
       document.getElementById('sb08-demo3s-btn')?.addEventListener('click', () => {
-        sb08Timer?.setMinutes(0.05);
+        sb08Timer?.reset(3);
         sb08Timer?.start();
       });
       document.getElementById('sb08-chime-btn')?.addEventListener('click', () => {
@@ -990,12 +1026,7 @@ function initBentoSandboxes() {
           highlightTone: -1.5,
           shadowTone: +1.5,
           colorShift: '+2',
-          palette: [
-            { oklch: 'oklch(0.722 0.155 61.15)', share: 52 },
-            { oklch: 'oklch(0.472 0.148 40.17)', share: 18 },
-            { oklch: 'oklch(0.821 0.137 75.75)', share: 16 },
-            { oklch: 'oklch(0.981 0.063 104.59)', share: 14 },
-          ],
+          palette: ['#C88A4B', '#7B4E34', '#D7B66E', '#EDE8D8', '#3B423E'],
         },
         {
           title: 'Kodak Portra 400 v2',
@@ -1012,11 +1043,7 @@ function initBentoSandboxes() {
           highlightTone: -1.0,
           shadowTone: -0.5,
           colorShift: '+1',
-          palette: [
-            { oklch: 'oklch(0.78 0.12 75)', share: 48 },
-            { oklch: 'oklch(0.62 0.09 52)', share: 24 },
-            { oklch: 'oklch(0.89 0.05 90)', share: 28 },
-          ],
+          palette: ['#D49B6A', '#8C583A', '#E6C79C', '#F4EFE6', '#2F3640'],
         },
         {
           title: 'Neopan Acros + Red Filter',
@@ -1033,11 +1060,7 @@ function initBentoSandboxes() {
           highlightTone: +2.0,
           shadowTone: +2.5,
           colorShift: 'Mono',
-          palette: [
-            { oklch: 'oklch(0.18 0.0 0)', share: 46 },
-            { oklch: 'oklch(0.54 0.0 0)', share: 30 },
-            { oklch: 'oklch(0.92 0.0 0)', share: 24 },
-          ],
+          palette: ['#1E1E1E', '#525252', '#8A8A8A', '#C7C7C7', '#F2F2F2'],
         },
       ];
 

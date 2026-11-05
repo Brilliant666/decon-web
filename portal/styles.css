@@ -3130,7 +3130,8 @@ html[data-theme="dark"] .card--04 .card-button {
   grid-column: span 1;
 }
 
-.bento-card--full {
+.bento-card--full,
+.bento-card.is-odd-tail {
   grid-column: 1 / -1;
 }
 
@@ -3261,10 +3262,58 @@ html[data-theme="dark"] .card--04 .card-button {
 }
 
 .bento-stage--photo-split {
+  --sb-text-main: #f4f5fa;
+  --sb-text-medium: rgba(244, 245, 250, 0.78);
+  --sb-text-dim: rgba(244, 245, 250, 0.52);
+  --sb-bg-main: #1b1e26;
+  --sb-bg-dim: rgba(255, 255, 255, 0.08);
+  --sb-border-color: rgba(255, 255, 255, 0.16);
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.4rem;
+  grid-template-columns: 1fr 1.15fr;
+  align-items: center;
+  gap: 1.2rem;
   background: #2b2927;
+  padding: 1rem 1.4rem !important;
+}
+
+.bento-stage--photo-split .pv-exif-plate {
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.bento-stage--photo-split .pv-photo-title {
+  font-size: 1.45rem;
+}
+
+.bento-stage--photo-split .pv-title-wrap {
+  margin-bottom: 0.4rem !important;
+}
+
+.bento-stage--photo-split .pv-pro-drawer {
+  position: static !important;
+  width: 100% !important;
+  margin-top: 0.45rem;
+  padding: 0.35rem 0.5rem;
+  display: none;
+}
+
+.bento-stage--photo-split .pv-exif-plate.is-pro .pv-pro-drawer {
+  display: block;
+}
+
+.bento-stage--photo-split .pv-pro-hist {
+  height: 22px !important;
+}
+
+.bento-stage--photo-split .pv-recipe-popover {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.92rem;
+}
+
+.bento-stage--photo-split .pv-recipe-visual-row {
+  display: none !important;
 }
 
 .bento-stage--loupe {
@@ -3292,11 +3341,28 @@ html[data-theme="dark"] .card--04 .card-button {
 
 .sb-webgl-canvas,
 .sb10-img,
-.sb-dottype-canvas,
 .sb-canvas-full {
   height: 100% !important;
   width: 100%;
   display: block;
+}
+
+.sb-dottype-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  color: #f4f5fa;
+}
+
+#sb-02 .bento-card__stage {
+  padding: 0;
+}
+
+#sb-15 .bento-card__stage {
+  height: 20rem !important;
+  min-height: 20rem !important;
+  max-height: 20rem !important;
+  flex: 0 0 20rem !important;
 }
 
 .sb10-img {
@@ -3473,10 +3539,23 @@ html[data-theme="dark"] .card--04 .card-button {
 }
 
 .sb05-win {
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 8px;
-  padding: 1.2rem;
+  --fg: #ececea;
+  --line-2: rgba(255, 255, 255, 0.34);
+  --line: rgba(255, 255, 255, 0.16);
+  --fg-3: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 1.4rem 1.6rem;
   position: relative;
+  width: 100%;
+}
+
+.sb05-win .win__frame {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .sb05-win__bar {
@@ -3523,6 +3602,104 @@ html[data-theme="dark"] .card--04 .card-button {
 .sb07-spectrum-host {
   min-height: 14rem;
 }
+
+/* MfpUI Shared Styles inside /lab (SB-06, SB-07, SB-08) */
+.mfp-ascii-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  line-height: 1.6;
+  cursor: ew-resize;
+  user-select: none;
+}
+
+.mfp-ascii-bar__br { color: rgba(255, 255, 255, 0.55); }
+.mfp-ascii-bar__fill { color: #20c997; font-weight: 500; }
+.mfp-ascii-bar__empty { color: rgba(255, 255, 255, 0.22); }
+.mfp-ascii-bar__suffix { color: rgba(255, 255, 255, 0.72); font-size: 1.02rem; }
+
+.mfp-spectrum {
+  display: flex;
+  flex-direction: column;
+  height: 13.5rem;
+  width: 100%;
+}
+
+.mfp-spectrum__stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.mfp-spectrum__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.mfp-spectrum__ascii {
+  display: grid;
+  grid-template-columns: repeat(32, minmax(0, 1fr));
+  height: 100%;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.mfp-spectrum__col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.mfp-spectrum__scale {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.sb08-timer-host {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  line-height: 1.8;
+  margin-bottom: 0.8rem;
+}
+
+.mfp-flow__comment { color: rgba(255, 255, 255, 0.42); }
+
+.mfp-flow__btn {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  margin: 0 0.15rem;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.mfp-flow__btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.bento-card__stage .green { color: #20c997; }
+.bento-card__stage .yellow { color: #fcc419; }
+.bento-card__stage .orange { color: #ff922b; }
+.bento-card__stage .fuschia { color: #f06595; }
+.bento-card__stage .purple { color: #b197fc; }
+.bento-card__stage .grey { color: rgba(255, 255, 255, 0.42); }
 
 .sb11-hex-bar {
   font-family: var(--font-mono);
