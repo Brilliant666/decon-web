@@ -589,10 +589,12 @@ function initIglooProHud() {
   requestAnimationFrame(telemetryTick);
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initIglooProHud);
-} else {
-  initIglooProHud();
+if (!window.location.search.includes('embed=card')) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initIglooProHud);
+  } else {
+    initIglooProHud();
+  }
 }
 
 // ============================================================================
@@ -635,19 +637,27 @@ if (document.readyState === 'loading') {
     return nativeCancelRaf(id);
   };
 
-  function check3DReady() {
-    if (readySent) return;
-    const canvas = document.querySelector('#app canvas') || document.querySelector('canvas');
-    if (canvas && glTelemetry.renderedActiveFrames > 8) {
-      readySent = true;
-      try {
-        window.parent.postMessage({ type: 'decon:igloo-ready' }, '*');
-      } catch (_) {}
-      return;
+  function trackCardEmbedFrame() {
+    if (glTelemetry.drawCallsPerFrame > 2) {
+      glTelemetry.lastFrameDrawCalls = glTelemetry.drawCallsPerFrame;
+      glTelemetry.renderedActiveFrames++;
     }
-    nativeRaf(check3DReady);
+    glTelemetry.drawCallsPerFrame = 0;
+    glTelemetry.trianglesPerFrame = 0;
+    if (!readySent && glTelemetry.renderedActiveFrames > 8) {
+      const canvas = document.querySelector('#app canvas') || document.querySelector('canvas');
+      if (canvas) {
+        readySent = true;
+        try {
+          window.parent.postMessage({ type: 'decon:igloo-ready' }, '*');
+        } catch (_) {}
+      }
+    }
+    if (!cardEmbedPaused || glTelemetry.renderedActiveFrames <= 240) {
+      nativeRaf(trackCardEmbedFrame);
+    }
   }
-  nativeRaf(check3DReady);
+  nativeRaf(trackCardEmbedFrame);
 
   // Receive visibility suspend/wake & normalized pointer coordinates from parent portal Card #04
   window.addEventListener('message', (e) => {
@@ -658,12 +668,15 @@ if (document.readyState === 'loading') {
       const nextPaused = !data.visible;
       if (cardEmbedPaused === nextPaused) return;
       cardEmbedPaused = nextPaused;
-      if (!cardEmbedPaused && pendingRafCallbacks.size > 0) {
-        const queued = Array.from(pendingRafCallbacks.values());
-        pendingRafCallbacks.clear();
-        for (let i = 0; i < queued.length; i += 1) {
-          nativeRaf(queued[i]);
+      if (!cardEmbedPaused) {
+        if (pendingRafCallbacks.size > 0) {
+          const queued = Array.from(pendingRafCallbacks.values());
+          pendingRafCallbacks.clear();
+          for (let i = 0; i < queued.length; i += 1) {
+            nativeRaf(queued[i]);
+          }
         }
+        nativeRaf(trackCardEmbedFrame);
       }
       return;
     }

@@ -7,7 +7,8 @@
  *   - Cross-directory /shared-ui/* routing -> ../../shared-ui/
  *   - /lab and /lab.html routing -> sites/04-igloo-inc/lab.html
  *   - /assets/* static hosting + transparent upstream proxy & local disk cache from https://www.igloo.inc/assets/*
- *     (automatically patches index-2e130bc1.js hardcoded "https://www.igloo.inc/" -> "/")
+ *     (automatically patches index-2e130bc1.js hardcoded "https://www.igloo.inc/" -> "/"
+ *      and patches App3D-d68cb154.js with ?embed=card Scene-01 Only Fast Path)
  *   - Clean SPA routes (/, /portfolio/*) -> sites/04-igloo-inc/index.html
  */
 
@@ -42,6 +43,49 @@ const ASSET_ALIAS_MAP = {
   'assets/images/smoke_datatexture.ktx2': 'assets/images/perlin-datatexture.ktx2'
 };
 
+/**
+ * Idempotently injects ?embed=card Scene-01 Only Fast Path into App3D-d68cb154.js
+ */
+function patchApp3DBundleIfNeeded(code) {
+  if (typeof code !== 'string' || code.includes('isEmbedCardMode')) {
+    return { code, changed: false };
+  }
+
+  let next = code;
+
+  // 1. Skip detail project 3D text meshes in QF.init() when in ?embed=card mode
+  next = next.replace(
+    'class QF{constructor(e){this.scene=e,this.ready=new Promise(t=>{this.isReady=t}),this.group=new Gi,this.group.name="projects",this.scene.add(this.group),this.options={width:.6,align:"left",lineHeight:.8,size:.09},this.projects=[],this.projectID=-1,this.mouseSim=null,this.scrollMultiplier=1,this.init()}async init(){await Promise.all(',
+    'class QF{constructor(e){this.scene=e,this.ready=new Promise(t=>{this.isReady=t}),this.group=new Gi,this.group.name="projects",this.scene.add(this.group),this.options={width:.6,align:"left",lineHeight:.8,size:.09},this.projects=[],this.projectID=-1,this.mouseSim=null,this.scrollMultiplier=1,this.init()}async init(){if(typeof window<"u"&&window.location.search.includes("embed=card"))return this.isReady();await Promise.all('
+  );
+
+  // 2. Skip cubes, entry scenes and audioController (13 .ogg downloads) in ?embed=card mode
+  next = next.replace(
+    'const ty={igloo:F3,cubes:aF,entry:UF};class jF{constructor(e){this.options=e,this.isFirstNavigation=!0,this.currentSection=null,this.ready=new Promise(t=>{this.isReady=t}),this.scroll={total:0,targetY1:0,targetY2:0,y:0,velocity:0},this.autoCenter={needed:!1,animating:!1,lastTarget:0,lastTime:0},this.scrollMultiplier=75e-5,this.scrollBlocked=!1,this.detailIndex=0,this.isDetailOpen=!1,this.scrollComposers=[],this.detailScene=null,this.detailComposer=null,this.init()}async init(){this.initGlobalPlane(),await this.createScenes(),this.audioController=new u3(this),',
+    'const isEmbedCardMode=typeof window<"u"&&window.location.search.includes("embed=card");const ty=isEmbedCardMode?{igloo:F3}:{igloo:F3,cubes:aF,entry:UF};class jF{constructor(e){this.options=e,this.isFirstNavigation=!0,this.currentSection=null,this.ready=new Promise(t=>{this.isReady=t}),this.scroll={total:0,targetY1:0,targetY2:0,y:0,velocity:0},this.autoCenter={needed:!1,animating:!1,lastTarget:0,lastTime:0},this.scrollMultiplier=75e-5,this.scrollBlocked=!1,this.detailIndex=0,this.isDetailOpen=!1,this.scrollComposers=[],this.detailScene=null,this.detailComposer=null,this.init()}async init(){this.initGlobalPlane(),await this.createScenes(),this.audioController=isEmbedCardMode?null:new u3(this),'
+  );
+
+  // 3. Skip detailScene (JF) and detailComposer in jF.createScenes()
+  next = next.replace(
+    'this.detailScene=new JF({mainController:this}),this.detailComposer=new tA({scene:this.detailScene}),await Promise.all([this.uiScene.uploaded,...this.scrollComposers.map(e=>e.passes[0].scene.uploaded),this.detailComposer.passes[0].scene.uploaded]),this.uiScene.projects.setMouseSim(this.detailScene.mouseSim)',
+    'isEmbedCardMode||(this.detailScene=new JF({mainController:this}),this.detailComposer=new tA({scene:this.detailScene})),await Promise.all([this.uiScene.uploaded,...this.scrollComposers.map(e=>e.passes[0].scene.uploaded),...(this.detailComposer?[this.detailComposer.passes[0].scene.uploaded]:[])]),this.detailScene&&this.uiScene.projects.setMouseSim(this.detailScene.mouseSim)'
+  );
+
+  // 4. Safe fallback for tCubes uniform in jF.render()
+  next = next.replace(
+    'this.material.uniforms.tCubes.value=this.scrollComposers[1].readBuffer.texture',
+    'this.material.uniforms.tCubes.value=(this.scrollComposers[1]||this.scrollComposers[0]).readBuffer.texture'
+  );
+
+  // 5. Lock DPR to 1 in sN launcher when in ?embed=card mode
+  next = next.replace(
+    'const u=window.devicePixelRatio<=2?Math.min(window.devicePixelRatio,1.15):Math.min(window.devicePixelRatio,1.5);',
+    'const u=isEmbedCardMode?1:window.devicePixelRatio<=2?Math.min(window.devicePixelRatio,1.15):Math.min(window.devicePixelRatio,1.5);'
+  );
+
+  return { code: next, changed: next !== code };
+}
+
 function proxyUpstreamAsset(relAssetPath, destPath) {
   const key = relAssetPath.replace(/^\/+/, '');
   if (inFlightProxy.has(key)) {
@@ -62,6 +106,9 @@ function proxyUpstreamAsset(relAssetPath, destPath) {
       if (key.endsWith('index-2e130bc1.js')) {
         const patched = rawBuf.toString('utf8').replace(/https:\/\/www\.igloo\.inc\//g, '/');
         buf = Buffer.from(patched, 'utf8');
+      } else if (key.endsWith('App3D-d68cb154.js')) {
+        const { code } = patchApp3DBundleIfNeeded(rawBuf.toString('utf8'));
+        buf = Buffer.from(code, 'utf8');
       }
       writeFileAtomicSync(destPath, buf);
       inFlightProxy.delete(key);
@@ -77,6 +124,7 @@ function proxyUpstreamAsset(relAssetPath, destPath) {
 }
 
 let indexBundlePatched = false;
+let app3DBundlePatched = false;
 
 function serveBufferOrFile(req, res, filePath, contentType, cacheControl) {
   serveStaticFile(req, res, filePath, {
@@ -124,7 +172,7 @@ http.createServer(async (req, res) => {
       : 'public, max-age=86400';
 
     if (fs.existsSync(localAssetPath) && fs.statSync(localAssetPath).isFile()) {
-      // Ensure index-2e130bc1.js is checked/patched only once per server process
+      // Ensure index-2e130bc1.js & App3D-d68cb154.js are checked/patched only once per server process
       if (!indexBundlePatched && relAsset.endsWith('index-2e130bc1.js')) {
         const code = fs.readFileSync(localAssetPath, 'utf8');
         if (code.includes('https://www.igloo.inc/')) {
@@ -132,6 +180,13 @@ http.createServer(async (req, res) => {
           writeFileAtomicSync(localAssetPath, patched, 'utf8');
         }
         indexBundlePatched = true;
+      } else if (!app3DBundlePatched && relAsset.endsWith('App3D-d68cb154.js')) {
+        const rawCode = fs.readFileSync(localAssetPath, 'utf8');
+        const { code, changed } = patchApp3DBundleIfNeeded(rawCode);
+        if (changed) {
+          writeFileAtomicSync(localAssetPath, code, 'utf8');
+        }
+        app3DBundlePatched = true;
       }
       serveBufferOrFile(req, res, localAssetPath, contentType, cacheHeader);
       return;
