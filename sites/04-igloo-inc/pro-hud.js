@@ -29,8 +29,9 @@ const OPTICS_MODES = ['CRYO-STD', 'POLAR-NIGHT', 'THERMAL-IR', 'WIREFRAME-XRAY']
 const glTelemetry = {
   drawCallsPerFrame: 0,
   trianglesPerFrame: 0,
-  lastFrameDrawCalls: 28,
-  lastFrameTriangles: 142600,
+  lastFrameDrawCalls: 0,
+  lastFrameTriangles: 0,
+  renderedActiveFrames: 0,
   shaderPrograms: 0,
   uProgress: 0.0,
   uProgressVel: 0.0,
@@ -517,7 +518,11 @@ function initIglooProHud() {
     lastFrameStamp = now;
     frameCount++;
 
-    if (glTelemetry.drawCallsPerFrame > 0) {
+    if (glTelemetry.drawCallsPerFrame > 2) {
+      glTelemetry.lastFrameDrawCalls = glTelemetry.drawCallsPerFrame;
+      glTelemetry.lastFrameTriangles = glTelemetry.trianglesPerFrame;
+      glTelemetry.renderedActiveFrames++;
+    } else if (glTelemetry.drawCallsPerFrame > 0) {
       glTelemetry.lastFrameDrawCalls = glTelemetry.drawCallsPerFrame;
       glTelemetry.lastFrameTriangles = glTelemetry.trianglesPerFrame;
     }
@@ -597,10 +602,9 @@ if (document.readyState === 'loading') {
   const isCardEmbed = window.location.search.includes('embed=card');
   if (!isCardEmbed) return;
 
-  // Hide the initial ASCII loader overlay in card embed mode so the portal backdrop transitions cleanly into the 3D scene
+  // Only hide external PRO HUD controls in card embed mode; keep native #loader ASCII animation & 3D intro intact!
   const embedStyle = document.createElement('style');
   embedStyle.textContent = `
-    div#loader { opacity: 0 !important; pointer-events: none !important; display: none !important; }
     .igloo-pro-root, .igloo-hw-capsule { display: none !important; }
   `;
   document.head.appendChild(embedStyle);
@@ -612,10 +616,10 @@ if (document.readyState === 'loading') {
   let syntheticRafId = 900000;
   const pendingRafCallbacks = new Map();
 
-  // Intercept window.requestAnimationFrame in ?embed=card mode so decon:card-visibility can suspend/wake WebGL2 in 0ms
+  // Never freeze requestAnimationFrame until the 3D scene & its intro animation have fully settled (> 240 active draw frames)
   window.requestAnimationFrame = function (cb) {
     if (typeof cb !== 'function') return 0;
-    if (cardEmbedPaused && readySent) {
+    if (cardEmbedPaused && readySent && glTelemetry.renderedActiveFrames > 240) {
       const id = ++syntheticRafId;
       pendingRafCallbacks.set(id, cb);
       return id;
@@ -631,14 +635,10 @@ if (document.readyState === 'loading') {
     return nativeCancelRaf(id);
   };
 
-  // Notify parent portal as soon as WebGL2 3D Igloo scene draws its first geometry frames
   function check3DReady() {
     if (readySent) return;
     const canvas = document.querySelector('#app canvas') || document.querySelector('canvas');
-    if (
-      canvas &&
-      (glTelemetry.drawCallsPerFrame > 2 || glTelemetry.lastFrameDrawCalls > 2)
-    ) {
+    if (canvas && glTelemetry.renderedActiveFrames > 8) {
       readySent = true;
       try {
         window.parent.postMessage({ type: 'decon:igloo-ready' }, '*');

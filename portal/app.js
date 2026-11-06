@@ -1476,7 +1476,7 @@ function initCard04IglooLiveStage() {
   if (!cardEl || !iframe) return null;
 
   const targetSrc = iframe.dataset.src || 'http://127.0.0.1:6063/?embed=card';
-  let mounted = false;
+  let mounted = Boolean(iframe.getAttribute('src') && iframe.getAttribute('src') !== 'about:blank');
   let readyTimer = 0;
 
   window.addEventListener('message', (e) => {
@@ -1506,9 +1506,9 @@ function initCard04IglooLiveStage() {
   });
 
   function mountIframe() {
+    iframe.classList.add('is-ready');
     if (mounted) return;
     mounted = true;
-    iframe.classList.remove('is-ready');
     if (iframe.getAttribute('src') !== targetSrc) {
       iframe.setAttribute('src', targetSrc);
     }
@@ -1631,15 +1631,9 @@ function initSpecimenCards() {
   initSamBeckerGalleryFacade();
 
   // --- Card #04: Igloo Inc (Live :6063/?embed=card Lusion 3D WebGL2 Stage) ---
-  const card04El = document.getElementById('specimen-card-04');
+  // Keep Card #04 always active in grid view so its 3D intro & idle animation run immediately on the first screen
+  galleryEngines.card04Visible = true;
   galleryEngines.card04 = initCard04IglooLiveStage();
-  if (card04El && galleryEngines.card04) {
-    observeVisibility(card04El, (vis) => {
-      galleryEngines.card04Visible = vis;
-      if (vis && !galleryEngines.pausedAll) galleryEngines.card04.resume();
-      else galleryEngines.card04.pause({ unmountWebGL: false });
-    });
-  }
 
   // Clicking any specimen card (or its top-right .card-button) opens the 100vw x 100vh Fullscreen Live Stage
   document.querySelectorAll('#specimens-cards-grid .card').forEach((card) => {
