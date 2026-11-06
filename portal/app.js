@@ -587,11 +587,12 @@ function updateViewSwitchGlider(modeOverride) {
 }
 
 function updateHeroHeaderForView(mode) {
-  // Keep #header H1 & description 100% constant across grid | list | lab (zero CLS height jump & zero re-animation)
   document.title =
     mode === 'lab'
       ? 'Lusion Labs // Shared-UI Component Lab (30 Primitives)'
-      : 'Lusion Labs // Decon-Web Exhibition';
+      : mode === 'list'
+        ? 'Lusion Labs // Experiment Chronicle Index'
+        : 'Lusion Labs // Decon-Web Exhibition';
 }
 
 function applyViewModeDOM(mode, { animate = false, deferResume = false } = {}) {

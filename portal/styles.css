@@ -575,8 +575,12 @@ html[data-theme="dark"] .theme-switcher__roller {
 }
 
 /* ============================================================================
-   3. 1:1 labs.lusion.co HERO SECTION (#header)
+   3. 1:1 labs.lusion.co HERO SECTION (#header — 120fps Slot-Roller Sync)
    ============================================================================ */
+
+html[data-view="grid"] { --hero-idx: 0; }
+html[data-view="list"] { --hero-idx: 1; }
+html[data-view="lab"]  { --hero-idx: 2; }
 
 .header {
   max-width: 1800px;
@@ -603,7 +607,7 @@ html[data-theme="dark"] .theme-switcher__roller {
   font-family: var(--font-sans);
   font-weight: 400;
   font-size: clamp(3.5rem, 5.4vw, 6.15rem);
-  line-height: 0.95;
+  line-height: 1;
   letter-spacing: -0.02em;
   text-transform: uppercase;
   color: var(--color-black);
@@ -611,12 +615,15 @@ html[data-theme="dark"] .theme-switcher__roller {
 
 .hero-line-mask {
   display: block;
+  height: 1.02em;
   overflow: hidden;
-  padding-bottom: 0.04em;
+  position: relative;
 }
 
+/* 首次加载页面时的 Lusion 斜切旋转入场（只播一次，永不重播） */
 .hero-line {
   display: block;
+  height: 1.02em;
   transform-origin: 0% 100%;
   animation: lusionRotateIn 0.95s var(--ease-out-expo) backwards;
 }
@@ -624,6 +631,26 @@ html[data-theme="dark"] .theme-switcher__roller {
 .hero-line-mask:nth-child(1) .hero-line { animation-delay: 0.05s; }
 .hero-line-mask:nth-child(2) .hero-line { animation-delay: 0.14s; }
 .hero-line-mask:nth-child(3) .hero-line { animation-delay: 0.23s; }
+
+/* 视图切换时的 120fps 纯 GPU 垂直滚筒翻牌（3行微阶梯同步滚动） */
+.hero-line-roller {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transform: translate3d(0, calc(var(--hero-idx, 0) * -1.02em), 0);
+  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-line-mask:nth-child(1) .hero-line-roller { transition-delay: 0ms; }
+.hero-line-mask:nth-child(2) .hero-line-roller { transition-delay: 26ms; }
+.hero-line-mask:nth-child(3) .hero-line-roller { transition-delay: 52ms; }
+
+.hero-line-roller > span {
+  display: block;
+  height: 1.02em;
+  line-height: 1.02;
+  white-space: nowrap;
+}
 
 @keyframes lusionRotateIn {
   0% {
@@ -641,13 +668,37 @@ html[data-theme="dark"] .theme-switcher__roller {
   align-self: end;
 }
 
-.header__description p {
+/* 右侧导语：CSS Grid 同格叠放（高度 100% 锁死，0.0px 布局偏移） */
+.header__desc-stack {
+  display: grid;
+  grid-template-areas: "desc";
+  align-items: end;
+}
+
+.header__desc-item {
+  grid-area: desc;
   margin: 0;
   font-size: 1.45rem;
   line-height: 1.42;
   font-weight: 400;
   color: var(--color-black);
   max-width: 38ch;
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  pointer-events: none;
+  will-change: opacity, transform;
+  transition:
+    opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html:not([data-view]) .header__desc-item[data-desc-view="grid"],
+html[data-view="grid"] .header__desc-item[data-desc-view="grid"],
+html[data-view="list"] .header__desc-item[data-desc-view="list"],
+html[data-view="lab"] .header__desc-item[data-desc-view="lab"] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  pointer-events: auto;
 }
 
 .header__port-strip {

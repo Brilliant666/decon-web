@@ -9,6 +9,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
+  <script>
+    (function () {
+      var d = document.documentElement;
+      try {
+        var t = localStorage.getItem('decon-portal-theme');
+        if (t === 'dark' || t === 'light') d.setAttribute('data-theme', t);
+      } catch (_) {}
+      var p = location.pathname;
+      var q = new URLSearchParams(location.search);
+      var v = (p === '/lab' || p.indexOf('/lab/') === 0 || p === '/arsenal' || q.get('view') === 'lab')
+        ? 'lab'
+        : (p === '/list' || q.get('view') === 'list')
+          ? 'list'
+          : 'grid';
+      d.setAttribute('data-view', v);
+    })();
+  </script>
   <link rel="prefetch" href="/lab" />
   <link rel="prefetch" href="/lab.js" />
 </head>
@@ -73,17 +90,49 @@
   <!-- 4. 1:1 labs.lusion.co Pure Hero Section (#header) -->
   <header id="header" class="header">
     <div class="header__title">
-      <h1 class="header__h1" id="hero-h1">
-        <span class="hero-line-mask"><span class="hero-line">PLAY GROUND</span></span>
-        <span class="hero-line-mask"><span class="hero-line">R&amp;D COLLECTION</span></span>
-        <span class="hero-line-mask"><span class="hero-line">EXPERIMENTS</span></span>
+      <h1 class="header__h1" id="hero-h1" aria-label="Lusion Labs R&amp;D Exhibition">
+        <span class="hero-line-mask">
+          <span class="hero-line">
+            <span class="hero-line-roller">
+              <span>PLAY GROUND</span>
+              <span>CHRONICLE</span>
+              <span>COMPONENT LAB</span>
+            </span>
+          </span>
+        </span>
+        <span class="hero-line-mask">
+          <span class="hero-line">
+            <span class="hero-line-roller">
+              <span>R&amp;D COLLECTION</span>
+              <span>ARCHIVE INDEX</span>
+              <span>SHARED-UI KIT</span>
+            </span>
+          </span>
+        </span>
+        <span class="hero-line-mask">
+          <span class="hero-line">
+            <span class="hero-line-roller">
+              <span>EXPERIMENTS</span>
+              <span>04 SPECIMENS</span>
+              <span>30 PRIMITIVES</span>
+            </span>
+          </span>
+        </span>
       </h1>
     </div>
 
     <div class="header__description">
-      <p>
-        A space dedicated to deconstructing how god-tier websites are engineered and how we interact with them through WebGL2, Canvas &amp; Audio R&amp;D.
-      </p>
+      <div class="header__desc-stack">
+        <p class="header__desc-item" data-desc-view="grid">
+          A space dedicated to deconstructing how god-tier websites are engineered and how we interact with them through WebGL2, Canvas &amp; Audio R&amp;D.
+        </p>
+        <p class="header__desc-item" data-desc-view="list">
+          A structured index of all four flagship web reconstructions with real-time Retina canvas telemetry and instant full-viewport stage launch.
+        </p>
+        <p class="header__desc-item" data-desc-view="lab">
+          Interactive gallery of 30 zero-dependency ES6 primitives distilled from True JPEG, musicForProgramming, Sam Becker, and Igloo Inc.
+        </p>
+      </div>
     </div>
 
     <div class="header__scroll-down">
