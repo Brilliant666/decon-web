@@ -1521,9 +1521,9 @@ function initBentoSandboxes() {
     },
   ];
 
-  // Time-slice 16 sandboxes across animation frames (BATCH_SIZE = 3) so first paint & reveal transition stay 60fps
+  // Time-slice 16 sandboxes across animation frames (BATCH_SIZE = 2) so first paint & reveal transition stay 120fps
   let cursorIdx = 0;
-  const BATCH_SIZE = 3;
+  const BATCH_SIZE = 2;
   function runNextSandboxBatch() {
     const end = Math.min(cursorIdx + BATCH_SIZE, sandboxTasks.length);
     for (; cursorIdx < end; cursorIdx += 1) {
@@ -1531,16 +1531,18 @@ function initBentoSandboxes() {
     }
     if (cursorIdx < sandboxTasks.length) {
       requestAnimationFrame(runNextSandboxBatch);
+    } else if (!labViewActive) {
+      pauseLabSandboxes();
     }
   }
   requestAnimationFrame(runNextSandboxBatch);
 }
 
-export function ensureLabInitialized() {
-  labViewActive = true;
+export function ensureLabInitialized({ active = true } = {}) {
+  labViewActive = Boolean(active);
   if (!labInitialized) {
     initBentoSandboxes();
-  } else {
+  } else if (labViewActive) {
     resumeLabSandboxes();
   }
 }

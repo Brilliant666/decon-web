@@ -574,7 +574,6 @@ function initLucyMascot() {
    (True SPA Zero-Reload + Non-Destructive .view-panel Parking + 220ms Transition)
    ============================================================================ */
 
-let lastHeroVariant = 'exhibition'; // 'exhibition' | 'lab'
 let viewTransitionTimer = 0;
 let viewEnterRaf1 = 0;
 let viewEnterRaf2 = 0;
@@ -588,40 +587,11 @@ function updateViewSwitchGlider(modeOverride) {
 }
 
 function updateHeroHeaderForView(mode) {
-  const nextVariant = mode === 'lab' ? 'lab' : 'exhibition';
-  if (nextVariant === lastHeroVariant) return;
-  lastHeroVariant = nextVariant;
-
-  const heroH1 = document.getElementById('hero-h1');
-  const descP = document.querySelector('.header__description p');
-
-  if (nextVariant === 'lab') {
-    document.title = 'Lusion Labs // Shared-UI Component Lab (30 Primitives)';
-    if (heroH1) {
-      heroH1.innerHTML = `
-        <span class="hero-line-mask"><span class="hero-line">COMPONENT LAB</span></span>
-        <span class="hero-line-mask"><span class="hero-line">SHARED-UI KIT</span></span>
-        <span class="hero-line-mask"><span class="hero-line">30 PRIMITIVES</span></span>
-      `;
-    }
-    if (descP) {
-      descP.textContent =
-        'Interactive gallery of 30 zero-dependency ES6 primitives distilled from True JPEG, musicForProgramming, Sam Becker Photos, and Igloo Inc. Hover any card to wake full color & controls.';
-    }
-  } else {
-    document.title = 'Lusion Labs // Decon-Web Exhibition';
-    if (heroH1) {
-      heroH1.innerHTML = `
-        <span class="hero-line-mask"><span class="hero-line">PLAY GROUND</span></span>
-        <span class="hero-line-mask"><span class="hero-line">R&D COLLECTION</span></span>
-        <span class="hero-line-mask"><span class="hero-line">EXPERIMENTS</span></span>
-      `;
-    }
-    if (descP) {
-      descP.textContent =
-        'A space dedicated to deconstructing how god-tier websites are engineered and how we interact with them through WebGL2, Canvas & Audio R&D.';
-    }
-  }
+  // Keep #header H1 & description 100% constant across grid | list | lab (zero CLS height jump & zero re-animation)
+  document.title =
+    mode === 'lab'
+      ? 'Lusion Labs // Shared-UI Component Lab (30 Primitives)'
+      : 'Lusion Labs // Decon-Web Exhibition';
 }
 
 function applyViewModeDOM(mode, { animate = false, deferResume = false } = {}) {
@@ -648,16 +618,16 @@ function applyViewModeDOM(mode, { animate = false, deferResume = false } = {}) {
 
   if (floater) floater.classList.remove('is-visible');
 
-  // 1. Pause background loops of inactive views (and pause during the 220ms transition for 60fps smoothness)
+  // 1. Pause background loops of inactive views (and pause during the 180ms transition for 120fps smoothness)
   pauseGalleryEngines({ unmountWebGL: false });
   stopListPreviewCanvas();
   pauseLabSandboxes();
 
-  // 2. Ensure target view's DOM/sandboxes are initialized (idempotent, 0 rebuilds after first visit)
+  // 2. Ensure target view's DOM/sandboxes are initialized (idempotent, 0 rebuilds after idle warmup)
   if (mode === 'list') {
     renderExpListRows();
   } else if (mode === 'lab') {
-    ensureLabInitialized();
+    ensureLabInitialized({ active: !animate && !deferResume });
   }
 
   // 3. Non-destructively park inactive panels via .view-panel--inactive (preserving clientWidth/FBOs!)
@@ -691,7 +661,7 @@ function applyViewModeDOM(mode, { animate = false, deferResume = false } = {}) {
     }
   }
 
-  // 4. Resume active view engines after the 220ms GPU transition completes (or immediately if not animated)
+  // 4. Resume active view engines after the 180ms GPU transition completes (or immediately if not animated)
   if (!deferResume) {
     if (animate) {
       viewTransitionTimer = setTimeout(() => {
@@ -701,7 +671,7 @@ function applyViewModeDOM(mode, { animate = false, deferResume = false } = {}) {
         } else if (state.viewMode === 'lab') {
           resumeLabSandboxes();
         }
-      }, 220);
+      }, 185);
     } else if (mode === 'grid') {
       resumeGalleryEngines();
     } else if (mode === 'lab') {
@@ -2608,6 +2578,16 @@ function boot() {
 
   pollServerStatus();
   setInterval(pollServerStatus, 8000);
+
+  // Silent idle pre-warm for list & lab DOM so clicking grid | list | lab has < 1ms zero-jank response
+  const scheduleIdleWarmup =
+    window.requestIdleCallback || ((cb) => setTimeout(cb, 600));
+  scheduleIdleWarmup(() => {
+    renderExpListRows();
+    if (state.viewMode !== 'lab' && !state.stageOpen) {
+      ensureLabInitialized({ active: false });
+    }
+  });
 }
 
 if (document.readyState === 'loading') {

@@ -69,6 +69,8 @@ html[data-theme="dark"] {
 html {
   font-size: clamp(9.5px, 0.68vw, 12px);
   scroll-behavior: smooth;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
   background-color: var(--color-theme);
   color: var(--color-black);
   -webkit-font-smoothing: antialiased;
@@ -104,13 +106,13 @@ a {
   display: none !important;
 }
 
-/* Non-Destructive GPU View Panel Parking & 220ms In-Place Choreographed Transition */
+/* Non-Destructive GPU View Panel Parking & 180ms In-Place Choreographed Transition */
 .view-panel {
   opacity: 1;
   transform: translate3d(0, 0, 0);
   transition:
-    opacity 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: opacity, transform;
 }
 
@@ -123,13 +125,13 @@ a {
   visibility: hidden !important;
   pointer-events: none !important;
   z-index: -1 !important;
-  transform: translate3d(0, 10px, 0) !important;
+  transform: translate3d(0, 6px, 0) !important;
   transition: none !important;
 }
 
 .view-panel.view-panel--entering {
   opacity: 0 !important;
-  transform: translate3d(0, 10px, 0) !important;
+  transform: translate3d(0, 6px, 0) !important;
   transition: none !important;
 }
 
@@ -722,10 +724,14 @@ html[data-theme="dark"] .theme-switcher__roller {
    4. MINIMAL CATEGORY FILTER CAPSULES (.tools-bar & .filter)
    ============================================================================ */
 
+.lab-view-section {
+  padding-top: 2rem;
+}
+
 .tools-bar {
   max-width: 1800px;
   margin: 0 auto;
-  padding: 0.5rem 5rem 1.5rem;
+  padding: 0 5rem 2.2rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -733,32 +739,37 @@ html[data-theme="dark"] .theme-switcher__roller {
 }
 
 .filter {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  align-items: center;
+  background: var(--card-surface);
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  padding: 0.35rem;
+  gap: 0.25rem;
+  box-shadow: var(--card-shadow);
 }
 
 .filter__btn {
   appearance: none;
-  border: 1px solid var(--color-line);
+  border: 1px solid transparent;
   background: transparent;
-  color: var(--color-muted);
+  color: var(--card-text-secondary);
   border-radius: 999px;
-  padding: 0.55rem 1.25rem;
+  padding: 0.52rem 1.25rem;
   font-family: var(--font-mono);
-  font-size: 1.08rem;
+  font-size: 1.05rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.55rem;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.22s ease;
 }
 
 .filter__btn:hover {
-  border-color: var(--color-black);
-  color: var(--color-black);
+  color: var(--card-text-primary);
 }
 
 .filter__btn.is-active {
@@ -777,9 +788,9 @@ html[data-theme="dark"] .theme-switcher__roller {
    ============================================================================ */
 
 .specimens-section {
-  max-width: 1840px;
+  max-width: 1800px;
   margin: 0 auto;
-  padding: 2.5rem 5rem 11rem;
+  padding: 2rem 5rem 11rem;
 }
 
 .cards-wrapper,
@@ -2211,10 +2222,10 @@ html[data-theme="dark"] .card--04 .exp-info span:first-child {
 .card__title {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: clamp(1.85rem, 2.05vw, 2.65rem);
+  font-size: clamp(1.75rem, 1.9vw, 2.25rem);
   font-weight: 500;
   line-height: 1.15;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
   color: inherit;
   height: 1.15em;
   overflow: hidden;
@@ -2244,9 +2255,9 @@ html[data-theme="dark"] .card--04 .exp-info span:first-child {
 
 .tags {
   font-family: var(--font-mono);
-  font-size: 0.96rem;
+  font-size: 1.05rem;
   color: var(--card-text-secondary);
-  letter-spacing: 0.07em;
+  letter-spacing: 0.05em;
   text-align: right;
   white-space: nowrap;
   flex-shrink: 0;
@@ -2732,11 +2743,11 @@ html[data-theme="dark"] .card--04 .card-button {
 .exp-list-section {
   max-width: 1800px;
   margin: 0 auto;
-  padding: 1rem 5rem 6rem;
+  padding: 2rem 5rem 8rem;
 }
 
 .exp-list {
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid var(--card-border-inner);
 }
 
 .exp-list__item {
@@ -2746,9 +2757,9 @@ html[data-theme="dark"] .card--04 .card-button {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: center;
   column-gap: 2rem;
-  padding: 0 1rem;
+  padding: 0;
   cursor: pointer;
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--card-border-inner);
   transition: opacity 0.32s ease;
 }
 
@@ -2779,24 +2790,26 @@ html[data-theme="dark"] .card--04 .card-button {
 .exp-list__title {
   grid-column: 1 / span 5;
   font-family: var(--font-sans);
-  font-size: 1.85rem;
-  font-weight: 400;
-  color: var(--color-black);
-  letter-spacing: -0.01em;
+  font-size: clamp(1.75rem, 1.9vw, 2.25rem);
+  font-weight: 500;
+  color: var(--card-text-primary);
+  letter-spacing: -0.015em;
 }
 
 .exp-list__origin {
   grid-column: 6 / span 3;
   font-family: var(--font-mono);
-  font-size: 1.1rem;
-  color: var(--color-muted);
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  color: var(--card-text-secondary);
 }
 
 .exp-list__tags {
   grid-column: 9 / span 3;
   font-family: var(--font-mono);
   font-size: 1.05rem;
-  color: var(--color-muted);
+  letter-spacing: 0.05em;
+  color: var(--card-text-secondary);
   text-transform: uppercase;
 }
 
@@ -3043,7 +3056,7 @@ html[data-theme="dark"] .card--04 .card-button {
 .arsenal-section {
   max-width: 1800px;
   margin: 0 auto;
-  padding: 1.5rem 5rem 6rem;
+  padding: 0 5rem 8rem;
 }
 
 .arsenal-header {
@@ -3081,13 +3094,13 @@ html[data-theme="dark"] .card--04 .card-button {
 
 .primitive-pill {
   appearance: none;
-  border: 1px solid var(--color-line);
-  background: var(--color-surface);
-  color: var(--color-black);
+  border: 1px solid var(--card-border-inner);
+  background: var(--card-surface-elevated);
+  color: var(--card-text-primary);
   border-radius: 999px;
   padding: 0.48rem 1.05rem;
   font-family: var(--font-mono);
-  font-size: 1rem;
+  font-size: 1.02rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -3107,23 +3120,25 @@ html[data-theme="dark"] .card--04 .card-button {
 
 .bento-card {
   grid-column: span 1;
-  background: var(--color-surface);
-  border: 1px solid rgba(25, 27, 34, 0.06);
-  border-radius: 16px;
+  background: var(--card-surface);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
   padding: 2.4rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  box-shadow: 0 16px 40px rgba(20, 22, 30, 0.04);
+  gap: 1.6rem;
+  box-shadow: var(--card-shadow);
   transition:
-    border-color 0.25s ease,
-    box-shadow 0.35s var(--ease-out-expo),
-    transform 0.35s var(--ease-out-expo);
+    border-color 0.35s ease,
+    box-shadow 0.45s var(--ease-out-expo),
+    transform 0.45s var(--ease-out-expo),
+    background-color 0.35s ease;
 }
 
 .bento-card:hover {
-  border-color: var(--color-line-strong);
-  box-shadow: 0 22px 52px rgba(20, 22, 30, 0.09);
+  transform: translate3d(0, -4px, 0);
+  border-color: var(--card-border-inner);
+  box-shadow: var(--card-shadow-hover);
 }
 
 .bento-card--wide {
@@ -3136,32 +3151,34 @@ html[data-theme="dark"] .card--04 .card-button {
 }
 
 .bento-card__head {
-  height: 3.4rem;
+  height: 4.2rem;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
 .bento-card__meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 1.02rem;
-  color: var(--color-muted);
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  color: var(--card-text-secondary);
 }
 
 .copy-esm-btn {
   appearance: none;
-  border: 1px solid var(--color-line-strong);
-  background: var(--color-theme);
-  color: var(--color-black);
+  border: 1px solid var(--card-border-inner);
+  background: var(--card-surface-elevated);
+  color: var(--card-text-primary);
   border-radius: 999px;
-  padding: 0.32rem 0.9rem;
+  padding: 0.38rem 1rem;
   font-family: var(--font-mono);
-  font-size: 0.92rem;
-  letter-spacing: 0.03em;
+  font-size: 1.02rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -3175,10 +3192,11 @@ html[data-theme="dark"] .card--04 .card-button {
 .bento-card__title {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: clamp(1.02rem, 1.15vw, 1.22rem);
-  line-height: 1.3;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+  font-size: clamp(1.38rem, 1.45vw, 1.65rem);
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--card-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3186,7 +3204,8 @@ html[data-theme="dark"] .card--04 .card-button {
 
 .bento-card__stage {
   position: relative;
-  border-radius: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
   overflow: hidden;
   min-height: 20rem;
   height: 20rem;
@@ -3197,10 +3216,7 @@ html[data-theme="dark"] .card--04 .card-button {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  filter: grayscale(0.86) saturate(0.18) contrast(0.92) brightness(1.06);
-  transition:
-    filter 0.55s cubic-bezier(0.16, 1, 0.3, 1),
-    background 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bento-card:not(.bento-card--full) .bento-card__stage,
@@ -3210,12 +3226,9 @@ html[data-theme="dark"] .card--04 .card-button {
   max-height: 20rem !important;
   flex: 0 0 20rem !important;
   background: #12151c;
-  border-radius: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
   overflow: hidden;
-}
-
-.bento-card:hover .bento-card__stage {
-  filter: grayscale(0) saturate(1.06) contrast(1.02) brightness(1);
 }
 
 .bento-card[data-categories*="01"]:hover .bento-card__stage {
@@ -3389,10 +3402,10 @@ html[data-theme="dark"] .card--04 .card-button {
 .bento-ctrl-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   font-family: var(--font-mono);
-  font-size: 0.82rem;
-  color: var(--color-muted);
+  font-size: 1.0rem;
+  color: var(--card-text-secondary);
   white-space: nowrap;
 }
 
@@ -3414,7 +3427,7 @@ html[data-theme="dark"] .card--04 .card-button {
   height: 12px;
   border-radius: 50%;
   background: var(--color-black);
-  border: 2px solid var(--color-surface);
+  border: 2px solid var(--card-surface);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   transition: transform 0.15s ease;
 }
@@ -3428,7 +3441,7 @@ html[data-theme="dark"] .card--04 .card-button {
   height: 12px;
   border-radius: 50%;
   background: var(--color-black);
-  border: 2px solid var(--color-surface);
+  border: 2px solid var(--card-surface);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   cursor: pointer;
   transition: transform 0.15s ease;
@@ -3440,26 +3453,26 @@ html[data-theme="dark"] .card--04 .card-button {
 
 .bento-input,
 .bento-select {
-  border: 1px solid var(--color-line-strong);
-  background: var(--color-theme);
-  color: var(--color-black);
+  border: 1px solid var(--card-border-inner);
+  background: var(--card-surface-elevated);
+  color: var(--card-text-primary);
   border-radius: 999px;
   padding: 0.42rem 1rem;
   font-family: var(--font-mono);
-  font-size: 1rem;
+  font-size: 1.02rem;
 }
 
 .pill-btn {
   appearance: none;
-  border: 1px solid var(--color-line-strong);
-  background: var(--color-theme);
-  color: var(--color-black);
+  border: 1px solid var(--card-border-inner);
+  background: var(--card-surface-elevated);
+  color: var(--card-text-primary);
   border-radius: 999px;
-  padding: 0.65rem 1.35rem;
+  padding: 0.62rem 1.35rem;
   font-family: var(--font-mono);
-  font-size: 1.04rem;
+  font-size: 1.02rem;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -3470,7 +3483,7 @@ html[data-theme="dark"] .card--04 .card-button {
 
 .pill-btn--sm {
   padding: 0.45rem 1.05rem;
-  font-size: 0.98rem;
+  font-size: 1.02rem;
 }
 
 .pill-btn:hover,
