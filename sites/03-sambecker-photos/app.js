@@ -16,7 +16,9 @@ import {
   createCompositionOverlay,
   createOpticalLoupe,
   createCommandPalette,
-  createShutterAudio
+  createShutterAudio,
+  escapeHtml,
+  sanitizeImageSrc
 } from '/shared-ui/photo-vault-ui.js';
 
 const THEMES = ['gallery-light', 'obsidian-dark', 'warm-contact'];
@@ -299,8 +301,9 @@ function renderFullView(photos) {
     rowOuter.className = 'sb-large-row-outer';
     rowOuter.setAttribute('data-photo-large', 'true');
 
-    const blurSrc = photo.blurData || '';
-    const imgSrc = photo.url || photo.imageUrl;
+    const blurSrc = sanitizeImageSrc(photo.blurData || '');
+    const imgSrc = sanitizeImageSrc(photo.url || photo.imageUrl);
+    const safeAlt = escapeHtml(photo.semanticDescription || photo.title || '');
 
     rowOuter.innerHTML = `
       <div class="sb-large-row ${isEven ? 'is-even' : 'is-odd'}">
@@ -313,7 +316,7 @@ function renderFullView(photos) {
                   class="sb-main-photo-img"
                   data-main-photo
                   src="${imgSrc}"
-                  alt="${(photo.semanticDescription || photo.title || '').replace(/"/g, '&quot;')}"
+                  alt="${safeAlt}"
                   loading="${idx < 3 ? 'eager' : 'lazy'}"
                   decoding="async"
                 />
@@ -393,15 +396,17 @@ function renderGridView(photos) {
     <div class="sb-grid-matrix" data-photo-grid="true">
       ${photos
         .map((photo, idx) => {
-          const ar = photo.aspectRatio || 1.5;
-          const src = photo.url || photo.imageUrl || photo.blurData;
+          const ar = Number(photo.aspectRatio) || 1.5;
+          const src = sanitizeImageSrc(photo.url || photo.imageUrl || photo.blurData);
+          const safeTitle = escapeHtml(photo.title || '');
+          const safeAlt = escapeHtml(photo.semanticDescription || photo.title || '');
           return `
             <div class="sb-grid-cell">
-              <div class="sb-grid-thumb-box" style="--photo-ar:${ar}" data-grid-idx="${idx}" title="${(photo.title || '').replace(/"/g, '&quot;')}">
+              <div class="sb-grid-thumb-box" style="--photo-ar:${ar}" data-grid-idx="${idx}" title="${safeTitle}">
                 <img
                   class="sb-grid-thumb-img"
                   src="${src}"
-                  alt="${(photo.semanticDescription || photo.title || '').replace(/"/g, '&quot;')}"
+                  alt="${safeAlt}"
                   loading="${idx < 12 ? 'eager' : 'lazy'}"
                   decoding="async"
                 />
@@ -419,7 +424,7 @@ function renderGridView(photos) {
     const photo = photos[idx];
     if (img && photo) {
       img.addEventListener('error', () => {
-        img.src = photo.blurData || createOfflineFallbackDataUrl(photo);
+        img.src = sanitizeImageSrc(photo.blurData) || createOfflineFallbackDataUrl(photo);
       }, { once: true });
     }
     box.addEventListener('click', () => openLightbox(idx));
@@ -436,16 +441,20 @@ function buildLibraryFolderHtml(kind, value, label, matchingPhotos) {
   const c = Math.min(0.08, Math.max(0.03, Number(firstAi.c || 0.06))).toFixed(3);
   const thumbs = [0, 1, 2, 3].map((i) => {
     const p = matchingPhotos[i % matchingPhotos.length];
-    return p?.url || p?.blurData || '';
+    return sanitizeImageSrc(p?.url || p?.blurData || '');
   });
+
+  const safeKind = escapeHtml(kind);
+  const safeVal = escapeHtml(value);
+  const safeLabel = escapeHtml(label);
 
   return `
     <button
       type="button"
       class="sb-folder-item"
-      data-lib-kind="${kind}"
-      data-lib-val="${String(value).replace(/"/g, '&quot;')}"
-      data-lib-label="${String(label).replace(/"/g, '&quot;')}"
+      data-lib-kind="${safeKind}"
+      data-lib-val="${safeVal}"
+      data-lib-label="${safeLabel}"
     >
       <div class="sb-folder-stage">
         <svg class="sb-folder-back-svg" viewBox="0 0 143 93" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -480,7 +489,7 @@ function buildLibraryFolderHtml(kind, value, label, matchingPhotos) {
         </div>
       </div>
       <div class="sb-folder-badge-row">
-        <span class="sb-folder-pill">${label}</span>
+        <span class="sb-folder-pill">${safeLabel}</span>
         <span class="sb-folder-count">× ${count}</span>
       </div>
     </button>
@@ -496,6 +505,7 @@ function renderLibraryView() {
 
   const all = state.photos;
   const avatarPhoto = all[0] || {};
+  const safeAvatarSrc = sanitizeImageSrc(avatarPhoto.url || avatarPhoto.blurData || '');
 
   // Group by Cameras, Lenses, Recipes, Films, Focal Lengths, Tags
   const groupBy = (keyFn, labelFn) => {
@@ -519,18 +529,26 @@ function renderLibraryView() {
   const focalGroups = groupBy((p) => p.focalLengthFormatted, (k) => k);
   const tagGroups = groupBy((p) => p.tags || [], (k) => `#${k}`);
 
-  const topCamera = cameraGroups[0]?.label || 'FUJIFILM X-T5';
-  const topLens = lensGroups[0]?.label || 'XF35mmF1.4 R';
-  const topRecipe = recipeGroups[0]?.label || 'Classic Cuban';
-  const topFilm = filmGroups[0]?.label || 'CLASSIC NEG.';
-  const oldestDate = [...all]
-    .map((p) => (p.takenAt || '2025-10-18').slice(0, 10))
-    .sort()[0] || '2025-10-18';
+  const topCamera = escapeHtml(cameraGroups[0]?.label || 'FUJIFILM X-T5');
+  const topCameraVal = escapeHtml(cameraGroups[0]?.value || '');
+  const topLens = escapeHtml(lensGroups[0]?.label || 'XF35mmF1.4 R');
+  const topLensVal = escapeHtml(lensGroups[0]?.value || '');
+  const topRecipe = escapeHtml(recipeGroups[0]?.label || 'Classic Cuban');
+  const topRecipeVal = escapeHtml(recipeGroups[0]?.value || '');
+  const topFilm = escapeHtml(filmGroups[0]?.label || 'CLASSIC NEG.');
+  const topFilmVal = escapeHtml(filmGroups[0]?.value || '');
+  const topTagLabel = escapeHtml(tagGroups[0]?.label || '#nature');
+  const topTagVal = escapeHtml(tagGroups[0]?.value || 'nature');
+  const oldestDate = escapeHtml(
+    [...all]
+      .map((p) => (p.takenAt || '2025-10-18').slice(0, 10))
+      .sort()[0] || '2025-10-18'
+  );
 
   container.innerHTML = `
     <div class="sb-lib-profile-row">
       <span class="sb-lib-avatar">
-        <img src="${avatarPhoto.url || avatarPhoto.blurData || ''}" alt="Sam Becker Photos" />
+        <img src="${safeAvatarSrc}" alt="Sam Becker Photos" />
       </span>
       <div class="sb-lib-profile-meta">
         <div>
@@ -558,23 +576,23 @@ function renderLibraryView() {
       </div>
       <div class="sb-lib-stat-card">
         <div class="sb-lib-stat-label">Top Camera</div>
-        <div class="sb-lib-stat-val sb-lib-stat-link" data-stat-filter="camera" data-stat-val="${cameraGroups[0]?.value || ''}" data-stat-label="${topCamera}">${topCamera}</div>
+        <div class="sb-lib-stat-val sb-lib-stat-link" data-stat-filter="camera" data-stat-val="${topCameraVal}" data-stat-label="${topCamera}">${topCamera}</div>
       </div>
       <div class="sb-lib-stat-card">
         <div class="sb-lib-stat-label">Top Lens</div>
-        <div class="sb-lib-stat-val sb-lib-stat-link" data-stat-filter="lens" data-stat-val="${lensGroups[0]?.value || ''}" data-stat-label="${topLens}">${topLens}</div>
+        <div class="sb-lib-stat-val sb-lib-stat-link" data-stat-filter="lens" data-stat-val="${topLensVal}" data-stat-label="${topLens}">${topLens}</div>
       </div>
       <div class="sb-lib-stat-card">
         <div class="sb-lib-stat-label">Top Recipe</div>
-        <div class="sb-lib-stat-val sb-lib-stat-link" data-stat-filter="recipe" data-stat-val="${recipeGroups[0]?.value || ''}" data-stat-label="${topRecipe}">${topRecipe}</div>
+        <div class="sb-lib-stat-val sb-lib-stat-link" data-stat-filter="recipe" data-stat-val="${topRecipeVal}" data-stat-label="${topRecipe}">${topRecipe}</div>
       </div>
       <div class="sb-lib-stat-card">
         <div class="sb-lib-stat-label">Top Film</div>
-        <div class="sb-lib-stat-val sb-lib-stat-link" data-stat-filter="film" data-stat-val="${filmGroups[0]?.value || ''}" data-stat-label="${topFilm}">${topFilm}</div>
+        <div class="sb-lib-stat-val sb-lib-stat-link" data-stat-filter="film" data-stat-val="${topFilmVal}" data-stat-label="${topFilm}">${topFilm}</div>
       </div>
       <div class="sb-lib-stat-card">
         <div class="sb-lib-stat-label">Popular Tag</div>
-        <div class="sb-lib-stat-val sb-lib-stat-link" data-stat-filter="tag" data-stat-val="${tagGroups[0]?.value || 'nature'}" data-stat-label="${tagGroups[0]?.label || '#nature'}">${tagGroups[0]?.label || '#nature'}</div>
+        <div class="sb-lib-stat-val sb-lib-stat-link" data-stat-filter="tag" data-stat-val="${topTagVal}" data-stat-label="${topTagLabel}">${topTagLabel}</div>
       </div>
     </div>
 

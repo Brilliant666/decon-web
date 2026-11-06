@@ -6,7 +6,7 @@
 
 @font-face {
   font-family: 'Aeonik';
-  src: url('https://labs.lusion.co/assets/fonts/Aeonik-Regular.ttf') format('truetype');
+  src: local('Aeonik Regular'), local('Aeonik-Regular'), local('Aeonik');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -14,7 +14,7 @@
 
 @font-face {
   font-family: 'Aeonik';
-  src: url('https://labs.lusion.co/assets/fonts/Aeonik-Medium.ttf') format('truetype');
+  src: local('Aeonik Medium'), local('Aeonik-Medium');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -22,7 +22,8 @@
 
 @font-face {
   font-family: 'IBMPlexMono-Medium';
-  src: url('https://labs.lusion.co/assets/fonts/IBMPlexMono-Medium.ttf') format('truetype');
+  src: local('IBM Plex Mono Medium'), local('IBMPlexMono-Medium'),
+    url('/sites/04-igloo-inc/assets/IBMPlexMono-Medium-897c8c30.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;

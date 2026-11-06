@@ -12,9 +12,19 @@
  */
 
 const http = require('http');
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const {
+  DEFAULT_MIME_TYPES,
+  safeDecodePath,
+  isPathInsideRoot,
+  applyCorsHeaders,
+  handleOptionsRequest,
+  verifyLocalJsonPost,
+  serveStaticFile,
+  writeFileAtomicSync,
+  fetchUpstreamBuffer
+} = require('../../shared/static-server');
 
 const root = __dirname;
 const sharedRoot = path.resolve(root, '../../shared-ui');
@@ -22,24 +32,10 @@ const photosRoot = path.join(root, 'photos');
 const userPhotosDir = path.join(photosRoot, 'user');
 const userManifestPath = path.join(userPhotosDir, 'manifest.json');
 const PORT = Number(process.env.PORT) || 6062;
+const MAX_USER_PHOTOS = 100;
 
 fs.mkdirSync(photosRoot, { recursive: true });
 fs.mkdirSync(userPhotosDir, { recursive: true });
-
-const mime = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.md': 'text/markdown; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.ico': 'image/x-icon'
-};
 
 const inFlightProxy = new Map();
 
@@ -49,30 +45,12 @@ function proxyUpstreamPhoto(filename, destPath) {
   }
   const blobUrl = `https://wpz47wrhgzc7qaub.public.blob.vercel-storage.com/${filename}`;
   const nextImgUrl = `https://photos.sambecker.com/_next/image?url=${encodeURIComponent(blobUrl)}&w=1200&q=85`;
+  const headers = { 'User-Agent': 'Mozilla/5.0 (SamBecker-Local-Proxy/1.0)' };
 
-  const fetchBuf = (url) =>
-    new Promise((resolve, reject) => {
-      https
-        .get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (SamBecker-Local-Proxy/1.0)' } }, (res) => {
-          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-            return fetchBuf(new URL(res.headers.location, url).toString()).then(resolve, reject);
-          }
-          if (res.statusCode !== 200) {
-            res.resume();
-            return reject(new Error(`Upstream HTTP ${res.statusCode}`));
-          }
-          const chunks = [];
-          res.on('data', (c) => chunks.push(c));
-          res.on('end', () => resolve(Buffer.concat(chunks)));
-        })
-        .on('error', reject);
-    });
-
-  const p = fetchBuf(nextImgUrl)
-    .catch(() => fetchBuf(blobUrl))
+  const p = fetchUpstreamBuffer(nextImgUrl, { timeoutMs: 15000, headers })
+    .catch(() => fetchUpstreamBuffer(blobUrl, { timeoutMs: 15000, headers }))
     .then((buf) => {
-      fs.mkdirSync(path.dirname(destPath), { recursive: true });
-      fs.writeFileSync(destPath, buf);
+      writeFileAtomicSync(destPath, buf);
       inFlightProxy.delete(filename);
       return buf;
     })
@@ -96,20 +74,51 @@ function readUserManifest() {
 }
 
 function writeUserManifest(items) {
-  fs.mkdirSync(userPhotosDir, { recursive: true });
-  fs.writeFileSync(userManifestPath, JSON.stringify(items, null, 2), 'utf8');
+  writeFileAtomicSync(userManifestPath, JSON.stringify(items, null, 2), 'utf8');
 }
 
-function sendJson(res, statusCode, obj) {
-  res.writeHead(statusCode, {
+function sendJson(req, res, statusCode, obj) {
+  const headers = applyCorsHeaders(req, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
     'Cache-Control': 'no-store'
   });
+  res.writeHead(statusCode, headers);
   res.end(JSON.stringify(obj));
 }
 
+function cleanTextField(val, fallback = '', maxLen = 120) {
+  const cleaned = String(val ?? fallback)
+    .replace(/[\x00-\x1f\x7f]/g, ' ')
+    .trim()
+    .slice(0, maxLen);
+  return cleaned || fallback;
+}
+
+function isValidImageMagicBytes(buf) {
+  if (!Buffer.isBuffer(buf) || buf.length <= 32) return false;
+  // JPEG: FF D8 FF
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    return true;
+  }
+  // PNG: 89 50 4E 47
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+    return true;
+  }
+  // WebP: RIFF....WEBP
+  if (
+    buf.slice(0, 4).toString('ascii') === 'RIFF' &&
+    buf.slice(8, 12).toString('ascii') === 'WEBP'
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function handleIngest(req, res) {
+  if (!verifyLocalJsonPost(req, res)) {
+    return;
+  }
+
   const chunks = [];
   let totalBytes = 0;
   const MAX_BYTES = 35 * 1024 * 1024;
@@ -125,46 +134,120 @@ function handleIngest(req, res) {
 
   req.on('end', () => {
     try {
+      const items = readUserManifest();
+      if (items.length >= MAX_USER_PHOTOS) {
+        sendJson(req, res, 400, {
+          ok: false,
+          error: `Maximum user photo limit (${MAX_USER_PHOTOS}) reached`
+        });
+        return;
+      }
+
       const bodyStr = Buffer.concat(chunks).toString('utf8');
       const payload = JSON.parse(bodyStr);
+
+      let imgBuffer = null;
+      if (payload.dataUrl && typeof payload.dataUrl === 'string') {
+        const commaIdx = payload.dataUrl.indexOf(',');
+        const b64 = commaIdx >= 0 ? payload.dataUrl.slice(commaIdx + 1) : payload.dataUrl;
+        imgBuffer = Buffer.from(b64, 'base64');
+      } else if (payload.base64 && typeof payload.base64 === 'string') {
+        imgBuffer = Buffer.from(payload.base64, 'base64');
+      }
+
+      if (!isValidImageMagicBytes(imgBuffer)) {
+        sendJson(req, res, 400, { ok: false, error: '400 Invalid image binary' });
+        return;
+      }
 
       const rawName = String(payload.filename || 'frame.jpg').replace(/[^a-zA-Z0-9._-]/g, '-');
       const extMatch = rawName.match(/\.(jpe?g|png|webp)$/i);
       const ext = extMatch ? extMatch[0].toLowerCase() : '.jpg';
-      const baseSlug = rawName.replace(/\.(jpe?g|png|webp)$/i, '').toLowerCase() || 'ingested-frame';
+      const baseSlug =
+        rawName.replace(/\.(jpe?g|png|webp)$/i, '').toLowerCase().slice(0, 64) || 'ingested-frame';
       const stamp = Date.now();
       const savedFilename = `${stamp}-${baseSlug}${ext}`;
       const savedPath = path.join(userPhotosDir, savedFilename);
 
-      if (payload.dataUrl && typeof payload.dataUrl === 'string') {
-        const commaIdx = payload.dataUrl.indexOf(',');
-        const b64 = commaIdx >= 0 ? payload.dataUrl.slice(commaIdx + 1) : payload.dataUrl;
-        fs.writeFileSync(savedPath, Buffer.from(b64, 'base64'));
-      } else if (payload.base64 && typeof payload.base64 === 'string') {
-        fs.writeFileSync(savedPath, Buffer.from(payload.base64, 'base64'));
-      }
+      writeFileAtomicSync(savedPath, imgBuffer);
 
-      const items = readUserManifest();
-      const exif = payload.exif || {};
-      const make = (exif.make || payload.make || 'FUJIFILM').toUpperCase();
-      const model = exif.model || payload.model || 'X-T5';
-      const lensModel = exif.lens || payload.lensModel || payload.lens || 'XF35mmF1.4 R';
-      const focalStr = exif.focalLength || payload.focalLengthFormatted || '35mm';
-      const focal35Str = exif.focalLength35mm || payload.focalLengthIn35MmFormatFormatted || '53mm';
-      const fNumberFormatted = (exif.aperture || payload.fNumberFormatted || 'ƒ/2.0').replace(/^f\//i, 'ƒ/');
-      const exposureTimeFormatted = exif.shutterSpeed || payload.exposureTimeFormatted || '1/500s';
-      const isoFormatted = String(exif.iso || payload.isoFormatted || 'ISO400').replace(/\s+/g, '');
+      const exif = payload.exif && typeof payload.exif === 'object' ? payload.exif : {};
+      const make = cleanTextField(exif.make || payload.make || 'FUJIFILM', 'FUJIFILM', 48).toUpperCase();
+      const model = cleanTextField(exif.model || payload.model || 'X-T5', 'X-T5', 64);
+      const lensModel = cleanTextField(
+        exif.lens || payload.lensModel || payload.lens || 'XF35mmF1.4 R',
+        'XF35mmF1.4 R',
+        80
+      );
+      const focalStr = cleanTextField(exif.focalLength || payload.focalLengthFormatted || '35mm', '35mm', 24);
+      const focal35Str = cleanTextField(
+        exif.focalLength35mm || payload.focalLengthIn35MmFormatFormatted || '53mm',
+        '53mm',
+        24
+      );
+      const fNumberFormatted = cleanTextField(
+        exif.aperture || payload.fNumberFormatted || 'ƒ/2.0',
+        'ƒ/2.0',
+        24
+      ).replace(/^f\//i, 'ƒ/');
+      const exposureTimeFormatted = cleanTextField(
+        exif.shutterSpeed || payload.exposureTimeFormatted || '1/500s',
+        '1/500s',
+        24
+      );
+      const isoFormatted = cleanTextField(
+        exif.iso || payload.isoFormatted || 'ISO400',
+        'ISO400',
+        24
+      ).replace(/\s+/g, '');
+
+      const rawBlur = typeof payload.blurData === 'string' ? payload.blurData.trim() : '';
+      const validBlurData =
+        rawBlur.length < 65536 &&
+        /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=\s]+$/i.test(rawBlur)
+          ? rawBlur
+          : '';
+
+      const defaultPalette = ['#C88A4B', '#7B4E34', '#D7B66E', '#EDE8D8', '#3B423E'];
+      const cleanedPalette = Array.isArray(payload.palette)
+        ? payload.palette
+            .map((c) => String(c || '').trim())
+            .filter((c) => /^#[0-9a-fA-F]{3,8}$/.test(c))
+            .slice(0, 8)
+        : [];
+
+      const cleanedTags = Array.isArray(payload.tags)
+        ? payload.tags
+            .map((t) => cleanTextField(t, '', 32))
+            .filter(Boolean)
+            .slice(0, 12)
+        : [];
+
+      const defaultTitle = baseSlug.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      const title = cleanTextField(payload.title, defaultTitle, 120);
+      const caption = cleanTextField(
+        payload.caption,
+        'Local user photograph ingested via binary EXIF parser',
+        120
+      );
+      const film = cleanTextField(payload.film, 'classic-neg', 64);
+      const filmLabel = cleanTextField(payload.filmLabel, 'CLASSIC NEG.', 64);
+      const recipeTitle = cleanTextField(payload.recipeTitle, 'classic-cuban', 64);
+      const recipeLabel = cleanTextField(payload.recipeLabel, 'Classic Cuban', 64);
+
+      const nextIndex =
+        Math.max(36, ...items.map((i) => Number(i.index) || 0)) + 1;
 
       const newPhoto = {
         id: `user-${stamp.toString(36)}`,
         slug: `user-${stamp.toString(36)}`,
-        index: 37 + items.length,
-        title: payload.title || baseSlug.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-        caption: payload.caption || 'Local user photograph ingested via binary EXIF parser',
-        semanticDescription: payload.caption || 'User ingested frame',
+        index: nextIndex,
+        title,
+        caption,
+        semanticDescription: caption || 'User ingested frame',
         url: `/photos/user/${savedFilename}`,
         remoteUrl: `/photos/user/${savedFilename}`,
-        blurData: payload.blurData || '',
+        blurData: validBlurData,
         aspectRatio: Number(payload.aspectRatio) || 1.5,
         width: Number(payload.width) || 1200,
         height: Number(payload.height) || 800,
@@ -185,11 +268,11 @@ function handleIngest(req, res) {
         exposureTimeFormatted,
         iso: parseInt(isoFormatted.replace(/[^0-9]/g, ''), 10) || 400,
         isoFormatted,
-        exposureCompensationFormatted: exif.ev || '0 EV',
-        film: payload.film || 'classic-neg',
-        filmLabel: payload.filmLabel || 'CLASSIC NEG.',
-        recipeTitle: payload.recipeTitle || 'classic-cuban',
-        recipeLabel: payload.recipeLabel || 'Classic Cuban',
+        exposureCompensationFormatted: cleanTextField(exif.ev, '0 EV', 24),
+        film,
+        filmLabel,
+        recipeTitle,
+        recipeLabel,
         recipeData: payload.recipeData || {
           color: 4,
           shadow: 1,
@@ -213,39 +296,48 @@ function handleIngest(req, res) {
             { l: 0.35, c: 0.03, h: 120 }
           ]
         },
-        palette: payload.palette || ['#C88A4B', '#7B4E34', '#D7B66E', '#EDE8D8', '#3B423E'],
+        palette: cleanedPalette.length ? cleanedPalette : defaultPalette,
         takenAt: new Date().toISOString(),
-        takenAtNaiveFormatted: (exif.date || new Date().toUTCString().slice(5, 22)).toUpperCase(),
-        tags: Array.isArray(payload.tags) && payload.tags.length ? payload.tags : ['ingested', 'vault', 'local'],
+        takenAtNaiveFormatted: cleanTextField(
+          exif.date || new Date().toUTCString().slice(5, 22),
+          '18 OCT 2026',
+          32
+        ).toUpperCase(),
+        tags: cleanedTags.length ? cleanedTags : ['ingested', 'vault', 'local'],
         isUserIngested: true
       };
 
       items.unshift(newPhoto);
       writeUserManifest(items);
 
-      sendJson(res, 200, { ok: true, photo: newPhoto, totalUserPhotos: items.length });
+      sendJson(req, res, 200, { ok: true, photo: newPhoto, totalUserPhotos: items.length });
     } catch (err) {
-      sendJson(res, 400, { ok: false, error: err.message || 'Invalid ingest payload' });
+      sendJson(req, res, 400, { ok: false, error: err.message || 'Invalid ingest payload' });
     }
   });
 }
 
 http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, HEAD, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Range'
-    });
-    res.end();
+    handleOptionsRequest(req, res, 'GET, POST, HEAD, OPTIONS');
     return;
   }
 
-  const reqUrl = new URL(req.url, `http://127.0.0.1:${PORT}`);
-  let u = decodeURIComponent(reqUrl.pathname);
+  let u = safeDecodePath(req.url || '/');
+  if (!u) {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('400 Bad Request');
+    return;
+  }
+
+  if (u.split('/').includes('..') || u.includes('\\')) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden');
+    return;
+  }
 
   if (u === '/api/user-photos' && req.method === 'GET') {
-    sendJson(res, 200, { ok: true, items: readUserManifest() });
+    sendJson(req, res, 200, { ok: true, items: readUserManifest() });
     return;
   }
 
@@ -258,26 +350,34 @@ http.createServer(async (req, res) => {
   if (u.startsWith('/photos/') && !u.startsWith('/photos/user/')) {
     const filename = path.basename(u);
     const localPhotoPath = path.join(photosRoot, filename);
+    if (!isPathInsideRoot(localPhotoPath, photosRoot)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Forbidden');
+      return;
+    }
     if (fs.existsSync(localPhotoPath) && fs.statSync(localPhotoPath).isFile()) {
-      const ext = path.extname(localPhotoPath).toLowerCase();
-      res.writeHead(200, {
-        'Content-Type': mime[ext] || 'image/jpeg',
-        'Cache-Control': 'public, max-age=86400',
-        'Access-Control-Allow-Origin': '*'
+      serveStaticFile(req, res, localPhotoPath, {
+        cacheControl: 'public, max-age=86400'
       });
-      fs.createReadStream(localPhotoPath).pipe(res);
       return;
     }
     if (/^photo-[a-zA-Z0-9_-]+\.(jpe?g|png|webp)$/i.test(filename)) {
       try {
         const buf = await proxyUpstreamPhoto(filename, localPhotoPath);
         const ext = path.extname(filename).toLowerCase();
-        res.writeHead(200, {
-          'Content-Type': mime[ext] || 'image/jpeg',
-          'Cache-Control': 'public, max-age=86400',
-          'Access-Control-Allow-Origin': '*'
-        });
-        res.end(buf);
+        res.writeHead(
+          200,
+          applyCorsHeaders(req, {
+            'Content-Type': DEFAULT_MIME_TYPES[ext] || 'image/jpeg',
+            'Content-Length': buf.length,
+            'Cache-Control': 'public, max-age=86400'
+          })
+        );
+        if (req.method === 'HEAD') {
+          res.end();
+        } else {
+          res.end(buf);
+        }
         return;
       } catch (err) {
         res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -310,37 +410,34 @@ http.createServer(async (req, res) => {
 
   let fp;
   if (u.startsWith('/shared-ui/')) {
-    fp = path.join(sharedRoot, u.slice('/shared-ui/'.length));
-    if (!path.resolve(fp).startsWith(sharedRoot)) {
-      res.writeHead(403);
+    fp = path.resolve(sharedRoot, u.slice('/shared-ui/'.length));
+    if (!isPathInsideRoot(fp, sharedRoot)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Forbidden');
       return;
     }
   } else {
-    fp = path.join(root, u);
-    if (!path.resolve(fp).startsWith(path.resolve(root))) {
-      res.writeHead(403);
+    fp = path.resolve(root, u.replace(/^\/+/, ''));
+    if (!isPathInsideRoot(fp, root)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Forbidden');
       return;
     }
+  }
+
+  const baseName = path.basename(fp);
+  if (baseName === 'server.js' || baseName === 'sync_images.js') {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden');
+    return;
   }
 
   if (!fs.existsSync(fp) && !path.extname(u)) {
     fp = path.join(root, 'index.html');
   }
 
-  const ext = path.extname(fp).toLowerCase();
-  const contentType = mime[ext] || 'application/octet-stream';
-  const isCode = ['.html', '.js', '.mjs', '.css', '.json'].includes(ext);
-  const cacheHeader = isCode ? 'no-store, no-cache, must-revalidate' : 'public, max-age=3600';
-
   if (fs.existsSync(fp) && fs.statSync(fp).isFile()) {
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Cache-Control': cacheHeader,
-      'Access-Control-Allow-Origin': '*'
-    });
-    fs.createReadStream(fp).pipe(res);
+    serveStaticFile(req, res, fp, { mimeTypes: DEFAULT_MIME_TYPES });
     return;
   }
 

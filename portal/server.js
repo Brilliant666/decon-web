@@ -1,9 +1,9 @@
 /**
  * decon-web Master Exhibition Portal Server
- * Listens on http://127.0.0.1:6000/
+ * Listens on http://127.0.0.1:6050/ (and mirror port 6080)
  *
  * Capabilities:
- *   1. Static hosting for portal/ root directory files (index.html, styles.css, app.js, README.md)
+ *   1. Static hosting for portal/ root directory files (index.html, styles.css, app.js, lab.js, README.md)
  *   2. Cross-directory ESM module mapping: /shared-ui/* -> ../shared-ui/*
  *   3. GET  /api/status -> Concurrently probes 127.0.0.1:6060, 6061, 6062, 6063 liveness & latency (ms)
  *   4. POST /api/wake   -> Spawns background sub-site server processes ({ id: "01"|"02"|"03"|"04"|"all" })
@@ -15,11 +15,18 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const { performance } = require('perf_hooks');
+const {
+  DEFAULT_MIME_TYPES,
+  safeDecodePath,
+  isPathInsideRoot,
+  applyCorsHeaders,
+  handleOptionsRequest,
+  verifyLocalJsonPost,
+  serveStaticFile
+} = require('../shared/static-server');
 
-const PRIMARY_PORT = Number(process.env.PORT) || 6000;
-// Note: Chromium/Firefox block TCP port 6000 (X11) with ERR_UNSAFE_PORT in standard browser tabs.
-// We simultaneously bind browser-safe mirror ports 6050 & 6080 alongside 6000 so both browser & CLI work seamlessly!
-const LISTEN_PORTS = Array.from(new Set([PRIMARY_PORT, 6050, 6080]));
+const PRIMARY_PORT = Number(process.env.PORT) || 6050;
+const LISTEN_PORTS = Array.from(new Set([PRIMARY_PORT, 6080]));
 const portalRoot = __dirname;
 const repoRoot = path.resolve(portalRoot, '..');
 const sharedRoot = path.join(repoRoot, 'shared-ui');
@@ -76,21 +83,28 @@ const SPECIMEN_REGISTRY = {
   }
 };
 
-const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.md': 'text/markdown; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.ico': 'image/x-icon',
-  '.woff2': 'font/woff2'
-};
+const spawnedChildren = new Set();
+
+function cleanupChildren() {
+  for (const child of spawnedChildren) {
+    try {
+      if (child && !child.killed) {
+        child.kill();
+      }
+    } catch (_) {}
+  }
+  spawnedChildren.clear();
+}
+
+process.on('exit', cleanupChildren);
+process.on('SIGINT', () => {
+  cleanupChildren();
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  cleanupChildren();
+  process.exit(0);
+});
 
 /**
  * Probes a single specimen HTTP server on 127.0.0.1:port
@@ -176,7 +190,7 @@ async function probeAllSpecimens() {
 }
 
 /**
- * Spawns a detached background process for a specimen server if not already online
+ * Spawns a background process for a specimen server if not already online
  */
 function spawnSpecimenServer(spec) {
   if (!fs.existsSync(spec.script)) {
@@ -188,6 +202,10 @@ function spawnSpecimenServer(spec) {
       detached: true,
       stdio: 'ignore',
       env: { ...process.env, PORT: String(spec.port) }
+    });
+    spawnedChildren.add(child);
+    child.on('exit', () => {
+      spawnedChildren.delete(child);
     });
     child.unref();
     return { spawned: true, pid: child.pid || null };
@@ -253,45 +271,45 @@ async function wakeSpecimens(targetId = 'all') {
   };
 }
 
-function sendJson(res, statusCode, payload) {
+function sendJson(req, res, statusCode, payload) {
   const body = JSON.stringify(payload);
-  res.writeHead(statusCode, {
+  const headers = applyCorsHeaders(req, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store, no-cache, must-revalidate',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
+    'Cache-Control': 'no-store, no-cache, must-revalidate'
   });
+  res.writeHead(statusCode, headers);
   res.end(body);
 }
 
 async function handleRequest(req, res) {
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    });
-    res.end();
+    handleOptionsRequest(req, res, 'GET, POST, OPTIONS');
     return;
   }
 
-  const rawUrl = req.url || '/';
-  const cleanPath = decodeURIComponent(rawUrl.split('?')[0]);
+  const cleanPath = safeDecodePath(req.url || '/');
+  if (!cleanPath) {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('400 Bad Request');
+    return;
+  }
 
   // 1. GET /api/status
   if (req.method === 'GET' && cleanPath === '/api/status') {
     try {
       const status = await probeAllSpecimens();
-      sendJson(res, 200, status);
+      sendJson(req, res, 200, status);
     } catch (err) {
-      sendJson(res, 500, { ok: false, error: err.message });
+      sendJson(req, res, 500, { ok: false, error: err.message });
     }
     return;
   }
 
   // 2. POST /api/wake
   if (req.method === 'POST' && cleanPath === '/api/wake') {
+    if (!verifyLocalJsonPost(req, res)) {
+      return;
+    }
     let bodyStr = '';
     req.on('data', (chunk) => {
       bodyStr += chunk;
@@ -301,9 +319,9 @@ async function handleRequest(req, res) {
       try {
         const parsed = bodyStr ? JSON.parse(bodyStr) : { id: 'all' };
         const result = await wakeSpecimens(parsed.id || 'all');
-        sendJson(res, 200, result);
+        sendJson(req, res, 200, result);
       } catch (err) {
-        sendJson(res, 400, { ok: false, error: err.message });
+        sendJson(req, res, 400, { ok: false, error: err.message });
       }
     });
     return;
@@ -320,13 +338,19 @@ async function handleRequest(req, res) {
     return;
   }
 
+  if (cleanPath.split('/').includes('..') || cleanPath.includes('\\')) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden');
+    return;
+  }
+
   // 4. Route /shared-ui/* -> ../shared-ui/* and /sites/* -> ../sites/*
   let filePath = null;
   if (cleanPath.startsWith('/shared-ui/')) {
     const rel = cleanPath.slice('/shared-ui/'.length);
     const candidate = path.resolve(sharedRoot, rel);
-    if (!candidate.startsWith(sharedRoot)) {
-      res.writeHead(403);
+    if (!isPathInsideRoot(candidate, sharedRoot)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Forbidden');
       return;
     }
@@ -339,8 +363,8 @@ async function handleRequest(req, res) {
       .replace(/^04-igloo\/images\//, '04-igloo-inc/assets/images/')
       .replace(/^04-igloo\//, '04-igloo-inc/');
     const candidate = path.resolve(sitesRoot, rel);
-    if (!candidate.startsWith(sitesRoot)) {
-      res.writeHead(403);
+    if (!isPathInsideRoot(candidate, sitesRoot)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Forbidden');
       return;
     }
@@ -361,9 +385,9 @@ async function handleRequest(req, res) {
     } else if (relPath === '/lab.html') {
       relPath = '/lab.html';
     }
-    const candidate = path.resolve(portalRoot, '.' + relPath);
-    if (!candidate.startsWith(portalRoot)) {
-      res.writeHead(403);
+    const candidate = path.resolve(portalRoot, relPath.replace(/^\/+/, ''));
+    if (!isPathInsideRoot(candidate, portalRoot)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Forbidden');
       return;
     }
@@ -376,49 +400,14 @@ async function handleRequest(req, res) {
     return;
   }
 
-  fs.stat(filePath, (err, stat) => {
-    if (err || !stat.isFile()) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end(`Not Found: ${cleanPath}`);
-      return;
-    }
+  const baseName = path.basename(filePath);
+  if (baseName === 'server.js' || baseName === 'sync_images.js') {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden');
+    return;
+  }
 
-    const ext = path.extname(filePath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    const etag = `W/"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`;
-    const isCodeOrMarkup =
-      ext === '.html' || ext === '.js' || ext === '.mjs' || ext === '.css' || ext === '.json';
-    const cacheControl = isCodeOrMarkup
-      ? 'public, max-age=0, must-revalidate'
-      : 'public, max-age=86400';
-
-    if (req.headers['if-none-match'] === etag) {
-      res.writeHead(304, {
-        ETag: etag,
-        'Cache-Control': cacheControl,
-        'Access-Control-Allow-Origin': '*'
-      });
-      res.end();
-      return;
-    }
-
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Content-Length': stat.size,
-      ETag: etag,
-      'Cache-Control': cacheControl,
-      'Access-Control-Allow-Origin': '*'
-    });
-
-    const stream = fs.createReadStream(filePath);
-    stream.on('error', () => {
-      if (!res.headersSent) {
-        res.writeHead(500);
-        res.end('Internal Server Error');
-      }
-    });
-    stream.pipe(res);
-  });
+  serveStaticFile(req, res, filePath, { mimeTypes: DEFAULT_MIME_TYPES });
 }
 
 let autoWakeTriggered = false;
@@ -428,7 +417,7 @@ LISTEN_PORTS.forEach((port) => {
   srv.on('error', (err) => {
     console.warn(`[DECON-WEB PORTAL] Port ${port} bind warning: ${err.message}`);
   });
-  srv.listen(port, () => {
+  srv.listen(port, '127.0.0.1', () => {
     console.log(`[DECON-WEB PORTAL] Master Exhibition Museum listening at http://127.0.0.1:${port}/`);
     if (!autoWakeTriggered) {
       autoWakeTriggered = true;

@@ -1,0 +1,50 @@
+MIT License
+
+Copyright (c) 2026 decon-web Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of the original architecture, server infrastructure, and extracted component
+code in this repository (`portal/`, `shared/`, `shared-ui/`, `scripts/`), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+NON-COMMERCIAL REVERSE-ENGINEERING RESEARCH & THIRD-PARTY ATTRIBUTION NOTICE
+================================================================================
+
+This repository (`decon-web`) is strictly a local, non-commercial educational
+and architectural deconstruction archive created to study modern creative web
+engineering, WebGL/GLSL shaders, procedural audio, and high-craft UI systems.
+
+All third-party brand identities, visual designs, artwork, photographs, audio
+mixes, and 3D assets mirrored or referenced within `sites/` remain the exclusive
+intellectual property of their respective creators and copyright holders:
+
+1. Specimen #01 — True JPEG (`sites/01-truejpeg/`)
+   Original Creator & Copyright: TJ (@RTJLDR) — https://truejpeg.com/
+
+2. Specimen #02 — musicForProgramming(); (`sites/02-musicforprogramming/`)
+   Original Creator & Copyright: Datassette & Contributors — https://musicforprogramming.net/
+
+3. Specimen #03 — Sam Becker Photos (`sites/03-sambecker-photos/`)
+   Original Creator & Copyright: Sam Becker — https://photos.sambecker.com/
+   Underlying Open-Source Engine: `sambecker/exif-photo-blog`
+
+4. Specimen #04 — Igloo Inc (`sites/04-igloo-inc/`)
+   Original Creator & Copyright: Igloo Inc. & Lusion (https://lusion.co/) — https://www.igloo.inc/
+
+No third-party assets from `sites/` may be redistributed or used for commercial
+purposes without explicit authorization from their respective rights holders.

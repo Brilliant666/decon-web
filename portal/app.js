@@ -2576,7 +2576,16 @@ function boot() {
   }
 
   pollServerStatus();
-  setInterval(pollServerStatus, 8000);
+  setInterval(() => {
+    if (!document.hidden) {
+      pollServerStatus();
+    }
+  }, 8000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      pollServerStatus();
+    }
+  });
 
   if (initialMode !== 'lab') {
     // Wait until first-screen entrance animation & Card #04 live 3D stage settle before warming hidden views

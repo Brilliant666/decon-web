@@ -12,9 +12,18 @@
  */
 
 const http = require('http');
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const {
+  DEFAULT_MIME_TYPES,
+  safeDecodePath,
+  isPathInsideRoot,
+  applyCorsHeaders,
+  handleOptionsRequest,
+  serveStaticFile,
+  writeFileAtomicSync,
+  fetchUpstreamBuffer
+} = require('../../shared/static-server');
 
 const root = __dirname;
 const sharedRoot = path.resolve(root, '../../shared-ui');
@@ -23,28 +32,6 @@ const PORT = Number(process.env.PORT) || 6063;
 const UPSTREAM_ORIGIN = 'https://www.igloo.inc';
 
 fs.mkdirSync(assetsRoot, { recursive: true });
-
-const mime = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.md': 'text/markdown; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.ico': 'image/x-icon',
-  '.wasm': 'application/wasm',
-  '.ktx2': 'image/ktx2',
-  '.drc': 'application/octet-stream',
-  '.exr': 'application/octet-stream',
-  '.ogg': 'audio/ogg',
-  '.woff2': 'font/woff2',
-  '.woff': 'font/woff'
-};
 
 const inFlightProxy = new Map();
 
@@ -55,35 +42,6 @@ const ASSET_ALIAS_MAP = {
   'assets/images/smoke_datatexture.ktx2': 'assets/images/perlin-datatexture.ktx2'
 };
 
-function fetchUpstreamBuffer(url) {
-  return new Promise((resolve, reject) => {
-    https
-      .get(
-        url,
-        {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Igloo-Local-Proxy/1.0)',
-            Accept: '*/*'
-          }
-        },
-        (res) => {
-          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-            res.resume();
-            return fetchUpstreamBuffer(new URL(res.headers.location, url).toString()).then(resolve, reject);
-          }
-          if (res.statusCode !== 200) {
-            res.resume();
-            return reject(new Error(`Upstream HTTP ${res.statusCode} for ${url}`));
-          }
-          const chunks = [];
-          res.on('data', (c) => chunks.push(c));
-          res.on('end', () => resolve(Buffer.concat(chunks)));
-        }
-      )
-      .on('error', reject);
-  });
-}
-
 function proxyUpstreamAsset(relAssetPath, destPath) {
   const key = relAssetPath.replace(/^\/+/, '');
   if (inFlightProxy.has(key)) {
@@ -92,15 +50,20 @@ function proxyUpstreamAsset(relAssetPath, destPath) {
 
   const upstreamKey = ASSET_ALIAS_MAP[key] || key;
   const upstreamUrl = `${UPSTREAM_ORIGIN}/${upstreamKey}`;
-  const p = fetchUpstreamBuffer(upstreamUrl)
+  const p = fetchUpstreamBuffer(upstreamUrl, {
+    timeoutMs: 15000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Igloo-Local-Proxy/1.0)',
+      Accept: '*/*'
+    }
+  })
     .then((rawBuf) => {
       let buf = rawBuf;
       if (key.endsWith('index-2e130bc1.js')) {
         const patched = rawBuf.toString('utf8').replace(/https:\/\/www\.igloo\.inc\//g, '/');
         buf = Buffer.from(patched, 'utf8');
       }
-      fs.mkdirSync(path.dirname(destPath), { recursive: true });
-      fs.writeFileSync(destPath, buf);
+      writeFileAtomicSync(destPath, buf);
       inFlightProxy.delete(key);
       return buf;
     })
@@ -116,86 +79,44 @@ function proxyUpstreamAsset(relAssetPath, destPath) {
 let indexBundlePatched = false;
 
 function serveBufferOrFile(req, res, filePath, contentType, cacheControl) {
-  fs.stat(filePath, (err, stat) => {
-    if (err || !stat.isFile()) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('404 Not Found');
-      return;
-    }
-
-    const etag = `W/"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`;
-    const range = req.headers.range;
-
-    if (!range && req.headers['if-none-match'] === etag) {
-      res.writeHead(304, {
-        ETag: etag,
-        'Cache-Control': cacheControl,
-        'Access-Control-Allow-Origin': '*'
-      });
-      res.end();
-      return;
-    }
-
-    if (range && filePath.endsWith('.ogg')) {
-      const parts = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10) || 0;
-      const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
-      const chunkSize = end - start + 1;
-      res.writeHead(206, {
-        'Content-Range': `bytes ${start}-${end}/${stat.size}`,
-        'Accept-Ranges': 'bytes',
-        'Content-Length': chunkSize,
-        'Content-Type': contentType,
-        ETag: etag,
-        'Cache-Control': cacheControl,
-        'Access-Control-Allow-Origin': '*'
-      });
-      fs.createReadStream(filePath, { start, end }).pipe(res);
-      return;
-    }
-
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Content-Length': stat.size,
-      'Accept-Ranges': 'bytes',
-      ETag: etag,
-      'Cache-Control': cacheControl,
-      'Access-Control-Allow-Origin': '*'
-    });
-    if (req.method === 'HEAD') {
-      res.end();
-      return;
-    }
-    fs.createReadStream(filePath).pipe(res);
+  serveStaticFile(req, res, filePath, {
+    contentType,
+    cacheControl,
+    mimeTypes: DEFAULT_MIME_TYPES
   });
 }
 
 http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Range'
-    });
-    res.end();
+    handleOptionsRequest(req, res, 'GET, HEAD, OPTIONS');
     return;
   }
 
-  const reqUrl = new URL(req.url, `http://127.0.0.1:${PORT}`);
-  let u = decodeURIComponent(reqUrl.pathname);
+  let u = safeDecodePath(req.url || '/');
+  if (!u) {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('400 Bad Request');
+    return;
+  }
+
+  if (u.split('/').includes('..') || u.includes('\\')) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden');
+    return;
+  }
 
   // 1. Transparent /assets/* local disk cache & upstream HTTPS fallback proxy
   if (u.startsWith('/assets/')) {
     const relAsset = u.slice(1); // "assets/..."
-    const localAssetPath = path.join(root, relAsset);
-    if (!path.resolve(localAssetPath).startsWith(path.resolve(assetsRoot))) {
+    const localAssetPath = path.resolve(root, relAsset);
+    if (!isPathInsideRoot(localAssetPath, assetsRoot)) {
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Forbidden');
       return;
     }
 
     const ext = path.extname(localAssetPath).toLowerCase();
-    const contentType = mime[ext] || 'application/octet-stream';
+    const contentType = DEFAULT_MIME_TYPES[ext] || 'application/octet-stream';
     const isCodeOrMarkup =
       ext === '.html' || ext === '.js' || ext === '.mjs' || ext === '.css' || ext === '.json';
     const cacheHeader = isCodeOrMarkup
@@ -208,7 +129,7 @@ http.createServer(async (req, res) => {
         const code = fs.readFileSync(localAssetPath, 'utf8');
         if (code.includes('https://www.igloo.inc/')) {
           const patched = code.replace(/https:\/\/www\.igloo\.inc\//g, '/');
-          fs.writeFileSync(localAssetPath, patched, 'utf8');
+          writeFileAtomicSync(localAssetPath, patched, 'utf8');
         }
         indexBundlePatched = true;
       }
@@ -217,22 +138,11 @@ http.createServer(async (req, res) => {
     }
 
     try {
-      const buf = await proxyUpstreamAsset(relAsset, localAssetPath);
-      res.writeHead(200, {
-        'Content-Type': contentType,
-        'Content-Length': buf.length,
-        'Accept-Ranges': 'bytes',
-        'Cache-Control': cacheHeader,
-        'Access-Control-Allow-Origin': '*'
-      });
-      if (req.method === 'HEAD') {
-        res.end();
-      } else {
-        res.end(buf);
-      }
+      await proxyUpstreamAsset(relAsset, localAssetPath);
+      serveBufferOrFile(req, res, localAssetPath, contentType, cacheHeader);
       return;
     } catch (err) {
-      res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.writeHead(502, applyCorsHeaders(req, { 'Content-Type': 'text/plain; charset=utf-8' }));
       res.end(`Upstream asset proxy error (${relAsset}): ${err.message}`);
       return;
     }
@@ -255,19 +165,26 @@ http.createServer(async (req, res) => {
   // 3. Resolve /shared-ui/* or site-local files
   let fp;
   if (u.startsWith('/shared-ui/')) {
-    fp = path.join(sharedRoot, u.slice('/shared-ui/'.length));
-    if (!path.resolve(fp).startsWith(sharedRoot)) {
+    fp = path.resolve(sharedRoot, u.slice('/shared-ui/'.length));
+    if (!isPathInsideRoot(fp, sharedRoot)) {
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Forbidden');
       return;
     }
   } else {
-    fp = path.join(root, u);
-    if (!path.resolve(fp).startsWith(path.resolve(root))) {
+    fp = path.resolve(root, u.replace(/^\/+/, ''));
+    if (!isPathInsideRoot(fp, root)) {
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Forbidden');
       return;
     }
+  }
+
+  const baseName = path.basename(fp);
+  if (baseName === 'server.js' || baseName === 'sync_images.js') {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden');
+    return;
   }
 
   if (!fs.existsSync(fp) && !path.extname(u)) {
@@ -275,7 +192,7 @@ http.createServer(async (req, res) => {
   }
 
   const ext = path.extname(fp).toLowerCase();
-  const contentType = mime[ext] || 'application/octet-stream';
+  const contentType = DEFAULT_MIME_TYPES[ext] || 'application/octet-stream';
   const isCode = ['.html', '.js', '.mjs', '.css', '.json'].includes(ext);
   const cacheHeader = isCode ? 'public, max-age=0, must-revalidate' : 'public, max-age=86400';
 

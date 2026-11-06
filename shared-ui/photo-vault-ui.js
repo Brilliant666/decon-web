@@ -649,6 +649,24 @@ function fmtSigned(n) {
   return v > 0 ? `+${v}` : `${v}`;
 }
 
+export function escapeHtml(val) {
+  return String(val ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function sanitizeImageSrc(src) {
+  const s = String(src ?? '').trim();
+  if (!s) return '';
+  if (/^data:image\/(jpeg|jpg|png|webp|gif|avif);base64,[a-z0-9+/=\s]+$/i.test(s)) return s;
+  if (s.startsWith('/') && !s.startsWith('//')) return encodeURI(s).replace(/"/g, '%22');
+  if (/^https?:\/\//i.test(s)) return s.replace(/"/g, '%22');
+  return '';
+}
+
 /**
  * 1. createExifPlate(el, photo, options = {})
  * Renders the 1:1 unlabeled Sam Becker EXIF sidebar:
@@ -689,8 +707,34 @@ export function createExifPlate(el, photo, options = {}) {
       { l: 0.463, c: 0.024, h: 119.481 }
     ]
   };
-  const aiColor = colorData.ai || { l: 0.72, c: 0.14, h: 60 };
-  const subColors = (colorData.colors || []).slice(0, 5);
+  const rawAi = colorData.ai || { l: 0.72, c: 0.14, h: 60 };
+  const aiColor = {
+    l: Number(rawAi.l) || 0,
+    c: Number(rawAi.c) || 0,
+    h: Number(rawAi.h) || 0
+  };
+  const subColors = (colorData.colors || []).slice(0, 5).map((c) => ({
+    l: Number(c?.l) || 0,
+    c: Number(c?.c) || 0,
+    h: Number(c?.h) || 0
+  }));
+
+  const safeSlug = escapeHtml(photo.slug || photo.id);
+  const safeTitle = escapeHtml(photo.title || 'UNTITLED');
+  const safeCamera = escapeHtml(cameraText);
+  const safeLens = escapeHtml(lensText);
+  const safeRecipeTitle = escapeHtml(recipeTitle);
+  const safeFocal = escapeHtml(focalText);
+  const safeFocal35 = escapeHtml(focal35Text);
+  const safeFNumber = escapeHtml(fNumberText);
+  const safeShutter = escapeHtml(shutterText);
+  const safeIso = escapeHtml(isoText);
+  const safeFilm = escapeHtml(filmText);
+  const safeDate = escapeHtml(dateText);
+  const safeEv = escapeHtml(evText);
+  const safePalette = (photo.palette || ['#C88A4B', '#7B4E34', '#D7B66E', '#EDE8D8', '#3B423E'])
+    .slice(0, 5)
+    .map((hex) => (/^#[0-9a-fA-F]{3,8}$/.test(String(hex || '').trim()) ? String(hex).trim() : '#7B4E34'));
 
   let show35Eq = false;
   let recipeOpen = Boolean(options.recipeExpanded);
@@ -698,27 +742,27 @@ export function createExifPlate(el, photo, options = {}) {
   el.innerHTML = `
     <div class="pv-exif-plate ${side === 'left' ? 'pv-side-left' : 'pv-side-right'}${options.proMode ? ' is-pro' : ''}">
       <div class="pv-title-wrap">
-        <a href="/p/${photo.slug || photo.id}" class="pv-photo-title" data-action="title">${photo.title || 'UNTITLED'}</a>
+        <a href="/p/${safeSlug}" class="pv-photo-title" data-action="title">${safeTitle}</a>
       </div>
 
       <div class="pv-gear-stack">
-        <button type="button" class="pv-meta-row" data-action="camera" title="Filter by ${cameraText}">
+        <button type="button" class="pv-meta-row" data-action="camera" title="Filter by ${safeCamera}">
           <span class="pv-meta-icon">${SVG_ICONS.camera}</span>
-          <span class="pv-meta-text">${cameraText}</span>
+          <span class="pv-meta-text">${safeCamera}</span>
         </button>
 
         ${lensText ? `
-        <button type="button" class="pv-meta-row" data-action="lens" title="Filter by ${lensText}">
+        <button type="button" class="pv-meta-row" data-action="lens" title="Filter by ${safeLens}">
           <span class="pv-meta-icon">${SVG_ICONS.lens}</span>
-          <span class="pv-meta-text">${lensText}</span>
+          <span class="pv-meta-text">${safeLens}</span>
         </button>
         ` : ''}
 
         ${hasRecipe ? `
         <div class="pv-recipe-line">
-          <button type="button" class="pv-meta-row" data-action="recipe-filter" title="Filter by recipe ${recipeTitle}">
+          <button type="button" class="pv-meta-row" data-action="recipe-filter" title="Filter by recipe ${safeRecipeTitle}">
             <span class="pv-meta-icon">${SVG_ICONS.recipe}</span>
-            <span class="pv-meta-text">${recipeTitle}</span>
+            <span class="pv-meta-text">${safeRecipeTitle}</span>
           </button>
           <button type="button" class="pv-recipe-plus-btn ${recipeOpen ? 'is-open' : ''}" data-action="recipe-toggle" aria-label="Show Fujifilm Recipe Details" title="Toggle Fujifilm Film Recipe Card">
             ${SVG_ICONS.plus}
@@ -731,25 +775,25 @@ export function createExifPlate(el, photo, options = {}) {
       <div class="pv-sub-stack">
         <ul class="pv-exposure-list">
           <li class="pv-exposure-line">
-            <button type="button" class="pv-focal-btn" data-action="focal" title="35mm Equivalent: ${focal35Text} (Click to filter)">
-              <span data-focal-text>${focalText}</span><span class="pv-focal-35eq" data-focal-eq style="display:none">(${focal35Text} eq)</span>
+            <button type="button" class="pv-focal-btn" data-action="focal" title="35mm Equivalent: ${safeFocal35} (Click to filter)">
+              <span data-focal-text>${safeFocal}</span><span class="pv-focal-35eq" data-focal-eq style="display:none">(${safeFocal35} eq)</span>
             </button>
-            <span>${fNumberText}</span>
+            <span>${safeFNumber}</span>
           </li>
           <li class="pv-exposure-line">
-            <span>${shutterText}</span>
-            <span>${isoText}</span>
+            <span>${safeShutter}</span>
+            <span>${safeIso}</span>
           </li>
         </ul>
 
         ${filmText ? `
-        <button type="button" class="pv-meta-row" data-action="film" title="Filter by film simulation ${filmText}">
+        <button type="button" class="pv-meta-row" data-action="film" title="Filter by film simulation ${safeFilm}">
           <span class="pv-meta-icon-film">${SVG_ICONS.filmCanister}</span>
-          <span class="pv-meta-text">${filmText}</span>
+          <span class="pv-meta-text">${safeFilm}</span>
         </button>
         ` : ''}
 
-        <span class="pv-timestamp-pill">${dateText}</span>
+        <span class="pv-timestamp-pill">${safeDate}</span>
 
         <div class="pv-oklch-wrap" title="OKLCH Perceptual Color Strip">
           <div class="pv-oklch-strip">
@@ -770,11 +814,11 @@ export function createExifPlate(el, photo, options = {}) {
         <div class="pv-pro-drawer">
           <div class="pv-pro-label">
             <span>64-BIN LUMA/RGB</span>
-            <span>${focal35Text} EQ · ${evText}</span>
+            <span>${safeFocal35} EQ · ${safeEv}</span>
           </div>
           <canvas class="pv-pro-hist" width="180" height="36"></canvas>
           <div class="pv-pro-swatches">
-            ${(photo.palette || ['#C88A4B', '#7B4E34', '#D7B66E', '#EDE8D8', '#3B423E']).slice(0, 5).map((hex) => `
+            ${safePalette.map((hex) => `
               <button type="button" class="pv-pro-swatch" style="background:${hex}" data-hex="${hex}" title="Copy ${hex}"></button>
             `).join('')}
           </div>
@@ -984,12 +1028,21 @@ export function createFilmRecipeCard(el, recipeOrPhoto, options = {}) {
   const wbDotX = Math.max(6, Math.min(58, 32 + (Number(wbR) / 9) * 26));
   const wbDotY = Math.max(6, Math.min(58, 32 - (Number(wbB) / 9) * 26));
 
+  const safeTitle = escapeHtml(title);
+  const safeSim = escapeHtml(sim);
+  const safeDr = escapeHtml(dr);
+  const safeIso = escapeHtml(iso);
+  const safeWbStr = escapeHtml(wbStr);
+  const safeGrain = escapeHtml(grain);
+  const safeCce = escapeHtml(cce);
+  const safeCcfx = escapeHtml(ccfx);
+
   el.innerHTML = `
     <div class="pv-recipe-popover">
       <div class="pv-recipe-pop-header">
-        <span class="pv-recipe-pop-title" title="${title}">${title}</span>
+        <span class="pv-recipe-pop-title" title="${safeTitle}">${safeTitle}</span>
         <div class="pv-recipe-pop-badges">
-          <span class="pv-recipe-pop-sim">${sim}</span>
+          <span class="pv-recipe-pop-sim">${safeSim}</span>
           <button type="button" class="pv-recipe-copy-btn" data-copy-recipe title="Copy Fujifilm Recipe Settings">Copy Recipe</button>
         </div>
       </div>
@@ -997,11 +1050,11 @@ export function createFilmRecipeCard(el, recipeOrPhoto, options = {}) {
       <div class="pv-recipe-pop-grid">
         <div class="pv-recipe-cell">
           <span class="pv-recipe-cell-k">Dynamic Range</span>
-          <span class="pv-recipe-cell-v">${dr} · ${iso}</span>
+          <span class="pv-recipe-cell-v">${safeDr} · ${safeIso}</span>
         </div>
         <div class="pv-recipe-cell">
           <span class="pv-recipe-cell-k">White Balance</span>
-          <span class="pv-recipe-cell-v">${wbStr}</span>
+          <span class="pv-recipe-cell-v">${safeWbStr}</span>
         </div>
       </div>
 
@@ -1035,15 +1088,15 @@ export function createFilmRecipeCard(el, recipeOrPhoto, options = {}) {
       <div class="pv-recipe-pop-grid-3" style="margin-bottom:0">
         <div class="pv-recipe-cell">
           <span class="pv-recipe-cell-k">Grain</span>
-          <span class="pv-recipe-cell-v">${grain}</span>
+          <span class="pv-recipe-cell-v">${safeGrain}</span>
         </div>
         <div class="pv-recipe-cell">
           <span class="pv-recipe-cell-k">Chrome Effect</span>
-          <span class="pv-recipe-cell-v">${cce}</span>
+          <span class="pv-recipe-cell-v">${safeCce}</span>
         </div>
         <div class="pv-recipe-cell">
           <span class="pv-recipe-cell-k">Chrome Blue</span>
-          <span class="pv-recipe-cell-v">${ccfx}</span>
+          <span class="pv-recipe-cell-v">${safeCcfx}</span>
         </div>
       </div>
 
@@ -1563,15 +1616,16 @@ export function createCommandPalette(items = [], onSelect = () => {}, options = 
       const sec = item.section || '';
       if (sec && sec !== lastSection) {
         lastSection = sec;
-        htmlParts.push(`<div class="pv-cmd-section">${sec}</div>`);
+        htmlParts.push(`<div class="pv-cmd-section">${escapeHtml(sec)}</div>`);
       }
+      const safeThumb = item.thumb ? sanitizeImageSrc(item.thumb) : '';
       htmlParts.push(`
         <div class="pv-cmd-item ${idx === activeIndex ? 'is-active' : ''}" data-idx="${idx}">
           <div class="pv-cmd-item-left">
-            ${item.thumb ? `<img class="pv-cmd-thumb" src="${item.thumb}" alt="" loading="lazy" />` : ''}
-            <span class="pv-cmd-label">${item.label || item.title}</span>
+            ${safeThumb ? `<img class="pv-cmd-thumb" src="${safeThumb}" alt="" loading="lazy" />` : ''}
+            <span class="pv-cmd-label">${escapeHtml(item.label || item.title)}</span>
           </div>
-          <span class="pv-cmd-item-sub">${item.meta || item.category || ''}</span>
+          <span class="pv-cmd-item-sub">${escapeHtml(item.meta || item.category || '')}</span>
         </div>
       `);
     });
