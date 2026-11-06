@@ -157,7 +157,7 @@ a {
   height: 100vh;
   z-index: 9600;
   pointer-events: none;
-  display: none;
+  display: none !important;
 }
 
 .portal-wipe {

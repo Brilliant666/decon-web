@@ -253,143 +253,22 @@ function showToast(msg) {
 
 function createTransitionCover() {
   const canvas = document.getElementById('transition-cover');
-  if (!canvas) {
-    return {
-      play: (cb, done) => {
-        if (cb) cb();
-        if (done) done();
-      },
-      playReveal: (done) => {
-        if (done) done();
-      },
-    };
+  if (canvas) {
+    canvas.style.display = 'none';
   }
-  const ctx = canvas.getContext('2d');
-  let animId = 0;
-
-  function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const targetW = Math.floor(window.innerWidth * dpr);
-    const targetH = Math.floor(window.innerHeight * dpr);
-    if (canvas.width !== targetW || canvas.height !== targetH) {
-      canvas.width = targetW;
-      canvas.height = targetH;
-    }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  resize();
-  window.addEventListener('resize', resize, { passive: true });
-
-  function easeInOutQuart(t) {
-    return t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
-  }
-
-  function drawSlantedLayers(rawT, layers) {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const slant = Math.tan((8 * Math.PI) / 180) * h;
-    const totalSpan = w + slant * 2;
-
-    ctx.clearRect(0, 0, w, h);
-
-    layers.forEach((color, idx) => {
-      const delay = idx * 0.08;
-      const localT = Math.max(0, Math.min(1, (rawT - delay) / (1 - delay * 1.5)));
-      let xStart;
-      let xEnd;
-
-      if (localT <= 0.5) {
-        const p = easeInOutQuart(localT * 2);
-        xStart = -slant;
-        xEnd = -slant + totalSpan * p;
-      } else {
-        const p = easeInOutQuart((localT - 0.5) * 2);
-        xStart = -slant + totalSpan * p;
-        xEnd = -slant + totalSpan;
+  return {
+    play(onMidpoint, onComplete) {
+      if (typeof onMidpoint === 'function') onMidpoint();
+      if (typeof onComplete === 'function') {
+        requestAnimationFrame(() => onComplete());
       }
-
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(xStart + slant, 0);
-      ctx.lineTo(xEnd + slant, 0);
-      ctx.lineTo(xEnd - slant, h);
-      ctx.lineTo(xStart - slant, h);
-      ctx.closePath();
-      ctx.fill();
-    });
-  }
-
-  function play(onMidpoint, onComplete) {
-    cancelAnimationFrame(animId);
-    resize();
-    document.documentElement.classList.add('is-transitioning-view');
-    canvas.style.display = 'block';
-
-    const start = performance.now();
-    const duration = 680;
-    let midpointFired = false;
-
-    const layers =
-      state.theme === 'light'
-        ? ['#000000', '#555555', '#ffffff']
-        : ['#ffffff', '#555555', '#000000'];
-
-    function frame(now) {
-      const rawT = Math.min(1, (now - start) / duration);
-      if (rawT >= 0.48 && !midpointFired) {
-        midpointFired = true;
-        if (typeof onMidpoint === 'function') onMidpoint();
+    },
+    playReveal(onComplete) {
+      if (typeof onComplete === 'function') {
+        requestAnimationFrame(() => onComplete());
       }
-
-      drawSlantedLayers(rawT, layers);
-
-      if (rawT < 1) {
-        animId = requestAnimationFrame(frame);
-      } else {
-        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        canvas.style.display = 'none';
-        document.documentElement.classList.remove('is-transitioning-view');
-        if (typeof onComplete === 'function') onComplete();
-      }
-    }
-
-    animId = requestAnimationFrame(frame);
-  }
-
-  function playReveal(onComplete) {
-    cancelAnimationFrame(animId);
-    resize();
-    document.documentElement.classList.add('is-transitioning-view');
-    canvas.style.display = 'block';
-
-    const start = performance.now();
-    const duration = 420;
-
-    const layers =
-      state.theme === 'light'
-        ? ['#000000', '#555555', '#ffffff']
-        : ['#ffffff', '#555555', '#000000'];
-
-    function frame(now) {
-      const progress = Math.min(1, (now - start) / duration);
-      const rawT = 0.48 + progress * 0.52;
-
-      drawSlantedLayers(rawT, layers);
-
-      if (progress < 1) {
-        animId = requestAnimationFrame(frame);
-      } else {
-        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        canvas.style.display = 'none';
-        document.documentElement.classList.remove('is-transitioning-view');
-        if (typeof onComplete === 'function') onComplete();
-      }
-    }
-
-    animId = requestAnimationFrame(frame);
-  }
-
-  return { play, playReveal };
+    },
+  };
 }
 
 const transitionCover = createTransitionCover();
@@ -1737,8 +1616,8 @@ function mountFullscreenStageDOM(id) {
   document.getElementById('navbar')?.classList.remove('is-navbar-scrolled-down');
   document.documentElement.classList.remove('is-navbar-scrolled-down');
 
-  // 1. Completely pause all gallery engines & unmount WebGL card iframe so stage gets 100% GPU/CPU
-  pauseGalleryEngines({ unmountWebGL: true });
+  // 1. Pause gallery engines without unmounting Card #04 WebGL iframe so returning to homepage is 0ms instant
+  pauseGalleryEngines({ unmountWebGL: false });
   stopListPreviewCanvas();
   pauseLabSandboxes();
 
@@ -1851,7 +1730,7 @@ function closeFullscreenStage({ fromPopState = false } = {}) {
   transitionCover.play(
     () => {
       teardownFullscreenStageDOM();
-      applyViewModeDOM(state.viewMode, { deferResume: true, animate: false });
+      applyViewModeDOM(state.viewMode, { deferResume: true, animate: true });
     },
     () => {
       if (state.viewMode === 'grid') {
