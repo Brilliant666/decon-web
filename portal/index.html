@@ -26,8 +26,12 @@
       d.setAttribute('data-view', v);
     })();
   </script>
-  <link rel="prefetch" href="/lab" />
-  <link rel="prefetch" href="/lab.js" />
+  <link rel="modulepreload" href="/app.js" />
+  <link rel="modulepreload" href="/lab.js" />
+  <link rel="modulepreload" href="/shared-ui/truejpeg-ui.js" />
+  <link rel="modulepreload" href="/shared-ui/mfp-ui.js" />
+  <link rel="modulepreload" href="/shared-ui/photo-vault-ui.js" />
+  <link rel="modulepreload" href="/shared-ui/igloo-ui.js" />
 </head>
 <body>
   <!-- 1. Lusion Labs Authentic 8° Slanted 3-Layer Parallelogram Curtain Transition (TransitionCover) -->
@@ -179,10 +183,10 @@
                 </div>
                 <div class="tj-win__ticks"></div>
                 <div class="tj-win__view tj-win__view--reel">
-                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/148.jpg" alt="" loading="lazy" /></span>
-                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/149.jpg" alt="" loading="lazy" /></span>
-                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/160.jpg" alt="" loading="lazy" /></span>
-                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/168.jpg" alt="" loading="lazy" /></span>
+                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/148.jpg" alt="" loading="lazy" decoding="async" /></span>
+                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/149.jpg" alt="" loading="lazy" decoding="async" /></span>
+                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/160.jpg" alt="" loading="lazy" decoding="async" /></span>
+                  <span class="tj-win__tile"><img src="/sites/01-truejpeg/images/168.jpg" alt="" loading="lazy" decoding="async" /></span>
                   <span class="tj-win__slot">01.0 // 144 works</span>
                 </div>
                 <div class="tj-win__body">
@@ -305,6 +309,7 @@
                     src="/sites/03-sambecker-photos/photos/photo-xGnIrl5DjT3Nurp3.jpg"
                     alt="Aerial Gourds #1 — Fujifilm X-T5"
                     loading="lazy"
+                    decoding="async"
                   />
                   <!-- Subtle Rule-of-Thirds & Reticle Viewfinder Overlay on Hover -->
                   <div class="sbp-hero-guides">
@@ -320,19 +325,19 @@
                 <!-- 4-Frame Contact Sheet Strip -->
                 <div class="sbp-contact-strip" id="sbp-contact-strip">
                   <div class="sbp-thumb is-active" data-sbp-idx="0">
-                    <img src="/sites/03-sambecker-photos/photos/photo-xGnIrl5DjT3Nurp3.jpg" alt="" loading="lazy" />
+                    <img src="/sites/03-sambecker-photos/photos/photo-xGnIrl5DjT3Nurp3.jpg" alt="" loading="lazy" decoding="async" />
                     <span>01</span>
                   </div>
                   <div class="sbp-thumb" data-sbp-idx="1">
-                    <img src="/sites/03-sambecker-photos/photos/photo-IluPcUDtQJDKT42M.jpeg" alt="" loading="lazy" />
+                    <img src="/sites/03-sambecker-photos/photos/photo-IluPcUDtQJDKT42M.jpeg" alt="" loading="lazy" decoding="async" />
                     <span>02</span>
                   </div>
                   <div class="sbp-thumb" data-sbp-idx="2">
-                    <img src="/sites/03-sambecker-photos/photos/photo-sKjgaHDvSur4KvrJ.jpeg" alt="" loading="lazy" />
+                    <img src="/sites/03-sambecker-photos/photos/photo-sKjgaHDvSur4KvrJ.jpeg" alt="" loading="lazy" decoding="async" />
                     <span>03</span>
                   </div>
                   <div class="sbp-thumb" data-sbp-idx="3">
-                    <img src="/sites/03-sambecker-photos/photos/photo-Akbgou84jNGg7ezB.jpeg" alt="" loading="lazy" />
+                    <img src="/sites/03-sambecker-photos/photos/photo-Akbgou84jNGg7ezB.jpeg" alt="" loading="lazy" decoding="async" />
                     <span>04</span>
                   </div>
                 </div>
@@ -456,7 +461,7 @@
         <div class="card__img card__img--igloo" id="card-stage-04">
           <!-- Instant Zero-Latency Polar Igloo Backdrop (Top 62% of social.jpg, zero text) -->
           <div class="igloo-stage-backdrop" aria-hidden="true">
-            <img src="/sites/04-igloo-inc/assets/images/social.jpg" alt="" loading="eager" />
+            <img src="/sites/04-igloo-inc/assets/images/social.jpg" alt="" loading="eager" decoding="async" />
           </div>
           <!-- Live Authentic :6063 Lusion 3D WebGL2 Engine Stage -->
           <iframe
@@ -748,7 +753,7 @@
             <h3 class="bento-card__title">createOpticalLoupe &amp; createCompositionOverlay</h3>
           </div>
           <div class="bento-card__stage bento-stage--loupe" id="sb10-stage">
-            <img id="sb10-img" data-main-photo alt="Darkroom Optical Specimen" class="sb10-img" />
+            <img id="sb10-img" data-main-photo alt="Darkroom Optical Specimen" class="sb10-img" decoding="async" />
             <div class="sb10-hud-pill" id="sb10-hud-pill">HOVER &amp; WHEEL TO ZOOM LOUPE · GRID: PHI</div>
           </div>
           <div class="bento-card__controls">

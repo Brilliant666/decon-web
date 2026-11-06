@@ -1521,21 +1521,32 @@ function initBentoSandboxes() {
     },
   ];
 
-  // Time-slice 16 sandboxes across animation frames (BATCH_SIZE = 2) so first paint & reveal transition stay 120fps
-  let cursorIdx = 0;
-  const BATCH_SIZE = 2;
-  function runNextSandboxBatch() {
-    const end = Math.min(cursorIdx + BATCH_SIZE, sandboxTasks.length);
-    for (; cursorIdx < end; cursorIdx += 1) {
-      sandboxTasks[cursorIdx]();
+  let taskIdx = 0;
+  function runNextBatch() {
+    if (taskIdx >= sandboxTasks.length) return;
+    const batchSize = labViewActive ? 3 : 1;
+    const end = Math.min(taskIdx + batchSize, sandboxTasks.length);
+    while (taskIdx < end) {
+      try {
+        sandboxTasks[taskIdx]();
+      } catch (err) {
+        console.warn('[Lab Sandbox Init Error]', taskIdx, err);
+      }
+      taskIdx++;
     }
-    if (cursorIdx < sandboxTasks.length) {
-      requestAnimationFrame(runNextSandboxBatch);
+    if (taskIdx < sandboxTasks.length) {
+      if (labViewActive) {
+        requestAnimationFrame(runNextBatch);
+      } else if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(runNextBatch, { timeout: 600 });
+      } else {
+        setTimeout(runNextBatch, 32);
+      }
     } else if (!labViewActive) {
       pauseLabSandboxes();
     }
   }
-  requestAnimationFrame(runNextSandboxBatch);
+  runNextBatch();
 }
 
 export function ensureLabInitialized({ active = true } = {}) {

@@ -1882,18 +1882,21 @@ function getListPreviewImage(src) {
   if (!LIST_PREVIEW_IMAGES[src]) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
     img.src = src;
     LIST_PREVIEW_IMAGES[src] = img;
   }
   return LIST_PREVIEW_IMAGES[src];
 }
 
-// Eagerly warm cache for the authentic specimen covers used in list preview
-[
-  '/sites/01-truejpeg/images/149.jpg',
-  '/sites/01-truejpeg/images/168.jpg',
-  '/sites/03-sambecker-photos/photos/photo-IluPcUDtQJDKT42M.jpeg',
-].forEach(getListPreviewImage);
+// Warm cache for the authentic specimen covers used in list preview during idle time
+function warmListPreviewImages() {
+  [
+    '/sites/01-truejpeg/images/149.jpg',
+    '/sites/01-truejpeg/images/168.jpg',
+    '/sites/03-sambecker-photos/photos/photo-IluPcUDtQJDKT42M.jpeg',
+  ].forEach(getListPreviewImage);
+}
 
 // Pre-seeded 28 parallax snow particles for Specimen 04 procedural cryo-dome preview
 const CRYO_SNOW_PARTICLES = Array.from({ length: 28 }, (_, i) => ({
@@ -2234,6 +2237,7 @@ function stopListPreviewCanvas() {
 }
 
 function renderExpListRows() {
+  warmListPreviewImages();
   const host = document.getElementById('exp-list-rows');
   if (!host || host.dataset.rendered === '1') return;
 
@@ -2580,15 +2584,22 @@ function boot() {
   pollServerStatus();
   setInterval(pollServerStatus, 8000);
 
-  // Silent idle pre-warm for list & lab DOM so clicking grid | list | lab has < 1ms zero-jank response
-  const scheduleIdleWarmup =
-    window.requestIdleCallback || ((cb) => setTimeout(cb, 600));
-  scheduleIdleWarmup(() => {
-    renderExpListRows();
-    if (state.viewMode !== 'lab' && !state.stageOpen) {
-      ensureLabInitialized({ active: false });
-    }
-  });
+  if (initialMode !== 'lab') {
+    // Wait until first-screen entrance animation & Card #04 live 3D stage settle before warming hidden views
+    setTimeout(() => {
+      const idleWarmup = window.requestIdleCallback || ((cb) => setTimeout(cb, 16));
+      idleWarmup(
+        () => {
+          warmListPreviewImages();
+          renderExpListRows();
+          if (state.viewMode !== 'lab' && !state.stageOpen) {
+            ensureLabInitialized({ active: false });
+          }
+        },
+        { timeout: 4000 }
+      );
+    }, 2200);
+  }
 }
 
 if (document.readyState === 'loading') {

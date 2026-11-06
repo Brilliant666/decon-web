@@ -370,29 +370,55 @@ async function handleRequest(req, res) {
     filePath = candidate;
   }
 
-  if (filePath && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-    const ext = path.extname(filePath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    const isStaticMediaOrFont =
-      ext === '.jpg' ||
-      ext === '.jpeg' ||
-      ext === '.png' ||
-      ext === '.webp' ||
-      ext === '.svg' ||
-      ext === '.woff2';
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Cache-Control': isStaticMediaOrFont
-        ? 'public, max-age=3600'
-        : 'no-store, no-cache, must-revalidate',
-      'Access-Control-Allow-Origin': '*'
-    });
-    fs.createReadStream(filePath).pipe(res);
+  if (!filePath) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(`Not Found: ${cleanPath}`);
     return;
   }
 
-  res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end(`Not Found: ${cleanPath}`);
+  fs.stat(filePath, (err, stat) => {
+    if (err || !stat.isFile()) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end(`Not Found: ${cleanPath}`);
+      return;
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const etag = `W/"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`;
+    const isCodeOrMarkup =
+      ext === '.html' || ext === '.js' || ext === '.mjs' || ext === '.css' || ext === '.json';
+    const cacheControl = isCodeOrMarkup
+      ? 'public, max-age=0, must-revalidate'
+      : 'public, max-age=86400';
+
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, {
+        ETag: etag,
+        'Cache-Control': cacheControl,
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end();
+      return;
+    }
+
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'Content-Length': stat.size,
+      ETag: etag,
+      'Cache-Control': cacheControl,
+      'Access-Control-Allow-Origin': '*'
+    });
+
+    const stream = fs.createReadStream(filePath);
+    stream.on('error', () => {
+      if (!res.headersSent) {
+        res.writeHead(500);
+        res.end('Internal Server Error');
+      }
+    });
+    stream.pipe(res);
+  });
 }
 
 let autoWakeTriggered = false;

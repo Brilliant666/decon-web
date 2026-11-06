@@ -113,39 +113,61 @@ function proxyUpstreamAsset(relAssetPath, destPath) {
   return p;
 }
 
-function serveBufferOrFile(req, res, filePath, contentType, cacheControl) {
-  const stat = fs.statSync(filePath);
-  const range = req.headers.range;
+let indexBundlePatched = false;
 
-  if (range && filePath.endsWith('.ogg')) {
-    const parts = range.replace(/bytes=/, '').split('-');
-    const start = parseInt(parts[0], 10) || 0;
-    const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
-    const chunkSize = end - start + 1;
-    res.writeHead(206, {
-      'Content-Range': `bytes ${start}-${end}/${stat.size}`,
-      'Accept-Ranges': 'bytes',
-      'Content-Length': chunkSize,
+function serveBufferOrFile(req, res, filePath, contentType, cacheControl) {
+  fs.stat(filePath, (err, stat) => {
+    if (err || !stat.isFile()) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('404 Not Found');
+      return;
+    }
+
+    const etag = `W/"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`;
+    const range = req.headers.range;
+
+    if (!range && req.headers['if-none-match'] === etag) {
+      res.writeHead(304, {
+        ETag: etag,
+        'Cache-Control': cacheControl,
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end();
+      return;
+    }
+
+    if (range && filePath.endsWith('.ogg')) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10) || 0;
+      const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+      const chunkSize = end - start + 1;
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type': contentType,
+        ETag: etag,
+        'Cache-Control': cacheControl,
+        'Access-Control-Allow-Origin': '*'
+      });
+      fs.createReadStream(filePath, { start, end }).pipe(res);
+      return;
+    }
+
+    res.writeHead(200, {
       'Content-Type': contentType,
+      'Content-Length': stat.size,
+      'Accept-Ranges': 'bytes',
+      ETag: etag,
       'Cache-Control': cacheControl,
       'Access-Control-Allow-Origin': '*'
     });
-    fs.createReadStream(filePath, { start, end }).pipe(res);
-    return;
-  }
-
-  res.writeHead(200, {
-    'Content-Type': contentType,
-    'Content-Length': stat.size,
-    'Accept-Ranges': 'bytes',
-    'Cache-Control': cacheControl,
-    'Access-Control-Allow-Origin': '*'
+    if (req.method === 'HEAD') {
+      res.end();
+      return;
+    }
+    fs.createReadStream(filePath).pipe(res);
   });
-  if (req.method === 'HEAD') {
-    res.end();
-    return;
-  }
-  fs.createReadStream(filePath).pipe(res);
 }
 
 http.createServer(async (req, res) => {
@@ -174,16 +196,21 @@ http.createServer(async (req, res) => {
 
     const ext = path.extname(localAssetPath).toLowerCase();
     const contentType = mime[ext] || 'application/octet-stream';
-    const cacheHeader = 'public, max-age=86400';
+    const isCodeOrMarkup =
+      ext === '.html' || ext === '.js' || ext === '.mjs' || ext === '.css' || ext === '.json';
+    const cacheHeader = isCodeOrMarkup
+      ? 'public, max-age=0, must-revalidate'
+      : 'public, max-age=86400';
 
     if (fs.existsSync(localAssetPath) && fs.statSync(localAssetPath).isFile()) {
-      // Ensure index-2e130bc1.js is always patched
-      if (relAsset.endsWith('index-2e130bc1.js')) {
+      // Ensure index-2e130bc1.js is checked/patched only once per server process
+      if (!indexBundlePatched && relAsset.endsWith('index-2e130bc1.js')) {
         const code = fs.readFileSync(localAssetPath, 'utf8');
         if (code.includes('https://www.igloo.inc/')) {
           const patched = code.replace(/https:\/\/www\.igloo\.inc\//g, '/');
           fs.writeFileSync(localAssetPath, patched, 'utf8');
         }
+        indexBundlePatched = true;
       }
       serveBufferOrFile(req, res, localAssetPath, contentType, cacheHeader);
       return;
@@ -250,7 +277,7 @@ http.createServer(async (req, res) => {
   const ext = path.extname(fp).toLowerCase();
   const contentType = mime[ext] || 'application/octet-stream';
   const isCode = ['.html', '.js', '.mjs', '.css', '.json'].includes(ext);
-  const cacheHeader = isCode ? 'no-store, no-cache, must-revalidate' : 'public, max-age=3600';
+  const cacheHeader = isCode ? 'public, max-age=0, must-revalidate' : 'public, max-age=86400';
 
   if (fs.existsSync(fp) && fs.statSync(fp).isFile()) {
     serveBufferOrFile(req, res, fp, contentType, cacheHeader);
