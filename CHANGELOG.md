@@ -2,10 +2,39 @@
 
 All notable deconstruction milestones and architectural changes in `decon-web`.
 
+## [2026-11-06] — v1.1: Full-Stack Security Hardening, Atomic Cache, Igloo Scene-01 Fast Path & 0ms Stage Return
+
+### Security, Protocol & Atomic Persistence (`shared/static-server.js` & 5 Node Servers)
+- **Shared Server Security Foundation ([`shared/static-server.js`](./shared/static-server.js))**: Consolidated common security, caching, and static hosting primitives across `portal/server.js` and `sites/01..04/server.js`:
+  - **Malformed URL Crash Prevention (`safeDecodePath`)**: Safely wraps `decodeURIComponent` and rejects control characters or malformed percent-encoding (e.g., `/%E0%A4%A` returns `400 Bad Request` without crashing Node processes).
+  - **Strict Directory Traversal Protection (`isPathInsideRoot`)**: Replaced naive `.startsWith()` checks with `path.relative()` boundary validation and explicit `..` / backslash guards (`403 Forbidden`).
+  - **Loopback CORS Whitelist & Local JSON POST Guard (`getCorsOrigin`, `verifyLocalJsonPost`)**: Removed wildcard `Access-Control-Allow-Origin: *` headers in favor of strict loopback origin matching (`127.0.0.1` / `localhost`), and hardened `POST /api/wake` (`:6050`) and `POST /api/ingest` (`:6062`) against cross-origin `text/plain` CSRF (`415 Unsupported Media Type` / `403 Forbidden`).
+  - **Stored XSS & Binary Upload Hardening (`03-sambecker-photos` & `shared-ui/photo-vault-ui.js`)**: Added server-side JPEG/PNG/WebP magic-byte verification, `MAX_USER_PHOTOS = 100` cap, metadata sanitization, and dynamic `index` calculation on `POST /api/ingest`, paired with front-end `escapeHtml` and `sanitizeImageSrc` across `createExifPlate`, `createFilmRecipeCard`, `createCommandPalette`, and gallery views.
+  - **Atomic Disk Writes & Deduped Upstream Fetching (`writeFileAtomicSync`, `fetchUpstreamBuffer`)**: All upstream proxy caches (`01-truejpeg`, `02-musicforprogramming`, `03-sambecker-photos`, `04-igloo-inc`) and `sync_images.js` now write to `.tmp` files and atomically `fs.renameSync` to destination with 15s timeouts and redirect caps, eliminating half-written corrupted files on disk.
+  - **RFC 9110 Standard HTTP `Range` (`206` / `416`) & Child Process Lifecycle**: Implemented full suffix (`bytes=-500`) and interval byte-range parsing with `416 Range Not Satisfiable` guards, removed unsafe port `6000` from Portal, and registered `SIGINT` / `SIGTERM` / `exit` cleanup for spawned specimen servers.
+- **Single Source of Truth for `shared-ui/`**: Removed 4 stale duplicate component copies inside `sites/01..04/` (reducing redundant code by `5,600+` lines); all specimen apps and `/lab` workbenches now import exclusively from `/shared-ui/*.js`.
+- **Compliance & Licensing**: Removed third-party Cloudflare Beacon telemetry from `sites/01-truejpeg/legal.html`, replaced external `labs.lusion.co` font hotlinks in `portal/styles.css` with local font matching and cached `.woff2`, and added root [`LICENSE`](./LICENSE) (MIT + non-commercial attribution notice), [`package.json`](./package.json), [`scripts/smoke-test.js`](./scripts/smoke-test.js) (39 automated assertions), and GitHub Actions CI ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)).
+
+### Performance & Instant Stage Transitions (`portal/` & `04-igloo-inc`)
+- **Card #04 (`?embed=card`) Scene-01 Only Fast Path**: Patched `App3D-d68cb154.js` (idempotently persisted by `sites/04-igloo-inc/server.js`) and `pro-hud.js` so `?embed=card` only initializes Scene 01 (`igloo: F3`) at `DPR = 1`, skipping `cubes`, `entry`, `detailScene`, 3D project text meshes, 13 `.ogg` audio downloads, and hidden PRO HUD DOM/loops—cutting ~85% of background card initialization overhead while preserving 100% of the live 3D Igloo intro animation and full 4-scene experience in fullscreen stage.
+- **Zero-Flash Stage Switch & `0ms` Homepage Return**: Replaced the full-screen 2× DPR `#transition-cover` parallelogram wipe with a zero-canvas instant trigger and preserved `Card #04`'s WebGL2 context via `pauseGalleryEngines({ unmountWebGL: false })`, achieving `0ms` zero-reload restoration when clicking the top-left Lucy logo to return home.
+
+---
+
+## [2026-11-05] — v1.0: Master Exhibition Portal (`:6050`) & 16-Sandbox Shared-UI Component Lab
+
+### Master Exhibition Portal (`portal/`)
+- **Unified `grid | list | lab` SPA (`http://127.0.0.1:6050/`)**: Built the Lusion Labs-inspired Master Exhibition Portal hosting all 4 specimen reconstructions with automatic background process wake-up (`POST /api/wake`), live port health & latency telemetry (`GET /api/status`), and an embedded `100vw × 100vh` Fullscreen Stage (`#fullscreen-stage`) with progressive Escape / Mouse Back / top-left Lucy mascot return.
+- **Diagonal Asymmetric Gallery (`grid`) & 2× Retina Procedural Preview (`list`)**: Designed a 24-column staggered diagonal card layout with live interactive engines (`Card #01` True JPEG halftone/dot-matrix, `Card #02` MFP dual-column IDE & spectrum, `Card #03` Sam Becker 3D fan stack, `Card #04` live `:6063/?embed=card` 3D WebGL stage) and a 2× Retina floating preview canvas in `list` view featuring real-time 3D procedural cryo-dome rendering for `Igloo Inc`.
+- **120fps Pure-GPU 3-State Slot-Roller Header & Horizon Lock**: Upgraded `#header` to a zero-DOM-rewrite 3-state slot-roller (`PLAY GROUND` ↔ `CHRONICLE` ↔ `COMPONENT LAB`) with `scrollbar-gutter: stable` and unified `1800px` container geometry (`CLS = 0.00px`).
+- **30-Primitive × 16-Sandbox Shared-UI Component Lab (`/lab`)**: Assembled 16 interactive Bento sandboxes (`SB-01` through `SB-16`) showcasing all 30 extracted primitives from `/shared-ui/*.js`, complete with live parameter controls, category filtering, ESM code copy drawers, `ETag` `304` V8 bytecode caching, and `requestIdleCallback` time-sliced warmup.
+
+---
+
 ## [2026-11-04] — Specimen #04: Igloo Inc (`sites/04-igloo-inc`)
 
 ### Architecture & 100% Native WebGL2 3D Mirror Layer
-- **Isolated Site Archive (`sites/04-igloo-inc/`)**: Added Specimen #04 (`https://www.igloo.inc/` by Lusion) strictly inside `sites/04-igloo-inc/` and `shared-ui/igloo-ui.js` (mirrored byte-for-byte at `sites/04-igloo-inc/igloo-ui.js`), with zero modifications to `sites/01-truejpeg/`, `sites/02-musicforprogramming/`, `sites/03-sambecker-photos/`, or their shared UI kits.
+- **Isolated Site Archive (`sites/04-igloo-inc/`)**: Added Specimen #04 (`https://www.igloo.inc/` by Lusion) strictly inside `sites/04-igloo-inc/` and `shared-ui/igloo-ui.js` (served directly via `/shared-ui/igloo-ui.js` as the single source of truth), with zero modifications to `sites/01-truejpeg/`, `sites/02-musicforprogramming/`, `sites/03-sambecker-photos/`, or their shared UI kits.
 - **Transparent Upstream Proxy & Disk Cache Server (`server.js`, port `6063`)**: Supports `/shared-ui/*` cross-directory routing, `/lab` & `/lab.html` component lab routing, `/portfolio/*` SPA routing, and `/assets/*` local disk cache hosting with `inFlightProxy`-deduplicated HTTPS fallback to `https://www.igloo.inc/assets/*`, exact binary MIME mapping (`.wasm` → `application/wasm`, `.ktx2` → `image/ktx2`, `.drc` / `.exr` → `application/octet-stream`, `.ogg` → `audio/ogg` with HTTP `Range` support, `.woff2` → `font/woff2`), and automatic patching of `index-2e130bc1.js` (`"https://www.igloo.inc/"` → `"/"`).
 - **One-Command 3D Asset Pre-Sync (`sync_assets.js`)**: Pre-fetches and caches all **108 upstream WebGL2 3D assets (`18.25 MB`)** into `sites/04-igloo-inc/assets/` (ignored by `.gitignore`), covering `index-2e130bc1.js`, `App3D-d68cb154.js`, 4 Web Workers (`audioworker`, `msdfworker`, `bitmapworker`, `exrworker`), Draco & Basis Universal WASM decoders, 20 `.drc` 3D meshes, 46 `.ktx2` / `.exr` / `.png` textures & 3D VDB volumetric clouds, MSDF 3D font atlases, and 18 spatial `.ogg` audio tracks.
 
@@ -36,7 +65,7 @@ All notable deconstruction milestones and architectural changes in `decon-web`.
 - **Zero Layout Shift (`CLS = 0`) & `RAW / PRO` Darkroom Suite (`P`)**:
   - Locked geometric dimensions on topbar controls (`#btnThemeCycle`, `#btnModeToggle`) and `scrollbar-gutter: stable` on `html`, plus out-of-flow floating `#proToolbar` HUD and `.pv-pro-drawer` without full-DOM re-renders (`0.00px` horizontal/vertical layout shift).
   - Unlocks 64-Bin Luma/RGB histogram + 5 copyable HEX swatches, `2.5×–4.5×` wheel-zoom optical loupe (`L`, `getBoundingClientRect` object-contain coordinate mapping), 5-mode SVG composition guides (`G`), local JPEG drag-and-drop binary EXIF ingest (`POST /api/ingest`), procedural Web Audio leaf-shutter & aperture clicks (strictly silent in `RAW` mode), and `⌘K` Command Palette with `28×20px` micro-thumbnails and `semanticDescription` AI semantic search.
-- **UI Kit Extraction (`shared-ui/photo-vault-ui.js` & `lab.html`)**: Extracted 8 zero-dependency ES6 modules (`createExifPlate`, `createFilmRecipeCard`, `parseExif`, `extractColorPalette`, `createCompositionOverlay`, `createOpticalLoupe`, `createCommandPalette`, `createShutterAudio`) into [`shared-ui/photo-vault-ui.js`](./shared-ui/photo-vault-ui.js) (byte-for-byte mirrored at `sites/03-sambecker-photos/photo-vault-ui.js`) with a 2×2 interactive workbench in [`lab.html`](./sites/03-sambecker-photos/lab.html).
+- **UI Kit Extraction (`shared-ui/photo-vault-ui.js` & `lab.html`)**: Extracted zero-dependency ES6 modules (`createExifPlate`, `createFilmRecipeCard`, `parseExif`, `extractColorPalette`, `createCompositionOverlay`, `createOpticalLoupe`, `createCommandPalette`, `createShutterAudio`, `escapeHtml`, `sanitizeImageSrc`) into [`shared-ui/photo-vault-ui.js`](./shared-ui/photo-vault-ui.js) (served directly via `/shared-ui/photo-vault-ui.js` as the single source of truth) with a 2×2 interactive workbench in [`lab.html`](./sites/03-sambecker-photos/lab.html).
 
 ---
 
@@ -54,7 +83,7 @@ All notable deconstruction milestones and architectural changes in `decon-web`.
 - **`RAW / PRO` Hardware Switch (`P`) & 4 Editor Themes (`T`)**:
   - Defaults to `RAW` (pure 1:1 original look); switching to `PRO` unlocks the **32-Band Real-Time ASCII (`▁▂▃▄▅▆▇█`) / LED Dot-Matrix Spectrum Analyzer**, **Code-Comment Pomodoro Flow Timer (`/* FLOW_TIMER: 25:00 */`)** with two-tone harmonic overtone chime, and **Full Geek Keyboard Shortcuts** (`Space`, `←/→`, `↑/↓`, `R`, `S`, `T`, `P`).
   - Cycle through `MFP Dark`, `Gruvbox`, `Solarized`, and `Paper Light` themes via `T`.
-- **UI Kit Extraction (`shared-ui/mfp-ui.js` & `lab.html`)**: Extracted `createAsciiBar`, `createSpectrum`, `createAmbientPad`, `createFlowTimer`, `scrambleText`, and `createSoundEngine` into [`shared-ui/mfp-ui.js`](./shared-ui/mfp-ui.js) (and site copy) with a 2×2 interactive playground and 1,380-track searchable vault in [`lab.html`](./sites/02-musicforprogramming/lab.html).
+- **UI Kit Extraction (`shared-ui/mfp-ui.js` & `lab.html`)**: Extracted `createAsciiBar`, `createSpectrum`, `createAmbientPad`, `createFlowTimer`, `scrambleText`, and `createSoundEngine` into [`shared-ui/mfp-ui.js`](./shared-ui/mfp-ui.js) (served directly via `/shared-ui/mfp-ui.js` as the single source of truth) with a 2×2 interactive playground and 1,380-track searchable vault in [`lab.html`](./sites/02-musicforprogramming/lab.html).
 
 ---
 
@@ -73,4 +102,4 @@ All notable deconstruction milestones and architectural changes in `decon-web`.
   - **Contact Sheet (`3`)**: High-density darkroom proof-sheet grid with film-strip perforation ticks.
   - **Web Audio Tactile Sound Engine (`createSoundEngine`)**: Procedural zero-asset Web Audio synthesis (`tick`, `switch`, `shutter`, `copy`) active exclusively in `PRO` mode, plus a two-layer darkroom ambient soundscape (`ambient`) showcased in `lab.html`.
 - **`INK / PAPER` Theme (`T`)**: Honeycomb dot-wave transition between `#111110` darkroom ink and `#f4f3ee` museum warm paper, while keeping the Viewer in pure darkroom mode with warm tonal matting shadows.
-- **UI Kit Extraction**: Extracted standalone [`shared-ui/truejpeg-ui.js`](./shared-ui/truejpeg-ui.js) (including `dotType`, `winFrame`, `renderHalftone`, `createWipe`, `scramble`, `createGlobe`, `attachLoupe`, `analyzeImage`, `drawDotHistogram`, `createSoundEngine`) and 2×2 interactive playground [`lab.html`](./sites/01-truejpeg/lab.html).
+- **UI Kit Extraction**: Extracted standalone [`shared-ui/truejpeg-ui.js`](./shared-ui/truejpeg-ui.js) (served directly via `/shared-ui/truejpeg-ui.js`, including `dotType`, `winFrame`, `renderHalftone`, `createWipe`, `scramble`, `createGlobe`, `attachLoupe`, `analyzeImage`, `drawDotHistogram`, `createSoundEngine`) and 2×2 interactive playground [`lab.html`](./sites/01-truejpeg/lab.html).

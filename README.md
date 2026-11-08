@@ -1,5 +1,8 @@
 # decon-web // 解构网页
 
+[![CI Smoke Test](https://github.com/Brilliant666/decon-web/actions/workflows/ci.yml/badge.svg)](https://github.com/Brilliant666/decon-web/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 > **Deconstructing craft-obsessed, god-tier websites.**
 > 拆解与复刻全球极具审美统治力、微交互巧思与工程美学的「神级独立网站」，提炼可复用的零依赖 UI 组件与设计心法。
 
@@ -8,11 +11,33 @@
 ## ⚠️ Educational Attribution & Disclaimer (致敬与声明)
 
 本项目仅作为**前端视觉工程、Canvas/Web Audio 物理交互与 UI 架构的拆解学习仓库（Educational Deconstruction & UI Study）**：
+- **Master Exhibition Portal (`portal/`)**：总展览馆门户设计向 **[Lusion Labs](https://labs.lusion.co/)** 与 **[Rauno Freiberg Craft](https://rauno.me/craft)** 致敬。
 - **Specimen #01 (`True JPEG`)**：原始网站设计、前端架构与 AI 图像/提示词作品版权均归原作者 **TJ ([@RTJLDR](https://x.com/RTJLDR))** 及官方站点 **[truejpeg.com](https://truejpeg.com/)** 所有。
 - **Specimen #02 (`musicForProgramming();`)**：原始网站设计、理念宣言与混音电台企划版权均归原作者 **Datassette ([datassette.net](https://datassette.net/))**、各期客座艺术家及官方站点 **[musicforprogramming.net](https://musicforprogramming.net/)** 所有。
 - **Specimen #03 (`Sam Becker Photos`)**：原始网站极简摄影博客排版与开源项目创意归原作者 **Sam Becker ([sambecker/exif-photo-blog](https://github.com/sambecker/exif-photo-blog))** 及官方站点 **[photos.sambecker.com](https://photos.sambecker.com/)** 所有。
 - **Specimen #04 (`Igloo Inc`)**：原始网站 3D WebGL 极地冰原巨石视觉、GLSL 着色器管线与空间声效工程版权均归创意制作团队 **Lusion ([lusion.co](https://lusion.co/))** 及品牌方 **Igloo Inc. ([igloo.inc](https://www.igloo.inc/))** 所有。
-- 为保持 Git 仓库轻量与合规，本仓库**不包含**原站的大体积媒体与 3D 网格/纹理缓存（`images/`、`photos/` 与 `sites/04-igloo-inc/assets/` 目录已在 `.gitignore` 中忽略，均提供一键同步脚本与本地程序化合成/着色器兜底）。
+- 为保持 Git 仓库轻量与合规，本仓库**不包含**原站的大体积媒体与 3D 网格/纹理缓存（`images/`、`photos/` 与 `sites/04-igloo-inc/assets/` 目录已在 `.gitignore` 中忽略，均提供一键同步脚本与本地程序化合成/着色器兜底）。详见根目录 [`LICENSE`](./LICENSE)。
+
+---
+
+## 🚀 Quick Start (一键启动主展览馆 & 自动化测试)
+
+```bash
+# 一键启动 Master Exhibition Portal (:6050) 并自动在后台唤醒/托管 4 座标本站 (:6060–:6063)
+npm start
+
+# 运行全栈语法检查与 39 项安全/协议自动化冒烟测试
+npm test
+```
+
+启动后即可访问：
+- **主展览馆门户 (`grid | list | lab` 三视图单页应用)**：`http://127.0.0.1:6050/`
+- **Shared-UI 30 原语 × 16 沙盒交互实验室**：`http://127.0.0.1:6050/lab`
+- **4 座独立标本站**：
+  - `http://127.0.0.1:6060/` — **Specimen #01: True JPEG**
+  - `http://127.0.0.1:6061/` — **Specimen #02: musicForProgramming();**
+  - `http://127.0.0.1:6062/` — **Specimen #03: Sam Becker Photos**
+  - `http://127.0.0.1:6063/` — **Specimen #04: Igloo Inc**
 
 ---
 
@@ -24,6 +49,22 @@
 | **#02** | **[musicForProgramming();](https://musicforprogramming.net/)** (`Datassette`) | 代码编辑器 IDE 美学 / 纯 ASCII 控件 / Web Audio 频谱与环境合成器 | [`sites/02-musicforprogramming/`](./sites/02-musicforprogramming/) | [`shared-ui/mfp-ui.js`](./shared-ui/mfp-ui.js) | [`episodes.js`](./sites/02-musicforprogramming/episodes.js) · [`lab.html`](./sites/02-musicforprogramming/lab.html) |
 | **#03** | **[Sam Becker Photos](https://photos.sambecker.com/)** (`sambecker`) | 奇偶交错无框画廊 / `oklch` 3px 色彩条 / 3D 文件夹归档 / 二进制 EXIF 解析与 `CLS=0` 暗房套件 | [`sites/03-sambecker-photos/`](./sites/03-sambecker-photos/) | [`shared-ui/photo-vault-ui.js`](./shared-ui/photo-vault-ui.js) | [`catalog.js`](./sites/03-sambecker-photos/catalog.js) · [`lab.html`](./sites/03-sambecker-photos/lab.html) |
 | **#04** | **[Igloo Inc](https://www.igloo.inc/)** (`Lusion`) | 3D 极地冰原巨石 / `class f3` 斜向冰刀 5 重色散切屏 / SDF 光线步进冰封立方体 / 隐式键盘暗门工业遥测 HUD | [`sites/04-igloo-inc/`](./sites/04-igloo-inc/) | [`shared-ui/igloo-ui.js`](./shared-ui/igloo-ui.js) | [`sync_assets.js`](./sites/04-igloo-inc/sync_assets.js) · [`lab.html`](./sites/04-igloo-inc/lab.html) |
+
+---
+
+## 🏛️ Master Exhibition Portal (`portal/`, `:6050`) & Shared-UI Component Lab
+
+1. **1:1 Lusion Labs 画廊美学与三视图无刷架构 (`grid | list | lab`)**：
+   - **`grid`（双列非对称错落画廊）**：24 列网格下 4 座旗舰标本以对角错落韵律排布（`01 True JPEG` 左上、`03 Sam Becker Photos` 右上微沉、`02 musicForProgramming` 左下微提、`04 Igloo Inc` 右下压轴），每张卡片均内嵌实时微缩引擎。
+   - **`list`（编年史档案索引 + 2× Retina 悬浮实时预览）**：对齐 `labs.lusion.co` 档案索引排版，鼠标悬停时跟随渲染 2× Retina 高清画布（其中 `Igloo Inc` 采用实时 3D 极地冰穹程序化渲染）。
+   - **`lab`（16 沙盒 Bento 组件武器库）**：将 `shared-ui/` 提炼出的 **30 个零依赖 UI / WebGL / Web Audio 原语**整合为 16 个可实时调参、可一键复制 ESM 源码片段的 Bento 交互沙盒，并采用 `requestIdleCallback` 空闲分批预热实现首次切换零顿挫。
+2. **120fps 纯 GPU 3 态滚筒翻牌顶栏 (`Slot-Roller Sync Header`)**：
+   - 顶栏标题采用预渲染三态滚筒同格叠放结构（`PLAY GROUND` ↔ `CHRONICLE` ↔ `COMPONENT LAB`），配合 `scrollbar-gutter: stable` 与统一 `1800px` 视口地平线锚点，在 `grid | list | lab` 间切换时实现 **零 DOM 重写、零布局偏移（`CLS = 0.00px`）**。
+3. **首屏实时 3D 冰屋直通车 (`Card #04 ?embed=card`) 与 `0ms` 瞬时舞台切换**：
+   - **首屏单幕直通车 (`Scene-01 Only Fast Path`)**：首页 `Card #04` 直接挂载 `:6063/?embed=card` 实时 3D 舞台，自动跳过第 2/3/4 幕几何体、折射体积纹理与 13 轨 `.ogg` 音频解码并锁定卡片内 `DPR = 1`，在砍掉约 85% 后台无用负载的同时 **100% 保留首屏 3D 冰屋入场与交互动效**。
+   - **无频闪切屏与 `0ms` 秒回主页**：移除全屏黑白灰滑块扫屏（`#transition-cover`），进入全屏子站舞台时通过 `decon:card-visibility` 冻结卡片 `requestAnimationFrame` 而保留已编译的 WebGL2 上下文；点击左上角 Lucy 徽标返回主页时直接唤醒帧循环，实现 **`0ms` 零重载瞬间恢复**。
+4. **全栈安全与原子缓存底座 (`shared/static-server.js`)**：
+   - 5 台服务器共享同一安全底座：`safeDecodePath` 拦截畸形百分号编码（如 `/%E0%A4%A` 返回 `400` 绝不崩溃）、`isPathInsideRoot` 基于 `path.relative` 严防目录穿越、Loopback 同源 CORS 白名单、`verifyLocalJsonPost` 阻断跨站简单请求 CSRF、上传图像二进制魔数（JPEG/PNG/WebP）校验与前端 `escapeHtml`/`sanitizeImageSrc` 转义防存储型 XSS、`writeFileAtomicSync`（`.tmp` + `rename`）原子落盘、RFC 9110 标准 `Range` (`206` / `416`) 以及 `ETag` + `304 Not Modified` V8 字节码缓存。
 
 ---
 
@@ -51,7 +92,7 @@
 
 ```bash
 # 1. 启动本地 1:1 镜像服务器（默认监听 http://127.0.0.1:6060/）
-node sites/01-truejpeg/server.js
+npm run start:01
 
 # 2. （可选）全量下载 777 个图像文件到本地 sites/01-truejpeg/images/ 目录以实现 100% 离线秒开
 node sites/01-truejpeg/sync_images.js
@@ -80,7 +121,7 @@ node sites/01-truejpeg/sync_images.js
 
 ```bash
 # 1. 启动本地 1:1 镜像与音频/RSS 代理服务器（默认监听 http://127.0.0.1:6061/）
-node sites/02-musicforprogramming/server.js
+npm run start:02
 
 # 2. （可选）从官方同步最新 rss.xml 快照
 node sites/02-musicforprogramming/sync_rss.js
@@ -104,14 +145,14 @@ node sites/02-musicforprogramming/sync_rss.js
 3. **零布局偏移 (`CLS = 0`) 与 `RAW / PRO` 双轨暗房套件**：
    - **固定几何尺寸吸顶顶栏（`CLS = 0.00px`）**：锁死 `#btnThemeCycle`（`LIGHT` / `DARK` / `WARM`，快捷键 `T`）与 `#btnModeToggle`（`RAW` / `PRO`，快捷键 `P`）槽位宽度及全局滚动条槽位（`scrollbar-gutter: stable`），全屏详情页（`/p/:slug`）同步响应三套深浅主题，切换过程零抖动、零闪屏重绘。
    - **`PRO` 暗房遥测与本地入库套件**：开启 `PRO` 模式后，以脱离文档流的悬浮毛玻璃胶囊 `#proToolbar` 与 `.pv-pro-drawer` 呈现 **64-Bin Luma/RGB 直方图 + 5 色卡抽屉**、**`2.5×–4.5×` 滚轮变焦光学放大镜 (`createOpticalLoupe`, `L`)**、**5 态几何构图辅助网格 (`createCompositionOverlay`, `G`)**、**本地 JPEG 拖拽入库与二进制 `0xFFE1` EXIF 解析 (`POST /api/ingest`)**、**纯 Web Audio 机械镜间快门与光圈环音效 (`createShutterAudio`)**，以及带 `28×20px` 微缩略图与 `semanticDescription` AI 视觉语义检索的 **`⌘K` 全局命令面板 (`createCommandPalette`)**。
-4. **跨站复用组件库 8 大导出模块 (`shared-ui/photo-vault-ui.js`)**：
-   - `createExifPlate`、`createFilmRecipeCard`、`parseExif`、`extractColorPalette`、`createCompositionOverlay`、`createOpticalLoupe`、`createCommandPalette`、`createShutterAudio`。
+4. **跨站复用组件库导出模块 (`shared-ui/photo-vault-ui.js`)**：
+   - `createExifPlate`、`createFilmRecipeCard`、`parseExif`、`extractColorPalette`、`createCompositionOverlay`、`createOpticalLoupe`、`createCommandPalette`、`createShutterAudio`、`escapeHtml`、`sanitizeImageSrc`。
 
 ### 2. 如何本地运行 Specimen #03
 
 ```bash
 # 1. 启动本地 1:1 镜像与个人摄影资料库服务器（默认监听 http://127.0.0.1:6062/）
-node sites/03-sambecker-photos/server.js
+npm run start:03
 
 # 2. （可选）从线上同步真实元数据 / 扫描本地二进制 EXIF JPEG 样本并输出汇总清单
 node sites/03-sambecker-photos/sync_photos.js
@@ -127,7 +168,7 @@ node sites/03-sambecker-photos/sync_photos.js
 
 ### 1. 视觉、着色器与工业 HUD 工程亮点
 1. **100% 原生 Lusion WebGL2 3D 引擎镜像与透明回源代理架构 (`server.js` & `sync_assets.js`)**：
-   - **`server.js`（端口 `6063`）**：支持 `/shared-ui/*` 跨目录路由、`/lab` 组件实验室路由，以及 `/assets/*` 透明回源代理与本地磁盘缓存（含 `inFlightProxy` 并发去重、精确 `.wasm` / `.ktx2` / `.drc` / `.exr` / `.ogg` / `.woff2` MIME 映射、`.ogg` HTTP `Range` 分片流传输，并自动修补 `index-2e130bc1.js` 中硬编码的 `"https://www.igloo.inc/"` → `"/"`）。
+   - **`server.js`（端口 `6063`）**：支持 `/shared-ui/*` 跨目录路由、`/lab` 组件实验室路由，以及 `/assets/*` 透明回源代理与本地磁盘原子缓存（含 `inFlightProxy` 并发去重、精确 `.wasm` / `.ktx2` / `.drc` / `.exr` / `.ogg` / `.woff2` MIME 映射、RFC 9110 标准 HTTP `Range` 分片流传输，并自动修补 `index-2e130bc1.js` 域名映射与 `App3D-d68cb154.js` 的 `?embed=card` 首屏单幕直通车）。
    - **`sync_assets.js` 全量资产同步**：一键拉取并本地缓存全部 **108 项（18.25 MB）** 原站 WebGL2 3D 二进制资产（4 个 Web Workers `audioworker` / `msdfworker` / `bitmapworker` / `exrworker`、Draco 与 Basis Universal WASM 解码器、20 个 `.drc` 3D 几何体、46 个 `.ktx2` / `.exr` / `.png` 纹理与 3D VDB 体积云、MSDF 3D 字体图集及 18 轨 `.ogg` 空间音效），实现 100% 离线满帧秒开。
 2. **默认 `RAW` 模式 100% 零外挂 DOM + 隐式键盘暗门召唤 `PRO` 极地遥测套件 (`pro-hud.js`)**：
    - **纯粹 `RAW` 体验（零额外像素）**：默认 `RAW` 模式下主屏不渲染任何可见外挂按钮或胶囊栏，并强制锁定 `data-igloo-optics="CRYO-STD"` 原生色彩，确保打开 `http://127.0.0.1:6063/` 时画面与 `https://www.igloo.inc/` 100.00% 完全一致。
@@ -148,7 +189,7 @@ node sites/03-sambecker-photos/sync_photos.js
 node sites/04-igloo-inc/sync_assets.js
 
 # 2. 启动本地 1:1 WebGL2 3D 镜像与透明回源代理服务器（默认监听 http://127.0.0.1:6063/）
-node sites/04-igloo-inc/server.js
+npm run start:04
 ```
 
 启动后可访问：
@@ -161,14 +202,27 @@ node sites/04-igloo-inc/server.js
 
 ```text
 decon-web (main 分支)
+├── .github/workflows/ci.yml         # GitHub Actions 自动化语法与 5 服务器安全冒烟测试流水线
 ├── .gitignore
+├── LICENSE                          # MIT License 与非商业逆向研究版权归属声明
+├── package.json                     # 一键启动与自动化测试工程配置
 ├── README.md                        # 博物馆总览门户文档
-├── CHANGELOG.md                     # 精简演进与版本记录
-├── shared-ui/                       # 提炼出的跨项目可复用零依赖组件库
+├── CHANGELOG.md                     # 演进里程碑与版本记录
+├── portal/                          # Master Exhibition Portal (:6050) 主展览馆门户与 /lab 武器库
+│   ├── index.html                   # grid | list | lab 三视图 SPA 与全屏舞台容器
+│   ├── styles.css                   # 统一设计令牌、滚筒顶栏与 Bento 实验室样式表
+│   ├── app.js                       # 门户主控、卡片微缩引擎、子站生命周期与无闪烁舞台桥接
+│   ├── lab.js                       # 30 原语 × 16 沙盒 Bento 实验室挂载与空闲分批预热引擎
+│   └── server.js                    # 主展览馆服务器 (:6050/:6080) 与子站自动唤醒/健康探测守护
+├── shared/                          # 服务端公共安全与静态服务底座
+│   └── static-server.js             # URL 安全解码、路径越界防护、Loopback CORS、原子写入、RFC 9110 Range & ETag
+├── shared-ui/                       # 跨项目可复用零依赖组件库（唯一事实来源 Single Source of Truth）
 │   ├── truejpeg-ui.js               # Specimen #01 点阵/半色调/光学放大镜组件库
 │   ├── mfp-ui.js                    # Specimen #02 ASCII 进度条/双模频谱/环境合成器/番茄钟组件库
-│   ├── photo-vault-ui.js            # Specimen #03 二进制 EXIF 解析/胶片配方铭牌/构图叠层/色彩基因组件库
-│   └── igloo-ui.js                  # Specimen #04 斜向冰刀色散着色器/3D SDF 冰封立方体/极地遥测 HUD/寒风合成器组件库
+│   ├── photo-vault-ui.js            # Specimen #03 二进制 EXIF 解析/胶片配方铭牌/构图叠层/色彩基因/XSS 防护库
+│   └── igloo-ui.js                  # Specimen #04 斜向冰刀色散着色器/3D SDF 冰封立方体/极地遥测 HUD/寒风合成器库
+├── scripts/
+│   └── smoke-test.js                # 39 项全栈语法、畸形 URL、路径穿越、CSRF 与 HTTP Range 自动化测试套件
 └── sites/                           # 各神级网站独立自包含归档目录
     ├── 01-truejpeg/                 # Specimen #01: True JPEG 完整复刻、server (6060) 与 Prompt 手册
     ├── 02-musicforprogramming/      # Specimen #02: musicForProgramming(); 完整复刻、server (6061) 与交互实验室
@@ -176,5 +230,5 @@ decon-web (main 分支)
     └── 04-igloo-inc/                # Specimen #04: Igloo Inc (Lusion) WebGL2 3D 镜像、server (6063) 与着色器实验室
 ```
 
-- **`main` 分支**：保持根目录纯粹干净，仅包含总览文档、`shared-ui/` 通用组件库以及 `sites/` 下按编号归档的各个独立站点文件夹。
+- **`main` 分支**：统一包含 `portal/` 主展览馆门户、`shared/` 服务端安全底座、`shared-ui/` 跨站组件库（单一事实来源）、`scripts/` 自动化测试套件以及 `sites/01..04` 四座独立标本站。
 - **`truejpeg` 分支**：根目录直接作为 `True JPEG` 单站点的独立分支快照。

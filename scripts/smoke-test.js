@@ -96,7 +96,7 @@ function findOggAssetInIgloo() {
       }
     }
   }
-  return '/assets/index-2e130bc1.js';
+  return '/pro-hud.js';
 }
 
 async function main() {
