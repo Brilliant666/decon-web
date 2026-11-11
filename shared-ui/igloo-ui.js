@@ -175,11 +175,21 @@ function compileShader(gl, type, source) {
 
 function createProgram(gl, vsSource, fsSource) {
   const vs = compileShader(gl, gl.VERTEX_SHADER, vsSource);
-  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
+  let fs;
+  try {
+    fs = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
+  } catch (err) {
+    gl.deleteShader(vs);
+    throw err;
+  }
   const prog = gl.createProgram();
   gl.attachShader(prog, vs);
   gl.attachShader(prog, fs);
   gl.linkProgram(prog);
+  gl.detachShader(prog, vs);
+  gl.detachShader(prog, fs);
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
     const info = gl.getProgramInfoLog(prog);
     gl.deleteProgram(prog);
@@ -818,13 +828,23 @@ export function createFrostCutShader(canvas, options = {}) {
       }
     },
     destroy() {
+      if (destroyed) return;
       destroyed = true;
       paused = true;
-      if (rafId) cancelAnimationFrame(rafId);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       canvas.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       canvas.removeEventListener('wheel', onWheel);
+      [tScene1, tScene2, tScroll, tFrost, tBlue].forEach((tex) => {
+        if (tex) gl.deleteTexture(tex);
+      });
+      if (quadVbo) gl.deleteBuffer(quadVbo);
+      if (vao) gl.deleteVertexArray(vao);
+      if (program) gl.deleteProgram(program);
     }
   };
 }
@@ -1290,13 +1310,20 @@ export function createCryoCubeWebGL(canvas, options = {}) {
       }
     },
     destroy() {
+      if (destroyed) return;
       destroyed = true;
       paused = true;
-      if (rafId) cancelAnimationFrame(rafId);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       canvas.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       canvas.removeEventListener('wheel', onWheel);
+      if (quadVbo) gl.deleteBuffer(quadVbo);
+      if (vao) gl.deleteVertexArray(vao);
+      if (program) gl.deleteProgram(program);
     }
   };
 }
@@ -1313,6 +1340,8 @@ export function createAsciiWaveLoader(el, options = {}) {
   let frameIndex = 0;
   let speed = typeof options.speed === 'number' ? options.speed : 1.0;
   let paused = false;
+  let destroyed = false;
+  let intervalId = null;
   let scrambleTimer = null;
 
   const wrapper = document.createElement('div');
@@ -1352,12 +1381,21 @@ export function createAsciiWaveLoader(el, options = {}) {
   el.innerHTML = '';
   el.appendChild(wrapper);
 
-  const intervalId = setInterval(() => {
-    if (paused) return;
-    frameIndex = (frameIndex + 1) % ASCII_WAVE_FRAMES_100.length;
-    waveGlyphs.textContent = ASCII_WAVE_FRAMES_100[frameIndex];
-    frameTag.textContent = `FRAME ${String(frameIndex).padStart(3, '0')}/100`;
-  }, Math.max(16, Math.round(50 / speed)));
+  function startWaveInterval() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+    if (destroyed) return;
+    intervalId = setInterval(() => {
+      if (paused || destroyed) return;
+      frameIndex = (frameIndex + 1) % ASCII_WAVE_FRAMES_100.length;
+      waveGlyphs.textContent = ASCII_WAVE_FRAMES_100[frameIndex];
+      frameTag.textContent = `FRAME ${String(frameIndex).padStart(3, '0')}/100`;
+    }, Math.max(16, Math.round(50 / speed)));
+  }
+
+  startWaveInterval();
 
   const SCRAMBLE_CHARS = '////????===+++---0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_#';
 
@@ -1398,6 +1436,7 @@ export function createAsciiWaveLoader(el, options = {}) {
     },
     setSpeed(mult) {
       speed = Math.max(0.2, Math.min(5.0, Number(mult) || 1.0));
+      startWaveInterval();
     },
     scrambleText,
     pause() {
@@ -1413,8 +1452,15 @@ export function createAsciiWaveLoader(el, options = {}) {
       return ASCII_WAVE_FRAMES_100.slice();
     },
     destroy() {
-      clearInterval(intervalId);
-      if (scrambleTimer) clearInterval(scrambleTimer);
+      destroyed = true;
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      if (scrambleTimer) {
+        clearInterval(scrambleTimer);
+        scrambleTimer = null;
+      }
     }
   };
 }

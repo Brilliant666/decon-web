@@ -5,6 +5,7 @@ const {
   DEFAULT_MIME_TYPES,
   safeDecodePath,
   isPathInsideRoot,
+  isBlockedServerFile,
   applyCorsHeaders,
   handleOptionsRequest,
   serveStaticFile,
@@ -83,8 +84,7 @@ http.createServer(async (req, res) => {
     }
   }
 
-  const baseName = path.basename(fp);
-  if (baseName === 'server.js' || baseName === 'sync_images.js') {
+  if (isBlockedServerFile(fp)) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Forbidden');
     return;

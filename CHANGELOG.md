@@ -2,6 +2,26 @@
 
 All notable deconstruction milestones and architectural changes in `decon-web`.
 
+## [2026-11-11] — v1.1.1: True JPEG 266-Work & `Feian` Sync + Carbon Security & Zero-Broken-Image Audit Remediation
+
+### Specimen #01 Upstream Sync (`sites/01-truejpeg`)
+- **266-Work Archive & `Feian (废案 / Outtakes)` Category**: Synced the latest **266 works** (`works.js`, `data.js`, `prompts/en.json`, `prompts/ja.json`, `prompts.json`, `PROMPTS_CATALOG.md`, and 1,337 local image assets via `npm run sync:01`) and integrated the new `Feian` (`Outtakes` / `ボツ案` / `废案`) category across `i18n.js`, `app.js` (isolated from Home & Generate reels, age-gated on direct routes), and `lab.html` Prompt Vault while preserving 100% of local `PRO` darkroom tools, optical loupe, 40×10 dot-matrix histogram, and Web Audio tactility.
+- **Deterministic Catalog TOC & Category Precedence**: Fixed `buildCatalogMarkdown()` in `sync_images.js` with dynamic per-category work counts (`139` Portrait + `68` Anime + `2` Poster + `40` Feian + `17` NSFW = `266`) and explicit `<a id="..."></a>` GFM anchors, and aligned `sites/01-truejpeg/lab.html` `Poster` / `NSFW` filters with `app.js` `catOf` precedence so `Feian+NSFW` works are never double-counted.
+
+### Carbon Full-Stack Security, Lifecycle & Zero-Broken-Image Remediation
+- **Eliminated `eval`, Path Traversal & Internal Script Exposure**:
+  - Replaced `eval()` in `sites/01-truejpeg/sync_images.js` with isolated `vm.runInNewContext(code, { window: Object.create(null) }, { timeout: 1000 })` and added `isPathInsideRoot` destination boundary checks.
+  - Exported `isBlockedServerFile(filePath)` from [`shared/static-server.js`](./shared/static-server.js) (blocking `server.js`, `sync_*.js`, `package.json`, and dotfiles) across all 5 servers (`portal/server.js` and `sites/01..04/server.js`), and unified `sync_rss.js`, `sync_photos.js`, and `sync_assets.js` onto `fetchUpstreamBuffer` + Windows-hardened `writeFileAtomicSync` (`npm run sync:01`..`sync:04`).
+- **DOM XSS & `postMessage` Origin Hardening**:
+  - Added full HTML entity escaping (`& < > " '`) to `renderVault()` in `sites/01-truejpeg/lab.html` and `SB-11` binary EXIF / palette rendering in `portal/lab.js`.
+  - Added loopback `e.origin` verification (`window.location.origin` or `http://127.0.0.1:*` / `http://localhost:*`) to all `message` listeners in `portal/app.js` and `sites/04-igloo-inc/pro-hud.js`, and removed dead cross-origin `contentWindow` pointer listeners.
+- **Fresh-Clone Zero-Broken-Image Loopback Proxy (`portal/server.js`)**: When gitignored media under `/sites/01-truejpeg/images/*`, `/sites/01-truejpeg/prompts/*`, or `/sites/03-sambecker-photos/photos/*` is absent on disk, `:6050` transparently proxies requests to `:6060` / `:6062` (waking the specimen server if needed), guaranteeing zero `404` broken thumbnails on a fresh `git clone && npm start`.
+- **WebGL2 GPU Resource Cleanup & Orphan-Free Test Harness**:
+  - Detached and deleted compiled `WebGLShader` handles after linking in `shared-ui/igloo-ui.js`, released textures/VBOs/VAOs/programs inside `createFrostCutShader.destroy()` and `createCryoCubeWebGL.destroy()`, and rebuilt `setInterval` on `createAsciiWaveLoader.setSpeed()`.
+  - Added `DECON_NO_AUTOWAKE=1` support in `portal/server.js` and `scripts/smoke-test.js` (expanded to **24 syntax checks / 49 total assertions**) plus root [`.gitattributes`](./.gitattributes) (`eol=lf`).
+
+---
+
 ## [2026-11-06] — v1.1: Full-Stack Security Hardening, Atomic Cache, Igloo Scene-01 Fast Path & 0ms Stage Return
 
 ### Security, Protocol & Atomic Persistence (`shared/static-server.js` & 5 Node Servers)

@@ -26,7 +26,7 @@
 # 一键启动 Master Exhibition Portal (:6050) 并自动在后台唤醒/托管 4 座标本站 (:6060–:6063)
 npm start
 
-# 运行全栈语法检查与 39 项安全/协议自动化冒烟测试
+# 运行全栈语法检查与 49 项安全/协议自动化冒烟测试
 npm test
 ```
 
@@ -63,8 +63,8 @@ npm test
 3. **首屏实时 3D 冰屋直通车 (`Card #04 ?embed=card`) 与 `0ms` 瞬时舞台切换**：
    - **首屏单幕直通车 (`Scene-01 Only Fast Path`)**：首页 `Card #04` 直接挂载 `:6063/?embed=card` 实时 3D 舞台，自动跳过第 2/3/4 幕几何体、折射体积纹理与 13 轨 `.ogg` 音频解码并锁定卡片内 `DPR = 1`，在砍掉约 85% 后台无用负载的同时 **100% 保留首屏 3D 冰屋入场与交互动效**。
    - **无频闪切屏与 `0ms` 秒回主页**：移除全屏黑白灰滑块扫屏（`#transition-cover`），进入全屏子站舞台时通过 `decon:card-visibility` 冻结卡片 `requestAnimationFrame` 而保留已编译的 WebGL2 上下文；点击左上角 Lucy 徽标返回主页时直接唤醒帧循环，实现 **`0ms` 零重载瞬间恢复**。
-4. **全栈安全与原子缓存底座 (`shared/static-server.js`)**：
-   - 5 台服务器共享同一安全底座：`safeDecodePath` 拦截畸形百分号编码（如 `/%E0%A4%A` 返回 `400` 绝不崩溃）、`isPathInsideRoot` 基于 `path.relative` 严防目录穿越、Loopback 同源 CORS 白名单、`verifyLocalJsonPost` 阻断跨站简单请求 CSRF、上传图像二进制魔数（JPEG/PNG/WebP）校验与前端 `escapeHtml`/`sanitizeImageSrc` 转义防存储型 XSS、`writeFileAtomicSync`（`.tmp` + `rename`）原子落盘、RFC 9110 标准 `Range` (`206` / `416`) 以及 `ETag` + `304 Not Modified` V8 字节码缓存。
+4. **全栈安全、零破图回源与原子缓存底座 (`shared/static-server.js` & `portal/server.js`)**：
+   - 5 台服务器共享同一安全底座：`safeDecodePath` 拦截畸形百分号编码（如 `/%E0%A4%A` 返回 `400` 绝不崩溃）、`isPathInsideRoot` 基于 `path.relative` 严防目录穿越、`isBlockedServerFile` 统一拦截 `server.js` / `sync_*.js` / `package.json` / 隐藏文件（`403`）、Loopback 同源 CORS 白名单、`verifyLocalJsonPost` 阻断跨站简单请求 CSRF、上传图像二进制魔数（JPEG/PNG/WebP）校验与前端 `escapeHtml`/`sanitizeImageSrc` 转义防 XSS、`writeFileAtomicSync`（`.tmp` + `rename`）原子落盘、`:6050` 对缺失媒体透明回源至 `:6060`/`:6062`（确保首次 `git clone && npm start` 零破图）、RFC 9110 标准 `Range` (`206` / `416`) 以及 `ETag` + `304 Not Modified` V8 字节码缓存。
 
 ---
 
@@ -94,8 +94,8 @@ npm test
 # 1. 启动本地 1:1 镜像服务器（默认监听 http://127.0.0.1:6060/）
 npm run start:01
 
-# 2. （可选）全量下载 777 个图像文件到本地 sites/01-truejpeg/images/ 目录以实现 100% 离线秒开
-node sites/01-truejpeg/sync_images.js
+# 2. （可选）增量同步最新 266 组作品元数据与 1,337 个图像资产到本地 sites/01-truejpeg/images/ 目录以实现 100% 离线秒开
+npm run sync:01
 ```
 
 ---
@@ -124,7 +124,7 @@ node sites/01-truejpeg/sync_images.js
 npm run start:02
 
 # 2. （可选）从官方同步最新 rss.xml 快照
-node sites/02-musicforprogramming/sync_rss.js
+npm run sync:02
 ```
 
 启动后可访问：
@@ -155,7 +155,7 @@ node sites/02-musicforprogramming/sync_rss.js
 npm run start:03
 
 # 2. （可选）从线上同步真实元数据 / 扫描本地二进制 EXIF JPEG 样本并输出汇总清单
-node sites/03-sambecker-photos/sync_photos.js
+npm run sync:03
 ```
 
 启动后可访问：
@@ -186,7 +186,7 @@ node sites/03-sambecker-photos/sync_photos.js
 
 ```bash
 # 1. 预同步全量 108 项 Lusion WebGL2 3D 二进制资产到本地 sites/04-igloo-inc/assets/（约 18.25 MB）
-node sites/04-igloo-inc/sync_assets.js
+npm run sync:04
 
 # 2. 启动本地 1:1 WebGL2 3D 镜像与透明回源代理服务器（默认监听 http://127.0.0.1:6063/）
 npm run start:04
@@ -203,9 +203,10 @@ npm run start:04
 ```text
 decon-web (main 分支)
 ├── .github/workflows/ci.yml         # GitHub Actions 自动化语法与 5 服务器安全冒烟测试流水线
+├── .gitattributes                   # 统一跨平台 LF 行尾规范
 ├── .gitignore
 ├── LICENSE                          # MIT License 与非商业逆向研究版权归属声明
-├── package.json                     # 一键启动与自动化测试工程配置
+├── package.json                     # 一键启动、同步脚本与自动化测试工程配置 (v1.1.1)
 ├── README.md                        # 博物馆总览门户文档
 ├── CHANGELOG.md                     # 演进里程碑与版本记录
 ├── portal/                          # Master Exhibition Portal (:6050) 主展览馆门户与 /lab 武器库
@@ -213,18 +214,18 @@ decon-web (main 分支)
 │   ├── styles.css                   # 统一设计令牌、滚筒顶栏与 Bento 实验室样式表
 │   ├── app.js                       # 门户主控、卡片微缩引擎、子站生命周期与无闪烁舞台桥接
 │   ├── lab.js                       # 30 原语 × 16 沙盒 Bento 实验室挂载与空闲分批预热引擎
-│   └── server.js                    # 主展览馆服务器 (:6050/:6080) 与子站自动唤醒/健康探测守护
+│   └── server.js                    # 主展览馆服务器 (:6050/:6080)、缺失媒体透明回源与子站自动唤醒守护
 ├── shared/                          # 服务端公共安全与静态服务底座
-│   └── static-server.js             # URL 安全解码、路径越界防护、Loopback CORS、原子写入、RFC 9110 Range & ETag
+│   └── static-server.js             # URL 安全解码、路径越界防护、内部脚本拦截、Loopback CORS、原子写入、Range & ETag
 ├── shared-ui/                       # 跨项目可复用零依赖组件库（唯一事实来源 Single Source of Truth）
 │   ├── truejpeg-ui.js               # Specimen #01 点阵/半色调/光学放大镜组件库
 │   ├── mfp-ui.js                    # Specimen #02 ASCII 进度条/双模频谱/环境合成器/番茄钟组件库
 │   ├── photo-vault-ui.js            # Specimen #03 二进制 EXIF 解析/胶片配方铭牌/构图叠层/色彩基因/XSS 防护库
 │   └── igloo-ui.js                  # Specimen #04 斜向冰刀色散着色器/3D SDF 冰封立方体/极地遥测 HUD/寒风合成器库
 ├── scripts/
-│   └── smoke-test.js                # 39 项全栈语法、畸形 URL、路径穿越、CSRF 与 HTTP Range 自动化测试套件
+│   └── smoke-test.js                # 49 项全栈语法 (24 文件)、畸形 URL、路径穿越、内部脚本拦截、CSRF 与 Range 测试套件
 └── sites/                           # 各神级网站独立自包含归档目录
-    ├── 01-truejpeg/                 # Specimen #01: True JPEG 完整复刻、server (6060) 与 Prompt 手册
+    ├── 01-truejpeg/                 # Specimen #01: True JPEG 完整复刻 (266 works)、server (6060) 与 Prompt 手册
     ├── 02-musicforprogramming/      # Specimen #02: musicForProgramming(); 完整复刻、server (6061) 与交互实验室
     ├── 03-sambecker-photos/         # Specimen #03: Sam Becker Photos 完整复刻、server (6062) 与二进制 EXIF 实验室
     └── 04-igloo-inc/                # Specimen #04: Igloo Inc (Lusion) WebGL2 3D 镜像、server (6063) 与着色器实验室

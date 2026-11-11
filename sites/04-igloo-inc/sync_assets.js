@@ -7,9 +7,13 @@
  * so http://127.0.0.1:6063/ boots instantaneously offline/local.
  */
 
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const {
+  isPathInsideRoot,
+  writeFileAtomicSync,
+  fetchUpstreamBuffer
+} = require('../../shared/static-server');
 
 const UPSTREAM_ORIGIN = 'https://www.igloo.inc';
 const ASSETS_ROOT = path.join(__dirname, 'assets');
@@ -139,31 +143,12 @@ const ASSET_MANIFEST = [
 ];
 
 function fetchBuffer(url) {
-  return new Promise((resolve, reject) => {
-    https
-      .get(
-        url,
-        {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Igloo-Local-Mirror/1.0)',
-            Accept: '*/*'
-          }
-        },
-        (res) => {
-          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-            res.resume();
-            return fetchBuffer(new URL(res.headers.location, url).toString()).then(resolve, reject);
-          }
-          if (res.statusCode !== 200) {
-            res.resume();
-            return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
-          }
-          const chunks = [];
-          res.on('data', (c) => chunks.push(c));
-          res.on('end', () => resolve(Buffer.concat(chunks)));
-        }
-      )
-      .on('error', reject);
+  return fetchUpstreamBuffer(url, {
+    timeoutMs: 25000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Igloo-Local-Mirror/1.0)',
+      Accept: '*/*'
+    }
   });
 }
 
@@ -174,8 +159,11 @@ function patchIndexBundle(buf) {
 }
 
 async function syncSingleAsset(relAssetPath, force = false) {
-  const cleanRel = relAssetPath.replace(/^\/+/, '');
-  const localDest = path.join(__dirname, cleanRel);
+  const cleanRel = String(relAssetPath || '').replace(/^\/+/, '');
+  const localDest = path.resolve(__dirname, cleanRel);
+  if (!cleanRel || !isPathInsideRoot(localDest, ASSETS_ROOT)) {
+    throw new Error(`Blocked out-of-bounds asset path: ${relAssetPath}`);
+  }
   const isIndexBundle = cleanRel.endsWith('index-2e130bc1.js');
 
   if (!force && fs.existsSync(localDest) && fs.statSync(localDest).size > 0) {
@@ -183,7 +171,7 @@ async function syncSingleAsset(relAssetPath, force = false) {
       const existing = fs.readFileSync(localDest, 'utf8');
       if (existing.includes('https://www.igloo.inc/')) {
         const patched = patchIndexBundle(Buffer.from(existing, 'utf8'));
-        fs.writeFileSync(localDest, patched);
+        writeFileAtomicSync(localDest, patched);
         return { status: 'patched', bytes: patched.length, path: cleanRel };
       }
     }
@@ -195,8 +183,7 @@ async function syncSingleAsset(relAssetPath, force = false) {
   if (isIndexBundle) {
     buf = patchIndexBundle(buf);
   }
-  fs.mkdirSync(path.dirname(localDest), { recursive: true });
-  fs.writeFileSync(localDest, buf);
+  writeFileAtomicSync(localDest, buf);
   return { status: 'downloaded', bytes: buf.length, path: cleanRel };
 }
 
@@ -242,11 +229,14 @@ async function main() {
     ['assets/images/perlin-datatexture.ktx2', 'assets/images/smoke_datatexture.ktx2']
   ];
   for (const [srcRel, dstRel] of ALIAS_PAIRS) {
-    const srcAbs = path.join(__dirname, srcRel);
-    const dstAbs = path.join(__dirname, dstRel);
-    if (fs.existsSync(srcAbs)) {
-      fs.mkdirSync(path.dirname(dstAbs), { recursive: true });
-      fs.copyFileSync(srcAbs, dstAbs);
+    const srcAbs = path.resolve(__dirname, srcRel);
+    const dstAbs = path.resolve(__dirname, dstRel);
+    if (
+      isPathInsideRoot(srcAbs, ASSETS_ROOT) &&
+      isPathInsideRoot(dstAbs, ASSETS_ROOT) &&
+      fs.existsSync(srcAbs)
+    ) {
+      writeFileAtomicSync(dstAbs, fs.readFileSync(srcAbs));
     }
   }
 

@@ -19,6 +19,7 @@ const {
   DEFAULT_MIME_TYPES,
   safeDecodePath,
   isPathInsideRoot,
+  isBlockedServerFile,
   applyCorsHeaders,
   handleOptionsRequest,
   verifyLocalJsonPost,
@@ -346,6 +347,7 @@ async function handleRequest(req, res) {
 
   // 4. Route /shared-ui/* -> ../shared-ui/* and /sites/* -> ../sites/*
   let filePath = null;
+  let siteRel = null;
   if (cleanPath.startsWith('/shared-ui/')) {
     const rel = cleanPath.slice('/shared-ui/'.length);
     const candidate = path.resolve(sharedRoot, rel);
@@ -369,6 +371,7 @@ async function handleRequest(req, res) {
       return;
     }
     filePath = candidate;
+    siteRel = rel;
   } else {
     // Route portal static files — unify /, /list, /lab, /arsenal into the True SPA (/index.html)
     let relPath = cleanPath;
@@ -400,14 +403,107 @@ async function handleRequest(req, res) {
     return;
   }
 
-  const baseName = path.basename(filePath);
-  if (baseName === 'server.js' || baseName === 'sync_images.js') {
+  if (isBlockedServerFile(filePath)) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Forbidden');
     return;
   }
 
+  // Transparent loopback fallback to specimen servers (:6060 / :6062) when gitignored media is not cached yet
+  if (siteRel) {
+    let hasLocal = false;
+    try {
+      const st = fs.statSync(filePath);
+      hasLocal = st.isFile() && st.size > 0;
+    } catch (_) {
+      hasLocal = false;
+    }
+    if (!hasLocal) {
+      if (/^01-truejpeg\/(images|prompts)\//.test(siteRel)) {
+        proxyMissingSpecimenMedia(req, res, '01', 6060, siteRel.slice('01-truejpeg'.length));
+        return;
+      }
+      if (/^03-sambecker-photos\/photos\//.test(siteRel)) {
+        proxyMissingSpecimenMedia(req, res, '03', 6062, siteRel.slice('03-sambecker-photos'.length));
+        return;
+      }
+    }
+  }
+
   serveStaticFile(req, res, filePath, { mimeTypes: DEFAULT_MIME_TYPES });
+}
+
+function forwardToLocalPort(req, res, port, subPath) {
+  return new Promise((resolve, reject) => {
+    const fwdHeaders = {};
+    if (req.headers.accept) fwdHeaders.Accept = req.headers.accept;
+    if (req.headers.range) fwdHeaders.Range = req.headers.range;
+    if (req.headers['if-none-match']) fwdHeaders['If-None-Match'] = req.headers['if-none-match'];
+
+    const upReq = http.request(
+      {
+        hostname: '127.0.0.1',
+        port,
+        path: encodeURI(subPath),
+        method: req.method === 'HEAD' ? 'HEAD' : 'GET',
+        headers: fwdHeaders,
+        timeout: 18000
+      },
+      (upRes) => {
+        const outHeaders = {};
+        const copyKeys = [
+          'content-type',
+          'content-length',
+          'cache-control',
+          'etag',
+          'accept-ranges',
+          'content-range'
+        ];
+        for (const k of copyKeys) {
+          if (upRes.headers[k] !== undefined) {
+            outHeaders[k] = upRes.headers[k];
+          }
+        }
+        res.writeHead(upRes.statusCode || 502, applyCorsHeaders(req, outHeaders));
+        if (req.method === 'HEAD') {
+          upRes.resume();
+          res.end();
+          resolve();
+          return;
+        }
+        upRes.on('error', () => {
+          res.destroy();
+          resolve();
+        });
+        upRes.pipe(res);
+        res.on('finish', resolve);
+      }
+    );
+
+    upReq.on('timeout', () => {
+      upReq.destroy(new Error('Specimen media proxy timeout'));
+    });
+    upReq.on('error', reject);
+    upReq.end();
+  });
+}
+
+async function proxyMissingSpecimenMedia(req, res, specId, port, subPath) {
+  try {
+    await forwardToLocalPort(req, res, port, subPath);
+  } catch (_) {
+    if (process.env.DECON_NO_AUTOWAKE !== '1') {
+      try {
+        await wakeSpecimens(specId);
+        await forwardToLocalPort(req, res, port, subPath);
+        return;
+      } catch (_retryErr) {}
+    }
+    if (!res.headersSent) {
+      res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Upstream media unavailable');
+    }
+  }
 }
 
 let autoWakeTriggered = false;
@@ -419,7 +515,7 @@ LISTEN_PORTS.forEach((port) => {
   });
   srv.listen(port, '127.0.0.1', () => {
     console.log(`[DECON-WEB PORTAL] Master Exhibition Museum listening at http://127.0.0.1:${port}/`);
-    if (!autoWakeTriggered) {
+    if (!autoWakeTriggered && process.env.DECON_NO_AUTOWAKE !== '1') {
       autoWakeTriggered = true;
       wakeSpecimens('all')
         .then((status) => {

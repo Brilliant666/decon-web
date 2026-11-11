@@ -70,6 +70,20 @@ function isPathInsideRoot(candidatePath, rootDir) {
 }
 
 /**
+ * 2b. Unified blocklist for internal server scripts, sync CLIs, package manifests, and dotfiles.
+ */
+function isBlockedServerFile(filePath) {
+  const baseName = path.basename(String(filePath || ''));
+  if (!baseName) return false;
+  return (
+    baseName === 'server.js' ||
+    /^sync_.*\.js$/i.test(baseName) ||
+    baseName === 'package.json' ||
+    baseName.startsWith('.')
+  );
+}
+
+/**
  * 3. Loopback CORS Origin whitelist & Local JSON POST CSRF guard.
  */
 function getCorsOrigin(req) {
@@ -272,7 +286,21 @@ function writeFileAtomicSync(destPath, data, encoding) {
     } else {
       fs.writeFileSync(tmpPath, data);
     }
-    fs.renameSync(tmpPath, destPath);
+    try {
+      fs.renameSync(tmpPath, destPath);
+    } catch (renameErr) {
+      if (
+        process.platform === 'win32' &&
+        (renameErr.code === 'EPERM' || renameErr.code === 'EEXIST' || renameErr.code === 'EACCES')
+      ) {
+        try {
+          if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
+        } catch (_) {}
+        fs.renameSync(tmpPath, destPath);
+      } else {
+        throw renameErr;
+      }
+    }
   } catch (err) {
     try {
       if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
@@ -358,6 +386,7 @@ module.exports = {
   DEFAULT_MIME_TYPES,
   safeDecodePath,
   isPathInsideRoot,
+  isBlockedServerFile,
   getCorsOrigin,
   applyCorsHeaders,
   handleOptionsRequest,

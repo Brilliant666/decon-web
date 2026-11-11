@@ -7,29 +7,21 @@
  *   node sites/02-musicforprogramming/sync_rss.js
  */
 
-const https = require('https');
-const fs = require('fs');
 const path = require('path');
+const {
+  writeFileAtomicSync,
+  fetchUpstreamBuffer
+} = require('../../shared/static-server');
 
 const RSS_URL = 'https://musicforprogramming.net/rss.xml';
 const OUT_RSS = path.join(__dirname, 'rss.xml');
 
-function fetchUrl(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'decon-web-mfp-sync/1.0' } }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return fetchUrl(new URL(res.headers.location, url).href).then(resolve, reject);
-      }
-      if (res.statusCode !== 200) {
-        res.resume();
-        return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
-      }
-      let data = '';
-      res.setEncoding('utf8');
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => resolve(data));
-    }).on('error', reject);
+async function fetchUrl(url) {
+  const buf = await fetchUpstreamBuffer(url, {
+    timeoutMs: 20000,
+    headers: { 'User-Agent': 'decon-web-mfp-sync/1.0' }
   });
+  return buf.toString('utf8');
 }
 
 function extractTag(xml, tag) {
@@ -75,7 +67,7 @@ function parseRssItems(xml) {
   try {
     console.log(`[sync_rss] Fetching ${RSS_URL} ...`);
     const xml = await fetchUrl(RSS_URL);
-    fs.writeFileSync(OUT_RSS, xml, 'utf8');
+    writeFileAtomicSync(OUT_RSS, xml, 'utf8');
     const items = parseRssItems(xml);
     console.log(`[sync_rss] Cached rss.xml (${(xml.length / 1024).toFixed(1)} KB) — parsed ${items.length} episodes.`);
     if (items.length > 0) {

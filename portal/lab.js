@@ -17,6 +17,7 @@ import {
   createOpticalLoupe,
   createCompositionOverlay,
   createCommandPalette,
+  escapeHtml,
 } from '/shared-ui/photo-vault-ui.js';
 import {
   ASCII_WAVE_FRAMES_100,
@@ -1136,23 +1137,28 @@ function initBentoSandboxes() {
 
         if (sb11Kv) {
           sb11Kv.innerHTML = `
-            <div>MAKE: <strong>${parsed.make || 'FUJIFILM'}</strong></div>
-            <div>MODEL: <strong>${parsed.model || 'X-T5'}</strong></div>
-            <div>SHUTTER: <strong>${parsed.shutter || '1/1250s'}</strong></div>
-            <div>APERTURE: <strong>${parsed.aperture || 'f/2.0'}</strong></div>
-            <div>ISO: <strong>${parsed.iso || 160}</strong></div>
-            <div>FOCAL: <strong>${parsed.focalLength || '35mm'}</strong></div>
+            <div>MAKE: <strong>${escapeHtml(parsed.make || 'FUJIFILM')}</strong></div>
+            <div>MODEL: <strong>${escapeHtml(parsed.model || 'X-T5')}</strong></div>
+            <div>SHUTTER: <strong>${escapeHtml(parsed.shutter || '1/1250s')}</strong></div>
+            <div>APERTURE: <strong>${escapeHtml(parsed.aperture || 'f/2.0')}</strong></div>
+            <div>ISO: <strong>${escapeHtml(parsed.iso || 160)}</strong></div>
+            <div>FOCAL: <strong>${escapeHtml(parsed.focalLength || '35mm')}</strong></div>
           `;
         }
         if (sb11Palette) {
           sb11Palette.innerHTML = rawPalette
             .map((c, idx) => {
-              const hex = typeof c === 'string' ? c : (c?.hex || '#64748B');
-              const share =
+              const rawHex = typeof c === 'string' ? c : (c?.hex || '#64748B');
+              const safeHex = /^#[0-9a-fA-F]{3,8}$/.test(String(rawHex).trim())
+                ? String(rawHex).trim()
+                : '#64748B';
+              const hexEsc = escapeHtml(safeHex);
+              const share = escapeHtml(
                 typeof c === 'object' && c?.share != null
                   ? c.share
-                  : defaultShares[idx] || Math.round(100 / Math.max(1, rawPalette.length));
-              return `<div class="sb11-chip" style="background:${hex};" title="${hex}"><span>${hex}</span><b>${share}%</b></div>`;
+                  : defaultShares[idx] || Math.round(100 / Math.max(1, rawPalette.length))
+              );
+              return `<div class="sb11-chip" style="background:${hexEsc};" title="${hexEsc}"><span>${hexEsc}</span><b>${share}%</b></div>`;
             })
             .join('');
         }
@@ -1177,12 +1183,12 @@ function initBentoSandboxes() {
           const parsed = parseExif(buf) || {};
           if (sb11Kv) {
             sb11Kv.innerHTML = `
-              <div>MAKE: <strong>${parsed.make || 'CUSTOM'}</strong></div>
-              <div>MODEL: <strong>${parsed.model || file.name.slice(0, 12)}</strong></div>
-              <div>SHUTTER: <strong>${parsed.shutter || 'N/A'}</strong></div>
-              <div>APERTURE: <strong>${parsed.aperture || 'N/A'}</strong></div>
-              <div>ISO: <strong>${parsed.iso || 'N/A'}</strong></div>
-              <div>FOCAL: <strong>${parsed.focalLength || 'N/A'}</strong></div>
+              <div>MAKE: <strong>${escapeHtml(parsed.make || 'CUSTOM')}</strong></div>
+              <div>MODEL: <strong>${escapeHtml(parsed.model || file.name.slice(0, 12))}</strong></div>
+              <div>SHUTTER: <strong>${escapeHtml(parsed.shutter || 'N/A')}</strong></div>
+              <div>APERTURE: <strong>${escapeHtml(parsed.aperture || 'N/A')}</strong></div>
+              <div>ISO: <strong>${escapeHtml(parsed.iso || 'N/A')}</strong></div>
+              <div>FOCAL: <strong>${escapeHtml(parsed.focalLength || 'N/A')}</strong></div>
             `;
           }
           showToast(`Parsed EXIF from ${file.name}`);

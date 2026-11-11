@@ -339,7 +339,9 @@
   $$('[data-handle]').forEach((el) => { el.textContent = site.handle; });
   const realWorks = works.filter((w) => !w.slot);
   const isNsfw = (w) => w.tags.includes('NSFW');
-  const safeWorks = realWorks.filter((w) => !isNsfw(w)); // the home and Generate windows never play NSFW works
+  const isFeian = (w) => w.tags.includes('Feian'); // 废案: kept on the site, but only under its own tab
+  const offHome = (w) => isNsfw(w) || isFeian(w);
+  const safeWorks = realWorks.filter((w) => !offHome(w)); // the home and Generate windows never play NSFW or 废案 works
   $$('[data-count]').forEach((el) => { el.textContent = realWorks.length; });
   $$('[data-year]').forEach((el) => { el.textContent = new Date().getFullYear(); });
   $$('[data-x]').forEach((el) => { el.href = site.x; });
@@ -729,18 +731,19 @@
 
   // category filter: a work's category is the first of Portrait / Anime / Poster in its tags.
   // An NSFW tag overrides that: such a work shows only under NSFW, never under All, and the tab asks for age first
-  const CATS = ['all', 'Portrait', 'Anime', 'Poster', 'NSFW'];
-  const CAT_KEYS = ['catAll', 'catPortrait', 'catAnime', 'catPoster', 'catNsfw'];
-  const catOf = (w) => (isNsfw(w) ? 'NSFW' : w.tags.find((t) => t !== 'all' && CATS.includes(t)) || 'Portrait');
-  const inCat = (w, k) => (k === 'all' ? !isNsfw(w) : catOf(w) === k);
+  const CATS = ['all', 'Portrait', 'Anime', 'Poster', 'NSFW', 'Feian'];
+  const CAT_KEYS = ['catAll', 'catPortrait', 'catAnime', 'catPoster', 'catNsfw', 'catFeian'];
+  const catOf = (w) => (isFeian(w) ? 'Feian' : isNsfw(w) ? 'NSFW' : w.tags.find((t) => t !== 'all' && CATS.includes(t)) || 'Portrait');
+  const inCat = (w, k) => (k === 'all' ? !offHome(w) : catOf(w) === k);
+  const feianAdult = realWorks.some((w) => isFeian(w) && isNsfw(w));
   const catCount = (k) => realWorks.filter((w) => inCat(w, k)).length;
   const catsEl = $('#cats');
   let cat = 'all';
   catsEl.insertAdjacentHTML('beforeend', CATS.map((k, i) =>
     `<button class="seg__btn" type="button" data-cat="${k}" aria-label="${esc(tx('catAria', { name: tx(CAT_KEYS[i]), count: catCount(k) }))}" aria-pressed="${k === cat}"><span>${esc(tx(CAT_KEYS[i]))}</span><i>${catCount(k)}</i></button>`).join(''));
-  // All is the first tab: NSFW works start out of the grid
+  // All is the first tab: NSFW and 废案 works start out of the grid
   cells.forEach((c) => {
-    if (c.w.slot || !isNsfw(c.w)) return;
+    if (c.w.slot || !offHome(c.w)) return;
     c.shown = false;
     c.el.inert = true;
     c.el.classList.add('is-out', 'is-gone');
@@ -829,7 +832,7 @@
   let catTimer = 0;
   async function setCategory(k, asked) {
     if (k === cat || !CATS.includes(k)) return;
-    if (k === 'NSFW' && !asked && !(await ageOk())) return;
+    if ((k === 'NSFW' || (k === 'Feian' && feianAdult)) && !asked && !(await ageOk())) return;
     sfx.tick(1.0);
     cat = k;
     $$('.seg__btn', catsEl).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
@@ -1517,10 +1520,10 @@
       addEventListener('keydown', onKey, true);
     });
   }
-  // a link straight to an NSFW work: ask first, then open it inside the NSFW tab; a no lands on the gallery
+  // a link straight to an NSFW or 废案 work: ask first if NSFW, then open it inside its tab; a no lands on the gallery
   async function adultRoute(r) {
-    if (!r.cell || !isNsfw(r.cell.w)) return r;
-    if (await ageOk()) { await setCategory('NSFW', true); return r; }
+    if (!r.cell || !offHome(r.cell.w)) return r;
+    if (!isNsfw(r.cell.w) || await ageOk()) { await setCategory(catOf(r.cell.w), true); return r; }
     history.replaceState({ view: 'prompt' }, '', '#prompt');
     return { view: 'prompt' };
   }

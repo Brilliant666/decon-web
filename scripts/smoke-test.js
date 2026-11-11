@@ -22,13 +22,21 @@ const JS_FILES_TO_CHECK = [
   'shared-ui/photo-vault-ui.js',
   'shared-ui/igloo-ui.js',
   'sites/01-truejpeg/server.js',
+  'sites/01-truejpeg/app.js',
+  'sites/01-truejpeg/i18n.js',
+  'sites/01-truejpeg/works.js',
+  'sites/01-truejpeg/data.js',
+  'sites/01-truejpeg/tool.js',
   'sites/01-truejpeg/sync_images.js',
   'sites/02-musicforprogramming/server.js',
   'sites/02-musicforprogramming/app.js',
+  'sites/02-musicforprogramming/sync_rss.js',
   'sites/03-sambecker-photos/server.js',
   'sites/03-sambecker-photos/app.js',
+  'sites/03-sambecker-photos/sync_photos.js',
   'sites/04-igloo-inc/server.js',
-  'sites/04-igloo-inc/pro-hud.js'
+  'sites/04-igloo-inc/pro-hud.js',
+  'sites/04-igloo-inc/sync_assets.js'
 ];
 
 const SERVERS = [
@@ -139,7 +147,7 @@ async function main() {
       const child = spawn(process.execPath, [scriptAbs], {
         cwd: path.dirname(scriptAbs),
         stdio: 'ignore',
-        env: { ...process.env, PORT: String(srv.port) }
+        env: { ...process.env, PORT: String(srv.port), DECON_NO_AUTOWAKE: '1' }
       });
       tempChildren.push(child);
       for (let i = 0; i < 25; i++) {
@@ -191,6 +199,25 @@ async function main() {
     } catch (err) {
       assert(false, `${srv.name} path traversal check`, err.message);
     }
+  }
+
+  // Test 3b: Internal sync scripts blocked with 403 on both Specimen #02 (:6061) and Portal (:6050)
+  try {
+    const rSyncDirect = await rawHttpRequest({ port: 6061, reqPath: '/sync_rss.js' });
+    assert(
+      rSyncDirect.statusCode === 403,
+      `Specimen #02 (:6061) blocks internal script GET /sync_rss.js -> 403 (got ${rSyncDirect.statusCode})`
+    );
+    const rSyncPortal = await rawHttpRequest({
+      port: 6050,
+      reqPath: '/sites/02-musicforprogramming/sync_rss.js'
+    });
+    assert(
+      rSyncPortal.statusCode === 403,
+      `Portal (:6050) blocks internal script GET /sites/02-musicforprogramming/sync_rss.js -> 403 (got ${rSyncPortal.statusCode})`
+    );
+  } catch (err) {
+    assert(false, 'Internal sync script 403 block check', err.message);
   }
 
   // Test 4: POST http://127.0.0.1:6050/api/wake with Content-Type: text/plain -> 415 or 403

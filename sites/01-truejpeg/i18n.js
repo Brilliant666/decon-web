@@ -48,6 +48,7 @@
     catAnime: ['Anime', 'アニメ', '动漫'],
     catPoster: ['Poster', 'ポスター', '海报'],
     catNsfw: ['NSFW', 'NSFW', 'NSFW'],
+    catFeian: ['Outtakes', 'ボツ案', '废案'],
     ageTitle: ['Adults only', '成人向け', '仅限成年人'],
     ageText: ['This category contains sexually suggestive images. Please confirm you are 18 or older to continue.', 'このカテゴリーには性的な表現を含む画像があります。18歳以上の方のみご覧いただけます。', '此分类包含性感、成人向的图片，仅限年满 18 岁的用户查看。'],
     ageYes: ['I am 18 or older', '18歳以上です', '我已满 18 岁'],

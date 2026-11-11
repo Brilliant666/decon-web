@@ -677,18 +677,19 @@
       </div>
     </div>
 
-    <!-- SECTION 02: 154 PROMPT VAULT -->
+    <!-- SECTION 02: PROMPT VAULT -->
     <div class="sec-head">
-      <h2 data-scramble>02 // Complete Chinese Prompt Vault (154 Works)</h2>
+      <h2 data-scramble id="vault-title">02 // Complete Chinese Prompt Vault</h2>
       <span id="vault-count">Loading prompts.json...</span>
     </div>
 
     <div class="toolbar">
       <div class="tabs" id="cat-tabs">
-        <button class="tab is-active" type="button" data-cat="ALL">ALL (154)</button>
+        <button class="tab is-active" type="button" data-cat="ALL" id="tab-all">ALL</button>
         <button class="tab" type="button" data-cat="Portrait">Portrait (Safe)</button>
         <button class="tab" type="button" data-cat="Anime">Anime</button>
         <button class="tab" type="button" data-cat="Poster">Poster</button>
+        <button class="tab" type="button" data-cat="Feian">Feian (废案)</button>
         <button class="tab" type="button" data-cat="NSFW">NSFW (18+)</button>
       </div>
       <div class="ctrl-row" style="min-width:280px">
@@ -918,12 +919,12 @@
     $('#dk-next').addEventListener('click', () => {
       sfx.tick(1.05);
       if (!allWorks.length) { loadDarkroomSample(null); return; }
-      const safeWorks = allWorks.filter((w) => !(w.tags || []).includes('NSFW'));
+      const safeWorks = allWorks.filter((w) => !(w.tags || []).includes('NSFW') && !(w.tags || []).includes('Feian'));
       dkIdx = (dkIdx + 1) % safeWorks.length;
       loadDarkroomSample(safeWorks[dkIdx]);
     });
 
-    // 7. Load & Render 154 Prompts Vault
+    // 7. Load & Render Prompts Vault
     let allWorks = [];
     let currentCat = 'ALL';
     let searchQuery = '';
@@ -931,7 +932,9 @@
     async function loadVault() {
       const res = await fetch('./prompts.json');
       allWorks = await res.json();
-      const safeWorks = allWorks.filter((w) => !(w.tags || []).includes('NSFW'));
+      $('#vault-title').textContent = `02 // Complete Chinese Prompt Vault (${allWorks.length} Works)`;
+      $('#tab-all').textContent = `ALL (${allWorks.length})`;
+      const safeWorks = allWorks.filter((w) => !(w.tags || []).includes('NSFW') && !(w.tags || []).includes('Feian'));
       const idx122 = safeWorks.findIndex((w) => String(w.id) === '122');
       if (idx122 >= 0) {
         dkIdx = idx122;
@@ -942,13 +945,20 @@
       renderVault();
     }
 
+    const esc = (s) =>
+      String(s ?? '').replace(
+        /[&<>"']/g,
+        (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+      );
+
     function renderVault() {
       const q = searchQuery.trim().toLowerCase();
       const filtered = allWorks.filter((w) => {
-        if (currentCat === 'Portrait' && (!w.tags.includes('Portrait') || w.tags.includes('NSFW'))) return false;
-        if (currentCat === 'Anime' && (!w.tags.includes('Anime') || w.tags.includes('NSFW'))) return false;
-        if (currentCat === 'Poster' && !w.tags.includes('Poster')) return false;
-        if (currentCat === 'NSFW' && !w.tags.includes('NSFW')) return false;
+        if (currentCat === 'Portrait' && (!w.tags.includes('Portrait') || w.tags.includes('NSFW') || w.tags.includes('Feian'))) return false;
+        if (currentCat === 'Anime' && (!w.tags.includes('Anime') || w.tags.includes('NSFW') || w.tags.includes('Feian'))) return false;
+        if (currentCat === 'Poster' && (!w.tags.includes('Poster') || w.tags.includes('NSFW') || w.tags.includes('Feian'))) return false;
+        if (currentCat === 'Feian' && !w.tags.includes('Feian')) return false;
+        if (currentCat === 'NSFW' && (!w.tags.includes('NSFW') || w.tags.includes('Feian'))) return false;
         if (q) {
           const hay = `${w.id} ${w.title} ${w.prompt} ${(w.tags || []).join(' ')}`.toLowerCase();
           return hay.includes(q);
@@ -958,32 +968,39 @@
 
       $('#vault-count').textContent = `Showing ${filtered.length} of ${allWorks.length} works`;
       const grid = $('#vault-grid');
-      grid.innerHTML = filtered.map((w, idx) => {
+      grid.innerHTML = filtered.map((w) => {
         const no = String(allWorks.indexOf(w) + 1).padStart(3, '0');
-        const thumbUrl = `./${w.thumb || w.image}`;
-        const tagsHtml = (w.tags || []).map((t) => `<span class="pcard__tag">${t}</span>`).join('');
+        const safeId = esc(w.id);
+        const safeTitle = esc(w.title);
+        const safeDate = esc(w.date || '');
+        const safeModel = esc((w.params && w.params.Model) || 'SeeDream 5.0 Pro');
+        const safeWidth = esc(w.width);
+        const safeHeight = esc(w.height);
+        const rawThumb = String(w.thumb || w.image || '').replace(/^\/+/, '');
+        const thumbUrl = esc(`./${rawThumb}`);
+        const tagsHtml = (w.tags || []).map((t) => `<span class="pcard__tag">${esc(t)}</span>`).join('');
         return `
-          <article class="pcard" data-id="${w.id}">
+          <article class="pcard" data-id="${safeId}">
             <div class="pcard__head">
-              <span class="pcard__no">NO.${no} // ID #${w.id}</span>
-              <div class="pcard__meta">${tagsHtml}<span>${w.date || ''}</span></div>
+              <span class="pcard__no">NO.${no} // ID #${safeId}</span>
+              <div class="pcard__meta">${tagsHtml}<span>${safeDate}</span></div>
             </div>
             <div class="pcard__preview">
-              <img class="pcard__thumb" src="${thumbUrl}" alt="${w.title}" loading="lazy" referrerpolicy="no-referrer">
+              <img class="pcard__thumb" src="${thumbUrl}" alt="${safeTitle}" loading="lazy" referrerpolicy="no-referrer">
               <div class="pcard__info">
-                <h3 class="pcard__title">${w.title}</h3>
+                <h3 class="pcard__title">${safeTitle}</h3>
                 <div class="pcard__specs">
-                  Model: ${(w.params && w.params.Model) || 'SeeDream 5.0 Pro'}<br>
-                  Size: ${w.width} × ${w.height} px
+                  Model: ${safeModel}<br>
+                  Size: ${safeWidth} × ${safeHeight} px
                 </div>
-                <a href="https://truejpeg.com/#${w.id}" target="_blank" rel="noopener" style="font-family:var(--mono);font-size:11px;color:var(--fg-2);text-decoration:underline">View on truejpeg.com ↗</a>
+                <a href="https://truejpeg.com/#${encodeURIComponent(String(w.id ?? ''))}" target="_blank" rel="noopener" style="font-family:var(--mono);font-size:11px;color:var(--fg-2);text-decoration:underline">View on truejpeg.com ↗</a>
               </div>
             </div>
             <div class="pcard__body">
-              <pre class="pcard__prompt">${w.prompt.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>
+              <pre class="pcard__prompt">${esc(w.prompt)}</pre>
               <div class="pcard__acts">
                 <button class="btn" type="button" data-expand>Expand Full</button>
-                <button class="btn btn--primary" type="button" data-copy="${w.id}">Copy Prompt</button>
+                <button class="btn btn--primary" type="button" data-copy="${safeId}">Copy Prompt</button>
               </div>
             </div>
           </article>

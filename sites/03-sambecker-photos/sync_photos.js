@@ -12,53 +12,38 @@
 
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
+const {
+  isPathInsideRoot,
+  writeFileAtomicSync,
+  fetchUpstreamBuffer
+} = require('../../shared/static-server');
 
 const SITE_DIR = __dirname;
 const PHOTOS_DIR = path.join(SITE_DIR, 'photos');
 const CATALOG_PATH = path.join(SITE_DIR, 'catalog.js');
 
-function fetchText(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (SamBecker-Decon-Sync/1.0)' } }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return fetchText(new URL(res.headers.location, url).toString()).then(resolve, reject);
-      }
-      if (res.statusCode !== 200) {
-        res.resume();
-        return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
-      }
-      let data = '';
-      res.setEncoding('utf8');
-      res.on('data', (c) => (data += c));
-      res.on('end', () => resolve(data));
-    }).on('error', reject);
+async function fetchText(url) {
+  const buf = await fetchUpstreamBuffer(url, {
+    timeoutMs: 20000,
+    headers: { 'User-Agent': 'Mozilla/5.0 (SamBecker-Decon-Sync/1.0)' }
   });
+  return buf.toString('utf8');
 }
 
-function downloadFile(url, destPath) {
-  return new Promise((resolve, reject) => {
-    if (fs.existsSync(destPath) && fs.statSync(destPath).size > 2048) {
-      return resolve({ cached: true, size: fs.statSync(destPath).size });
-    }
-    https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (SamBecker-Decon-Sync/1.0)' } }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return downloadFile(new URL(res.headers.location, url).toString(), destPath).then(resolve, reject);
-      }
-      if (res.statusCode !== 200) {
-        res.resume();
-        return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
-      }
-      const chunks = [];
-      res.on('data', (c) => chunks.push(c));
-      res.on('end', () => {
-        const buf = Buffer.concat(chunks);
-        fs.mkdirSync(path.dirname(destPath), { recursive: true });
-        fs.writeFileSync(destPath, buf);
-        resolve({ cached: false, size: buf.length });
-      });
-    }).on('error', reject);
+async function downloadFile(url, destPath) {
+  const resolvedDest = path.resolve(destPath);
+  if (!isPathInsideRoot(resolvedDest, PHOTOS_DIR)) {
+    throw new Error(`Blocked out-of-bounds destination path: ${destPath}`);
+  }
+  if (fs.existsSync(resolvedDest) && fs.statSync(resolvedDest).size > 2048) {
+    return { cached: true, size: fs.statSync(resolvedDest).size };
+  }
+  const buf = await fetchUpstreamBuffer(url, {
+    timeoutMs: 20000,
+    headers: { 'User-Agent': 'Mozilla/5.0 (SamBecker-Decon-Sync/1.0)' }
   });
+  writeFileAtomicSync(resolvedDest, buf);
+  return { cached: false, size: buf.length };
 }
 
 function formatRecipeTitle(slug) {
@@ -366,7 +351,7 @@ export function getPhotoById(idOrSlug) {
 }
 `;
 
-  fs.writeFileSync(CATALOG_PATH, catalogSource, 'utf8');
+  writeFileAtomicSync(CATALOG_PATH, catalogSource, 'utf8');
   console.log(`[sync] Wrote ${selected.length} real photos to ${path.relative(SITE_DIR, CATALOG_PATH)}.`);
 
   // Clean up old synthetic curated folder if present

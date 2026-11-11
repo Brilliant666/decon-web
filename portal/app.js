@@ -34,7 +34,7 @@ const SPECIMENS = {
     modulePath: '/shared-ui/truejpeg-ui.js',
     tags: 'OPTICAL HALFTONE · 3D GLOBE',
     summary:
-      'Industrial optical darkroom and halftone specimen laboratory. Built with zero frameworks using OffscreenCanvas luminance-to-radius halftone dot matrices, spring-repulsion dot typography, and a 40×10 hardware dot-matrix exposure analyzer.',
+      'Industrial optical darkroom and halftone specimen laboratory (266 works). Built with zero frameworks using OffscreenCanvas luminance-to-radius halftone dot matrices, spring-repulsion dot typography, and a 40×10 hardware dot-matrix exposure analyzer.',
     bullets: [
       'OffscreenCanvas Halftone Engine: L = 0.299R + 0.587G + 0.114B mapped to r = step · 0.56 · √L.',
       'Interactive Dot Wordmark (TrueJpegUI.dotType): Float32Array particle grid with F = (1 - d/R)² repulsion and 0.16 spring return.',
@@ -1349,6 +1349,14 @@ function initSamBeckerGalleryFacade() {
  * - Forwards card pointermove coordinates to :6063 via postMessage('decon:igloo-pointer') for live 3D camera parallax
  * - Unmounts iframe when #fullscreen-stage opens (pauseAll) to guarantee zero GPU context contention
  */
+function isTrustedLocalOrigin(origin) {
+  if (!origin) return false;
+  return (
+    origin === window.location.origin ||
+    /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin)
+  );
+}
+
 function initCard04IglooLiveStage() {
   const cardEl = document.getElementById('specimen-card-04');
   const iframe = document.getElementById('card-04-igloo-iframe');
@@ -1359,6 +1367,7 @@ function initCard04IglooLiveStage() {
   let readyTimer = 0;
 
   window.addEventListener('message', (e) => {
+    if (!isTrustedLocalOrigin(e.origin)) return;
     if (e.data && e.data.type === 'decon:igloo-ready') {
       clearTimeout(readyTimer);
       iframe.classList.add('is-ready');
@@ -1540,21 +1549,6 @@ function handleStageEdgeProximity(clientX, clientY) {
   }
 }
 
-function bindStageIframeEvents(iframeEl) {
-  if (!iframeEl || iframeEl.dataset.boundStageEvents === '1') return;
-  iframeEl.dataset.boundStageEvents = '1';
-  iframeEl.addEventListener('load', () => {
-    try {
-      const cw = iframeEl.contentWindow;
-      cw?.addEventListener(
-        'pointermove',
-        (e) => handleStageEdgeProximity(e.clientX, e.clientY),
-        { passive: true }
-      );
-    } catch (_) {}
-  });
-}
-
 function setStageIframeUrl(url) {
   const iframe = document.getElementById('stage-iframe');
   if (!iframe) return;
@@ -1564,10 +1558,8 @@ function setStageIframeUrl(url) {
   if (!url || url === 'about:blank') {
     const fresh = iframe.cloneNode(false);
     fresh.removeAttribute('src');
-    delete fresh.dataset.boundStageEvents;
     delete fresh.dataset.currentUrl;
     iframe.parentNode?.replaceChild(fresh, iframe);
-    bindStageIframeEvents(fresh);
     return;
   }
 
@@ -1585,10 +1577,8 @@ function setStageIframeUrl(url) {
     // Cross-origin fallback: recreate clean about:blank iframe and location.replace on it
     const fresh = iframe.cloneNode(false);
     fresh.removeAttribute('src');
-    delete fresh.dataset.boundStageEvents;
     fresh.dataset.currentUrl = url;
     iframe.parentNode?.replaceChild(fresh, iframe);
-    bindStageIframeEvents(fresh);
     try {
       if (fresh.contentWindow && fresh.contentWindow.location) {
         fresh.contentWindow.location.replace(url);
@@ -2360,6 +2350,7 @@ function initGlobalControls() {
 
   // Listen for child site postMessage signals (Back macro / Escape / Mouse Button 4 / Top-Left wake)
   window.addEventListener('message', (e) => {
+    if (!isTrustedLocalOrigin(e.origin)) return;
     const data = e.data;
     if (!data || typeof data !== 'object') return;
     if (data.type === 'decon:stage-back') {
@@ -2372,12 +2363,6 @@ function initGlobalControls() {
       }
     }
   });
-
-  // Bind Escape key listener & edge-proximity wake inside #stage-iframe contentWindow on load
-  const stageIframe = document.getElementById('stage-iframe');
-  if (stageIframe) {
-    bindStageIframeEvents(stageIframe);
-  }
 
   document.getElementById('btn-offline-start')?.addEventListener('click', async () => {
     if (state.activeSpecimenId) {

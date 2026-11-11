@@ -28,6 +28,20 @@ window.GALLERY = {
       { key: "higgsfield", name: "Higgsfield", url: "https://higgsfield.ai?fpr=rtjldr" },
       { key: "yir", name: "Yir", url: "https://yir.ai/?ref=RTJLDR" },
     ],
+    // Yir 大窗口里轮换的价格表：每张图 1K 的价格，全部来自 Yir 自己的报价（2026-11-04 查）。
+    // official 是模型官方价，带 ≈ 的是 Yir 估算的；Yir 不知道官方价就留空，省多少也留空。价格变了改这里，date 也一起改
+    yirPricesDate: "2026-11-04",
+    yirPrices: [
+      { model: "GPT Image 2", yir: "$0.0085", official: "≈$0.053", save: 84 },
+      { model: "Grok Imagine 2.0", yir: "$0.015", official: "$0.040", save: 63 },
+      { model: "Seedream 5.0 Pro", yir: "$0.029", official: "$0.045", save: 35 },
+      { model: "Seedream 4.5", yir: "$0.026", official: "$0.040", save: 35 },
+      { model: "GPT Image 2.5 Flare", yir: "$0.0085", official: "≈$0.013", save: 35 },
+      { model: "FLUX.2 Pro", yir: "$0.024", official: "$0.030", save: 20 },
+      { model: "FLUX.2 Max", yir: "$0.056", official: "$0.070", save: 20 },
+      { model: "Nano Banana Pro", yir: "$0.020", official: "", save: null },
+      { model: "Nano Banana 2", yir: "$0.012", official: "", save: null },
+    ],
   },
 
   works: window.GALLERY_WORKS || [],

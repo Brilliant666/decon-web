@@ -661,6 +661,12 @@ if (!window.location.search.includes('embed=card')) {
 
   // Receive visibility suspend/wake & normalized pointer coordinates from parent portal Card #04
   window.addEventListener('message', (e) => {
+    if (
+      e.origin !== window.location.origin &&
+      !/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(String(e.origin || ''))
+    ) {
+      return;
+    }
     const data = e.data;
     if (!data || typeof data !== 'object') return;
 
