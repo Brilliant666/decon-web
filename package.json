@@ -2,7 +2,7 @@
   "name": "decon-web",
   "version": "1.1.1",
   "private": true,
-  "description": "Lusion Labs R&D Exhibition Portal, 4 Flagship Web Reconstructions & 30-Primitive Shared-UI Arsenal",
+  "description": "Lusion Labs R&D Exhibition Portal, 5 Flagship Web Specimens & Shared-UI Arsenal",
   "license": "MIT",
   "scripts": {
     "start": "node portal/server.js",
@@ -11,6 +11,7 @@
     "start:02": "node sites/02-musicforprogramming/server.js",
     "start:03": "node sites/03-sambecker-photos/server.js",
     "start:04": "node sites/04-igloo-inc/server.js",
+    "start:05": "node sites/05-lumen-muse/server.js",
     "sync:01": "node sites/01-truejpeg/sync_images.js",
     "sync:02": "node sites/02-musicforprogramming/sync_rss.js",
     "sync:03": "node sites/03-sambecker-photos/sync_photos.js",

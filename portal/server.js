@@ -5,9 +5,10 @@
  * Capabilities:
  *   1. Static hosting for portal/ root directory files (index.html, styles.css, app.js, lab.js, README.md)
  *   2. Cross-directory ESM module mapping: /shared-ui/* -> ../shared-ui/*
- *   3. GET  /api/status -> Concurrently probes 127.0.0.1:6060, 6061, 6062, 6063 liveness & latency (ms)
- *   4. POST /api/wake   -> Spawns background sub-site server processes ({ id: "01"|"02"|"03"|"04"|"all" })
+ *   3. GET  /api/status -> Concurrently probes 127.0.0.1:6060..6064 liveness & latency (ms)
+ *   4. POST /api/wake   -> Spawns background sub-site server processes ({ id: "01"|"02"|"03"|"04"|"05"|"all" })
  *                          and waits until ports are online before returning updated telemetry JSON.
+ *   5. GET  /api/muse-portrait?id=ccd|anime -> Whitelisted local #01 True JPEG portrait bridge for Specimen #05 & SB-17.
  */
 
 const http = require('http');
@@ -81,8 +82,31 @@ const SPECIMEN_REGISTRY = {
     labUrl: 'http://127.0.0.1:6063/lab',
     dir: path.join(repoRoot, 'sites', '04-igloo-inc'),
     script: path.join(repoRoot, 'sites', '04-igloo-inc', 'server.js')
+  },
+  '05': {
+    id: '05',
+    slug: '05-lumen-muse',
+    name: 'LUMEN MUSE · 潜影缪斯',
+    creator: 'Decon-Web Optics R&D',
+    originUrl: 'http://127.0.0.1:6064/',
+    port: 6064,
+    url: 'http://127.0.0.1:6064/',
+    labUrl: 'http://127.0.0.1:6064/lab',
+    dir: path.join(repoRoot, 'sites', '05-lumen-muse'),
+    script: path.join(repoRoot, 'sites', '05-lumen-muse', 'server.js')
   }
 };
+
+const MUSE_PORTRAIT_WHITELIST = Object.freeze({
+  ccd: {
+    file: path.join(repoRoot, 'sites', '01-truejpeg', 'images', '038.jpg'),
+    subPath: '/images/038.jpg'
+  },
+  anime: {
+    file: path.join(repoRoot, 'sites', '01-truejpeg', 'images', '197.webp'),
+    subPath: '/images/197.webp'
+  }
+});
 
 const spawnedChildren = new Set();
 
@@ -303,6 +327,32 @@ async function handleRequest(req, res) {
     } catch (err) {
       sendJson(req, res, 500, { ok: false, error: err.message });
     }
+    return;
+  }
+
+  // 1b. GET /api/muse-portrait?id=ccd|anime (whitelisted local portrait bridge for #05 & SB-17)
+  if ((req.method === 'GET' || req.method === 'HEAD') && cleanPath === '/api/muse-portrait') {
+    const rawUrlStr = String(req.url || '');
+    const qIndex = rawUrlStr.indexOf('?');
+    const params = new URLSearchParams(qIndex >= 0 ? rawUrlStr.slice(qIndex + 1) : '');
+    const id = (params.get('id') || '').trim();
+    if (!Object.prototype.hasOwnProperty.call(MUSE_PORTRAIT_WHITELIST, id)) {
+      sendJson(req, res, 400, {
+        ok: false,
+        error: 'Invalid portrait id. Allowed: ccd, anime'
+      });
+      return;
+    }
+    const entry = MUSE_PORTRAIT_WHITELIST[id];
+    if (!isPathInsideRoot(entry.file, repoRoot)) {
+      sendJson(req, res, 403, { ok: false, error: 'Forbidden' });
+      return;
+    }
+    if (fs.existsSync(entry.file)) {
+      serveStaticFile(req, res, entry.file, { mimeTypes: DEFAULT_MIME_TYPES });
+      return;
+    }
+    proxyMissingSpecimenMedia(req, res, '01', 6060, entry.subPath);
     return;
   }
 

@@ -2,7 +2,7 @@
  * scripts/smoke-test.js
  *
  * Automated syntax verification & full-stack security/protocol smoke test suite
- * for decon-web (:6050 Portal + :6060..:6063 Specimen Servers).
+ * for decon-web (:6050 Portal + :6060..:6064 Specimen Servers).
  */
 
 const http = require('http');
@@ -21,6 +21,10 @@ const JS_FILES_TO_CHECK = [
   'shared-ui/mfp-ui.js',
   'shared-ui/photo-vault-ui.js',
   'shared-ui/igloo-ui.js',
+  'shared-ui/lumen-muse-geometry.js',
+  'shared-ui/lumen-muse-stage.js',
+  'shared-ui/lumen-muse-audio.js',
+  'shared-ui/lumen-muse-ui.js',
   'sites/01-truejpeg/server.js',
   'sites/01-truejpeg/app.js',
   'sites/01-truejpeg/i18n.js',
@@ -36,7 +40,9 @@ const JS_FILES_TO_CHECK = [
   'sites/03-sambecker-photos/sync_photos.js',
   'sites/04-igloo-inc/server.js',
   'sites/04-igloo-inc/pro-hud.js',
-  'sites/04-igloo-inc/sync_assets.js'
+  'sites/04-igloo-inc/sync_assets.js',
+  'sites/05-lumen-muse/server.js',
+  'sites/05-lumen-muse/app.js'
 ];
 
 const SERVERS = [
@@ -44,7 +50,8 @@ const SERVERS = [
   { name: 'Specimen #01 True JPEG (:6060)', port: 6060, script: 'sites/01-truejpeg/server.js' },
   { name: 'Specimen #02 musicForProgramming (:6061)', port: 6061, script: 'sites/02-musicforprogramming/server.js' },
   { name: 'Specimen #03 Sam Becker Photos (:6062)', port: 6062, script: 'sites/03-sambecker-photos/server.js' },
-  { name: 'Specimen #04 Igloo Inc (:6063)', port: 6063, script: 'sites/04-igloo-inc/server.js' }
+  { name: 'Specimen #04 Igloo Inc (:6063)', port: 6063, script: 'sites/04-igloo-inc/server.js' },
+  { name: 'Specimen #05 Lumen Muse (:6064)', port: 6064, script: 'sites/05-lumen-muse/server.js' }
 ];
 
 function rawHttpRequest({ port, method = 'GET', reqPath = '/', headers = {}, body = null, timeoutMs = 4000 }) {
@@ -133,7 +140,7 @@ async function main() {
     }
   }
 
-  console.log('\n=== 2. Ensuring All 5 Servers Are Online ===');
+  console.log('\n=== 2. Ensuring All 6 Servers Are Online ===');
   for (const srv of SERVERS) {
     let online = false;
     try {
@@ -269,6 +276,148 @@ async function main() {
     );
   } catch (err) {
     assert(false, `Specimen #04 (:6063) RFC 9110 Range test`, err.message);
+  }
+
+  console.log('\n=== 4. Specimen #05「LUMEN MUSE · 潜影缪斯」End-to-End Verification ===');
+
+  // Test 6a: Portal (:6050) Card #05, /lab & /lab.html #sb-17 (/shared-ui/lumen-muse-ui.js)
+  try {
+    const rPortalHome = await rawHttpRequest({ port: 6050, reqPath: '/' });
+    const homeHtml = rPortalHome.body.toString('utf8');
+    const card05Idx = homeHtml.indexOf('id="specimen-card-05"');
+    const card05Slice = card05Idx >= 0 ? homeHtml.slice(card05Idx, card05Idx + 2600) : '';
+    assert(
+      rPortalHome.statusCode === 200 &&
+        card05Idx >= 0 &&
+        /LUMEN MUSE/i.test(card05Slice) &&
+        card05Slice.includes('潜影缪斯') &&
+        card05Slice.includes('?embed=card'),
+      `Portal (:6050) GET / contains 5th card #specimen-card-05 with LUMEN MUSE / 潜影缪斯 and ?embed=card`
+    );
+
+    const rPortalLabRoute = await rawHttpRequest({ port: 6050, reqPath: '/lab' });
+    const labRouteHtml = rPortalLabRoute.body.toString('utf8');
+    const sb17RouteIdx = labRouteHtml.indexOf('id="sb-17"');
+    const sb17RouteSlice = sb17RouteIdx >= 0 ? labRouteHtml.slice(sb17RouteIdx, sb17RouteIdx + 2600) : '';
+    assert(
+      rPortalLabRoute.statusCode === 200 &&
+        sb17RouteIdx >= 0 &&
+        sb17RouteSlice.includes('copy-esm-btn') &&
+        sb17RouteSlice.includes('/shared-ui/lumen-muse-ui.js'),
+      `Portal (:6050) GET /lab contains #sb-17 with copy-esm-btn referencing /shared-ui/lumen-muse-ui.js`
+    );
+
+    const rPortalLabHtml = await rawHttpRequest({ port: 6050, reqPath: '/lab.html' });
+    const labHtml = rPortalLabHtml.body.toString('utf8');
+    const sb17LabIdx = labHtml.indexOf('id="sb-17"');
+    const sb17LabSlice = sb17LabIdx >= 0 ? labHtml.slice(sb17LabIdx, sb17LabIdx + 2600) : '';
+    assert(
+      rPortalLabHtml.statusCode === 200 &&
+        sb17LabIdx >= 0 &&
+        sb17LabSlice.includes('copy-esm-btn') &&
+        sb17LabSlice.includes('/shared-ui/lumen-muse-ui.js'),
+      `Portal (:6050) GET /lab.html (portal/lab.html) contains #sb-17 with copy-esm-btn referencing /shared-ui/lumen-muse-ui.js`
+    );
+  } catch (err) {
+    assert(false, 'Portal (:6050) Card #05 & SB-17 markup check', err.message);
+  }
+
+  // Test 6b: Portal (:6050) GET /api/status ('05' online on :6064) & /api/muse-portrait?id=ccd + whitelist guard
+  try {
+    const rStatus = await rawHttpRequest({ port: 6050, reqPath: '/api/status' });
+    const statusJson = JSON.parse(rStatus.body.toString('utf8'));
+    const spec05 = statusJson && statusJson.specimens && statusJson.specimens['05'];
+    assert(
+      rStatus.statusCode === 200 &&
+        statusJson.ok === true &&
+        Boolean(spec05) &&
+        spec05.port === 6064 &&
+        spec05.online === true,
+      `Portal (:6050) GET /api/status reports specimen '05' online on port 6064`
+    );
+
+    const rPortrait50 = await rawHttpRequest({
+      port: 6050,
+      reqPath: '/api/muse-portrait?id=ccd'
+    });
+    const ct50 = String(rPortrait50.headers['content-type'] || '').toLowerCase();
+    assert(
+      rPortrait50.statusCode === 200 &&
+        ct50.includes('image/jpeg') &&
+        rPortrait50.body.length > 1000,
+      `Portal (:6050) GET /api/muse-portrait?id=ccd -> 200 image/jpeg (${rPortrait50.body.length} bytes)`
+    );
+
+    const rPortrait50Bad = await rawHttpRequest({
+      port: 6050,
+      reqPath: '/api/muse-portrait?id=../../portal/server.js'
+    });
+    assert(
+      rPortrait50Bad.statusCode === 400,
+      `Portal (:6050) GET /api/muse-portrait?id=../../portal/server.js -> 400 Bad Request whitelist guard (got ${rPortrait50Bad.statusCode})`
+    );
+  } catch (err) {
+    assert(false, `Portal (:6050) /api/status & /api/muse-portrait check`, err.message);
+  }
+
+  // Test 6c: Specimen #05 (:6064) /?embed=card, /lab, /standalone, /api/muse-portrait?id=anime + whitelist guard, and /server.js 403
+  try {
+    const rEmbed = await rawHttpRequest({ port: 6064, reqPath: '/?embed=card' });
+    const embedHtml = rEmbed.body.toString('utf8');
+    assert(
+      rEmbed.statusCode === 200 &&
+        embedHtml.includes('lumen-canvas') &&
+        embedHtml.includes('embed=card'),
+      `Specimen #05 (:6064) GET /?embed=card -> 200 OK with valid stage markup (got ${rEmbed.statusCode})`
+    );
+
+    const rLab = await rawHttpRequest({ port: 6064, reqPath: '/lab' });
+    const lumenLabHtml = rLab.body.toString('utf8');
+    assert(
+      rLab.statusCode === 200 && lumenLabHtml.includes('/shared-ui/lumen-muse-ui.js'),
+      `Specimen #05 (:6064) GET /lab -> 200 OK with /shared-ui/lumen-muse-ui.js (got ${rLab.statusCode})`
+    );
+
+    const rStandalone = await rawHttpRequest({ port: 6064, reqPath: '/standalone' });
+    const standaloneHtml = rStandalone.body.toString('utf8');
+    const standaloneCt = String(rStandalone.headers['content-type'] || '').toLowerCase();
+    assert(
+      rStandalone.statusCode === 200 &&
+        standaloneCt.includes('text/html') &&
+        standaloneHtml.length > 50000 &&
+        standaloneHtml.includes('createLumenMuseStage') &&
+        standaloneHtml.includes('buildMechanicalGeometry'),
+      `Specimen #05 (:6064) GET /standalone -> 200 OK self-contained HTML (${standaloneHtml.length} chars)`
+    );
+
+    const rPortrait64 = await rawHttpRequest({
+      port: 6064,
+      reqPath: '/api/muse-portrait?id=anime'
+    });
+    const ct64 = String(rPortrait64.headers['content-type'] || '').toLowerCase();
+    assert(
+      rPortrait64.statusCode === 200 &&
+        ct64.includes('image/webp') &&
+        rPortrait64.body.length > 1000,
+      `Specimen #05 (:6064) GET /api/muse-portrait?id=anime -> 200 image/webp (${rPortrait64.body.length} bytes)`
+    );
+
+    const rPortrait64Bad = await rawHttpRequest({
+      port: 6064,
+      reqPath: '/api/muse-portrait?id=../../portal/server.js'
+    });
+    assert(
+      rPortrait64Bad.statusCode === 400,
+      `Specimen #05 (:6064) GET /api/muse-portrait?id=../../portal/server.js -> 400 Bad Request whitelist guard (got ${rPortrait64Bad.statusCode})`
+    );
+
+    const rServerBlocked = await rawHttpRequest({ port: 6064, reqPath: '/server.js' });
+    assert(
+      rServerBlocked.statusCode === 403,
+      `Specimen #05 (:6064) blocks internal script GET /server.js -> 403 (got ${rServerBlocked.statusCode})`
+    );
+  } catch (err) {
+    assert(false, 'Specimen #05 (:6064) end-to-end routes & security check', err.message);
   }
 
   for (const child of tempChildren) {

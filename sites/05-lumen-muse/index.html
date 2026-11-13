@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>LUMEN MUSE · 潜影缪斯 — Optics LM-05 · 85mm f/1.2</title>
+  <meta name="description" content="Specimen #05: LUMEN MUSE (潜影缪斯 · Optics LM-05 · 85mm f/1.2) — Zero-dependency WebGL2 PBR 8-layer latent optical developer &amp; 48kHz crystal acoustic synthesis." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>
+    (function () {
+      try {
+        var q = window.location.search || '';
+        if (q.indexOf('embed=card') !== -1) {
+          document.documentElement.setAttribute('data-embed', 'card');
+        }
+        var m = /[?&]theme=(light|dark)/.exec(q);
+        if (m) {
+          document.documentElement.setAttribute('data-theme', m[1]);
+        }
+      } catch (_) {}
+    })();
+  </script>
+  <link rel="modulepreload" href="/shared-ui/lumen-muse-geometry.js" />
+  <link rel="modulepreload" href="/shared-ui/lumen-muse-stage.js" />
+  <link rel="modulepreload" href="/shared-ui/lumen-muse-audio.js" />
+  <link rel="modulepreload" href="/shared-ui/lumen-muse-ui.js" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main id="lumen-viewport" aria-label="LUMEN MUSE Optics LM-05 WebGL2 Studio Stage">
+    <canvas id="lumen-canvas"></canvas>
+
+    <!-- Whisper-thin top-left studio hairline (92% pure canvas framing) -->
+    <header id="lumen-topbar" class="lumen-topbar">
+      <div class="lumen-topbar__brand">
+        <span class="lumen-topbar__dot" aria-hidden="true"></span>
+        <span class="lumen-topbar__kicker">DECON-WEB</span>
+        <span class="lumen-topbar__sep" aria-hidden="true">|</span>
+        <span class="lumen-topbar__model">LUMEN MUSE · OPTICS LM-05 · 85MM F/1.2</span>
+      </div>
+      <nav class="lumen-topbar__links" aria-label="Specimen routes">
+        <a href="/lab" class="lumen-topbar__link">OPTICS LAB</a>
+        <a href="/standalone" class="lumen-topbar__link" target="_blank" rel="noopener">STANDALONE HTML</a>
+      </nav>
+    </header>
+
+    <!-- Unboxed bottom-left cinema caption plate (zero borders, zero box chrome) -->
+    <section id="lumen-caption" class="lumen-caption" aria-live="polite">
+      <div id="caption-meta" class="lumen-caption__meta">
+        SHOT 01 · 226,494 TRIS · 2048² SHADOWS · 60 FPS
+      </div>
+      <h1 id="caption-title" class="lumen-caption__title">
+        LUMEN MUSE · Optics LM-05
+      </h1>
+      <p id="caption-sub" class="lumen-caption__sub">
+        Real-Time WebGL2 PBR · 85mm f/1.2 Latent Optical Developer
+      </p>
+    </section>
+
+    <!-- Sleek bottom-center frosted capsule (auto-hides after 2.5s pointer stillness) -->
+    <aside id="lumen-capsule" class="lumen-capsule" aria-label="Optical developer controls">
+      <div class="capsule-group capsule-group--slider">
+        <label for="ctrl-explode" class="capsule-label">EXPLODE</label>
+        <input
+          id="ctrl-explode"
+          class="capsule-range"
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value="0"
+          aria-label="Axial optical layer explosion"
+        />
+      </div>
+
+      <span class="capsule-divider" aria-hidden="true"></span>
+
+      <div class="capsule-group" role="group" aria-label="Muse relief preset">
+        <span class="capsule-label">MUSE</span>
+        <button type="button" class="capsule-pill is-active" data-muse="ccd">CCD</button>
+        <button type="button" class="capsule-pill" data-muse="anime">Anime</button>
+        <button type="button" class="capsule-pill" data-muse="starlight">Starlight</button>
+      </div>
+
+      <span class="capsule-divider" aria-hidden="true"></span>
+
+      <div class="capsule-group" role="group" aria-label="Optical housing material">
+        <span class="capsule-label">BODY</span>
+        <button type="button" class="capsule-pill is-active" data-mat="titanium">Titanium</button>
+        <button type="button" class="capsule-pill" data-mat="crystal">Crystal</button>
+        <button type="button" class="capsule-pill" data-mat="carbon">Carbon</button>
+      </div>
+
+      <span class="capsule-divider" aria-hidden="true"></span>
+
+      <div class="capsule-group" role="group" aria-label="Studio modes and acoustics">
+        <button type="button" id="btn-lume" class="capsule-pill" aria-pressed="false">Lume</button>
+        <button type="button" id="btn-macro" class="capsule-pill" aria-pressed="false">0.1x Macro</button>
+        <button type="button" id="btn-chime" class="capsule-pill capsule-pill--accent" title="Strike D5 / F#5 crystal chime">Chime</button>
+        <button type="button" id="btn-replay" class="capsule-pill" title="Replay 24s Director Cut">Replay</button>
+        <button type="button" id="btn-sound" class="capsule-pill is-active" aria-pressed="true" title="Toggle 48kHz procedural audio">Sound</button>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

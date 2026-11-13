@@ -148,6 +148,33 @@ const SPECIMENS = {
       { label: 'createCryoAudioEngine', sandbox: 'sb-16' },
     ],
   },
+  '05': {
+    id: '05',
+    name: 'LUMEN MUSE · 潜影缪斯',
+    origin: '127.0.0.1:6064',
+    port: 6064,
+    url: 'http://127.0.0.1:6064/',
+    labUrl: 'http://127.0.0.1:6064/lab',
+    creator: 'Decon-Web Optics R&D — Optics LM-05',
+    creatorUrl: 'http://127.0.0.1:6064/',
+    modulePath: '/shared-ui/lumen-muse-ui.js',
+    tags: 'WEBGL2 PBR · 85MM F/1.2 · LATENT MUSE',
+    summary:
+      'Zero-dependency WebGL2 PBR 8-layer medium-format 85mm f/1.2 optical camera and latent relief developer (226,000+ triangles, 2048² PCF shadows, thin-film iridescence, 9-blade iris diaphragm, and 48kHz D5/F#5 crystal acoustic synthesis).',
+    bullets: [
+      '8-Layer Coaxial Optical Architecture (buildMechanicalGeometry): Aspheric thin-film lens, knurled helicoid barrel, 9-blade iris, optical crystal body, and sapphire display back.',
+      '52,800-Vertex 3D Maiden Muse Bas-Relief & 16,384 Gaussian Stardust Particles (buildImageMuseCore, buildLatentParticleBuffers).',
+      'Custom WebGL2 GLSL ES 3.00 GGX Anisotropic PBR, 2048² Shadow Map, Screen-Space Chromatic Refraction & ACES Filmic Bloom.',
+      '48kHz Procedural Acoustic Synthesis (createLumenMuseAudio): 3-stage leaf shutter snap, 0.10x macro slow-mo transients, and D5 / F#5 dual-hammer crystal chimes.',
+    ],
+    exports: [
+      { label: 'mountLumenMuse', sandbox: 'sb-17' },
+      { label: 'createLumenMuseStage', sandbox: 'sb-17' },
+      { label: 'createLumenMuseAudio', sandbox: 'sb-17' },
+      { label: 'buildMechanicalGeometry', sandbox: 'sb-17' },
+      { label: 'MUSE_PRESETS', sandbox: 'sb-17' },
+    ],
+  },
 };
 
 const ALL_30_PRIMITIVES = [
@@ -181,6 +208,9 @@ const ALL_30_PRIMITIVES = [
   { id: '28', name: 'createBlurTextCylinder', target: 'sb-14' },
   { id: '29', name: 'createPolarReticleHud', target: 'sb-15' },
   { id: '30', name: 'createCryoAudioEngine', target: 'sb-16' },
+  { id: '31', name: 'mountLumenMuse', target: 'sb-17' },
+  { id: '32', name: 'createLumenMuseStage', target: 'sb-17' },
+  { id: '33', name: 'createLumenMuseAudio', target: 'sb-17' },
 ];
 
 /* ============================================================================
@@ -201,6 +231,7 @@ const state = {
     '02': { online: true, latencyMs: 2 },
     '03': { online: true, latencyMs: 2 },
     '04': { online: true, latencyMs: 2 },
+    '05': { online: true, latencyMs: 2 },
   },
   mouse: {
     x: window.innerWidth * 0.5,
@@ -1464,6 +1495,108 @@ function initCard04IglooLiveStage() {
   };
 }
 
+function initCard05LumenLiveStage() {
+  const cardEl = document.getElementById('specimen-card-05');
+  const iframe = document.getElementById('card-05-lumen-iframe');
+  if (!cardEl || !iframe) return null;
+
+  const targetSrc = iframe.dataset.src || 'http://127.0.0.1:6064/?embed=card';
+  let mounted = Boolean(iframe.getAttribute('src') && iframe.getAttribute('src') !== 'about:blank');
+  let readyTimer = 0;
+
+  window.addEventListener('message', (e) => {
+    if (!isTrustedLocalOrigin(e.origin)) return;
+    if (e.data && e.data.type === 'decon:lumen-ready') {
+      clearTimeout(readyTimer);
+      iframe.classList.add('is-ready');
+      if ((galleryEngines.pausedAll || state.viewMode !== 'grid') && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage({ type: 'decon:card-visibility', visible: false }, '*');
+        } catch (_) {}
+      }
+    }
+  });
+
+  iframe.addEventListener('load', () => {
+    if (!mounted) return;
+    clearTimeout(readyTimer);
+    if ((galleryEngines.pausedAll || state.viewMode !== 'grid') && iframe.contentWindow) {
+      try {
+        iframe.contentWindow.postMessage({ type: 'decon:card-visibility', visible: false }, '*');
+      } catch (_) {}
+    }
+    readyTimer = setTimeout(() => {
+      if (mounted) iframe.classList.add('is-ready');
+    }, 950);
+  });
+
+  function mountIframe() {
+    iframe.classList.add('is-ready');
+    if (mounted) return;
+    mounted = true;
+    if (iframe.getAttribute('src') !== targetSrc) {
+      iframe.setAttribute('src', targetSrc);
+    }
+  }
+
+  function unmountIframe() {
+    if (!mounted) return;
+    mounted = false;
+    clearTimeout(readyTimer);
+    iframe.classList.remove('is-ready');
+    iframe.setAttribute('src', 'about:blank');
+  }
+
+  cardEl.addEventListener(
+    'pointermove',
+    (e) => {
+      if (!mounted || !iframe.contentWindow) return;
+      const rect = cardEl.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const nx = Math.max(-1, Math.min(1, ((e.clientX - rect.left) / rect.width) * 2 - 1));
+      const ny = Math.max(-1, Math.min(1, ((e.clientY - rect.top) / rect.height) * 2 - 1));
+      try {
+        iframe.contentWindow.postMessage({ type: 'decon:lumen-pointer', nx, ny }, '*');
+      } catch (_) {}
+    },
+    { passive: true }
+  );
+
+  cardEl.addEventListener(
+    'pointerleave',
+    () => {
+      if (!mounted || !iframe.contentWindow) return;
+      try {
+        iframe.contentWindow.postMessage({ type: 'decon:lumen-pointer', nx: 0, ny: 0 }, '*');
+      } catch (_) {}
+    },
+    { passive: true }
+  );
+
+  mountIframe();
+
+  return {
+    pause({ unmountWebGL = false } = {}) {
+      if (unmountWebGL || galleryEngines.unmountWebGL) {
+        unmountIframe();
+      } else if (mounted && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage({ type: 'decon:card-visibility', visible: false }, '*');
+        } catch (_) {}
+      }
+    },
+    resume() {
+      if (!mounted) {
+        mountIframe();
+      } else if (iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage({ type: 'decon:card-visibility', visible: true }, '*');
+        } catch (_) {}
+      }
+    },
+  };
+}
+
 const galleryEngines = {
   card01: null,
   card01Visible: true,
@@ -1471,6 +1604,8 @@ const galleryEngines = {
   card02Visible: true,
   card04: null,
   card04Visible: true,
+  card05: null,
+  card05Visible: true,
   pausedAll: false,
   unmountWebGL: false,
 };
@@ -1481,6 +1616,7 @@ function pauseGalleryEngines({ unmountWebGL = false } = {}) {
   galleryEngines.card01?.pause?.();
   galleryEngines.card02?.pause?.();
   galleryEngines.card04?.pause?.({ unmountWebGL: galleryEngines.unmountWebGL });
+  galleryEngines.card05?.pause?.({ unmountWebGL: galleryEngines.unmountWebGL });
 }
 
 function resumeGalleryEngines() {
@@ -1490,6 +1626,7 @@ function resumeGalleryEngines() {
   if (galleryEngines.card01Visible) galleryEngines.card01?.resume?.();
   if (galleryEngines.card02Visible) galleryEngines.card02?.resume?.();
   if (galleryEngines.card04Visible) galleryEngines.card04?.resume?.();
+  if (galleryEngines.card05Visible) galleryEngines.card05?.resume?.();
 }
 
 function initSpecimenCards() {
@@ -1522,6 +1659,21 @@ function initSpecimenCards() {
   // Keep Card #04 always active in grid view so its 3D intro & idle animation run immediately on the first screen
   galleryEngines.card04Visible = true;
   galleryEngines.card04 = initCard04IglooLiveStage();
+
+  // --- Card #05: LUMEN MUSE · 潜影缪斯 (Live :6064/?embed=card WebGL2 PBR 85mm f/1.2 Stage) ---
+  const card05El = document.getElementById('specimen-card-05');
+  galleryEngines.card05Visible = true;
+  galleryEngines.card05 = initCard05LumenLiveStage();
+  if (card05El && galleryEngines.card05) {
+    observeVisibility(card05El, (vis) => {
+      galleryEngines.card05Visible = vis;
+      if (vis && !galleryEngines.pausedAll && state.viewMode === 'grid') {
+        galleryEngines.card05.resume();
+      } else {
+        galleryEngines.card05.pause({ unmountWebGL: false });
+      }
+    });
+  }
 
   // Clicking any specimen card (or its top-right .card-button) opens the 100vw x 100vh Fullscreen Live Stage
   document.querySelectorAll('#specimens-cards-grid .card').forEach((card) => {
@@ -1884,6 +2036,95 @@ function startListPreviewCanvas(item) {
       ctx.font = '500 11px "JetBrains Mono", monospace';
       ctx.fillStyle = '#f4f5fa';
       ctx.fillText('CRANING · LEICA Q2 28MM', 142, h - 24);
+    } else if (item.specimenId === '05') {
+      // LUMEN MUSE · 潜影缪斯 — 2x Retina 85mm f/1.2 Thin-Film Lens, 9-Blade Iris & Nocturnal Lume
+      const bg = ctx.createRadialGradient(w * 0.5, h * 0.5, 10, w * 0.5, h * 0.5, w * 0.65);
+      bg.addColorStop(0, '#141d2e');
+      bg.addColorStop(0.55, '#090c14');
+      bg.addColorStop(1, '#040508');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      const cx = w * 0.5;
+      const cy = h * 0.52;
+      const outerR = 96;
+
+      // Thin-film iridescent outer coating sheen
+      const sheen = ctx.createLinearGradient(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
+      sheen.addColorStop(0, 'rgba(140, 210, 255, 0.55)');
+      sheen.addColorStop(0.5, 'rgba(192, 132, 252, 0.35)');
+      sheen.addColorStop(1, 'rgba(245, 158, 11, 0.52)');
+      ctx.strokeStyle = sheen;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Helicoid knurling ticks
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(t * 0.24);
+      ctx.strokeStyle = 'rgba(140, 210, 255, 0.32)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 48; i++) {
+        const a = (i / 48) * Math.PI * 2;
+        const r0 = outerR - 8;
+        const r1 = i % 4 === 0 ? outerR - 2 : outerR - 5;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0);
+        ctx.lineTo(Math.cos(a) * r1, Math.sin(a) * r1);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 9-blade iris diaphragm breathing smoothly
+      const irisOpen = 0.52 + 0.22 * Math.sin(t * 1.4);
+      const bladeR = outerR * 0.74;
+      ctx.save();
+      ctx.translate(cx, cy);
+      for (let b = 0; b < 9; b++) {
+        const a = (b / 9) * Math.PI * 2 + t * 0.18;
+        const tipA = a + 0.55 * (1 - irisOpen * 0.5);
+        ctx.strokeStyle = 'rgba(220, 232, 248, 0.48)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * bladeR, Math.sin(a) * bladeR);
+        ctx.quadraticCurveTo(
+          Math.cos(a + 0.26) * bladeR * 0.72,
+          Math.sin(a + 0.26) * bladeR * 0.72,
+          Math.cos(tipA) * (bladeR * irisOpen),
+          Math.sin(tipA) * (bladeR * irisOpen)
+        );
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Latent stardust & warm-amber Muse core glow
+      const coreGlow = ctx.createRadialGradient(cx, cy, 4, cx, cy, bladeR * irisOpen);
+      coreGlow.addColorStop(0, 'rgba(245, 158, 11, 0.42)');
+      coreGlow.addColorStop(0.55, 'rgba(140, 210, 255, 0.24)');
+      coreGlow.addColorStop(1, 'rgba(9, 12, 20, 0)');
+      ctx.fillStyle = coreGlow;
+      ctx.beginPath();
+      ctx.arc(cx, cy, bladeR * irisOpen, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (let p = 0; p < 36; p++) {
+        const ang = p * 2.39996 + t * 0.6;
+        const rad = ((p * 13) % 38) * (0.65 + 0.25 * Math.sin(t * 1.8 + p));
+        const px = cx + Math.cos(ang) * rad;
+        const py = cy + Math.sin(ang) * rad;
+        ctx.fillStyle = p % 3 === 0 ? 'rgba(245, 158, 11, 0.85)' : 'rgba(140, 210, 255, 0.85)';
+        ctx.beginPath();
+        ctx.arc(px, py, 1.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.font = '500 10px "IBM Plex Mono", monospace';
+      ctx.fillStyle = 'rgba(140, 210, 255, 0.9)';
+      ctx.fillText('SPECIMEN 05 // LUMEN MUSE · OPTICS LM-05', 22, 28);
+      ctx.fillStyle = 'rgba(226, 232, 245, 0.72)';
+      ctx.fillText('85MM F/1.2 // 8-LAYER PBR // D5·F#5 CHIME', 22, h - 18);
     } else {
       // Igloo Inc — 2x Retina Real-Time Procedural 3D Polar Geodesic Cryo-Dome & Frost Reticle
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
@@ -2104,7 +2345,7 @@ function renderExpListRows() {
   const host = document.getElementById('exp-list-rows');
   if (!host || host.dataset.rendered === '1') return;
 
-  const galleryOrder = ['01', '03', '02', '04'];
+  const galleryOrder = ['01', '03', '02', '04', '05'];
   const specimenItems = galleryOrder
     .map((id) => SPECIMENS[id])
     .filter(Boolean)
@@ -2193,6 +2434,12 @@ const cmdPalette = createCommandPalette(
       action: () => openFullscreenStage('04'),
     },
     {
+      label: 'LUMEN MUSE · 潜影缪斯 — Enter Specimen (:6064 Optics LM-05)',
+      meta: 'SPECIMEN',
+      section: 'FLAGSHIP SPECIMENS',
+      action: () => openFullscreenStage('05'),
+    },
+    {
       label: 'Open Shared-UI Component Arsenal (/lab · 30 Primitives)',
       meta: '/LAB',
       section: 'PORTAL NAVIGATION',
@@ -2230,7 +2477,7 @@ const cmdPalette = createCommandPalette(
   (chosen) => {
     if (chosen && typeof chosen.action === 'function') chosen.action();
   },
-  { placeholder: 'Search 4 flagship specimens, 30 shared-ui primitives (/lab), or commands...' }
+  { placeholder: 'Search 5 flagship specimens, shared-ui primitives (/lab), or commands...' }
 );
 
 function resolveViewModeFromLocation() {

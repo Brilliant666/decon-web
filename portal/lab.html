@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="modulepreload" href="/shared-ui/lumen-muse-ui.js" />
   <link rel="prefetch" href="/" />
   <link rel="prefetch" href="/app.js" />
 </head>
@@ -97,7 +98,7 @@
           <span class="hero-line">
             <span class="hero-line-roller">
               <span>EXPERIMENTS</span>
-              <span>04 SPECIMENS</span>
+              <span>05 SPECIMENS</span>
               <span>30 PRIMITIVES</span>
             </span>
           </span>
@@ -111,10 +112,10 @@
           A space dedicated to deconstructing how god-tier websites are engineered and how we interact with them through WebGL2, Canvas &amp; Audio R&amp;D.
         </p>
         <p class="header__desc-item" data-desc-view="list">
-          A structured index of all four flagship web reconstructions with real-time Retina canvas telemetry and instant full-viewport stage launch.
+          A structured index of all five flagship web specimens with real-time Retina canvas telemetry and instant full-viewport stage launch.
         </p>
         <p class="header__desc-item" data-desc-view="lab">
-          Interactive gallery of 30 zero-dependency ES6 primitives distilled from True JPEG, musicForProgramming, Sam Becker, and Igloo Inc.
+          Interactive gallery of zero-dependency ES6 primitives distilled from True JPEG, musicForProgramming, Sam Becker, Igloo Inc., and LUMEN MUSE.
         </p>
       </div>
     </div>
@@ -133,7 +134,7 @@
   <div class="tools-bar" id="tools-bar">
     <div class="filter" role="tablist" aria-label="Sandbox Specimen Filter">
       <button type="button" class="filter__btn is-active" data-filter="all">
-        <span>All (16)</span>
+        <span>All (17)</span>
       </button>
       <button type="button" class="filter__btn" data-filter="01">
         <span>True JPEG</span>
@@ -146,6 +147,9 @@
       </button>
       <button type="button" class="filter__btn" data-filter="04">
         <span>Igloo Inc</span>
+      </button>
+      <button type="button" class="filter__btn" data-filter="05">
+        <span>Lumen Muse</span>
       </button>
     </div>
   </div>
@@ -516,6 +520,35 @@
             <input type="range" id="sb15-depth" min="0" max="1" step="0.01" value="0.0" />
           </label>
           <button type="button" class="pill-btn pill-btn--sm" id="sb15-grid-btn">TOGGLE RETICLE GRID</button>
+        </div>
+      </article>
+
+      <!-- SB-17: mountLumenMuse + createLumenMuseStage + createLumenMuseAudio (lumen-muse-ui.js) -->
+      <article class="bento-card bento-card--full" id="sb-17" data-sandbox-id="SB-17" data-categories="05 webgl canvas audio">
+        <div class="bento-card__head">
+          <div class="bento-card__meta">
+            <span class="t-title-mono">05 · LUMEN MUSE · 潜影缪斯</span>
+            <button type="button" class="copy-esm-btn" data-copy-code="import { mountLumenMuse } from '/shared-ui/lumen-muse-ui.js';\nconst muse = mountLumenMuse(stageEl, { musePreset: 'ccd', caseMaterial: 'titanium', autoPlay: true });">Copy ESM</button>
+          </div>
+          <h3 class="bento-card__title">mountLumenMuse — 8-Layer WebGL2 PBR 85mm f/1.2 Latent Optical Developer &amp; 48kHz Crystal Chimes</h3>
+        </div>
+        <div class="bento-card__stage bento-stage--webgl bento-stage--lumen" id="sb17-stage">
+          <canvas id="sb17-canvas" class="sb-webgl-canvas"></canvas>
+        </div>
+        <div class="bento-card__controls">
+          <button type="button" class="pill-btn pill-btn--sm is-active" data-sb17-muse="ccd">MUSE 01 · CCD</button>
+          <button type="button" class="pill-btn pill-btn--sm" data-sb17-muse="anime">MUSE 02 · ANIME</button>
+          <button type="button" class="pill-btn pill-btn--sm" data-sb17-muse="starlight">MUSE 03 · STARLIGHT</button>
+          <button type="button" class="pill-btn pill-btn--sm is-active" data-sb17-mat="titanium">TITANIUM</button>
+          <button type="button" class="pill-btn pill-btn--sm" data-sb17-mat="crystal">CRYSTAL</button>
+          <button type="button" class="pill-btn pill-btn--sm" data-sb17-mat="carbon">CARBON</button>
+          <label class="bento-ctrl-label">
+            <span>EXPLODE <strong id="sb17-explode-val">0.48</strong></span>
+            <input type="range" id="sb17-explode" min="0" max="1" step="0.01" value="0.48" />
+          </label>
+          <button type="button" class="pill-btn pill-btn--sm" id="sb17-lume-btn">DARKROOM LUME</button>
+          <button type="button" class="pill-btn pill-btn--sm" id="sb17-chime-d5">CHIME D5</button>
+          <button type="button" class="pill-btn pill-btn--sm pill-btn--solid" id="sb17-chime-fs5">CHIME F#5</button>
         </div>
       </article>
 

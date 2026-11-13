@@ -887,6 +887,14 @@ html[data-view="lab"] .header__desc-item[data-desc-view="lab"] {
   aspect-ratio: 15.2 / 10;
 }
 
+/* Slot 5 (左下暗房光学显影缪斯旗舰): Card #05 LUMEN MUSE · 潜影缪斯 (Cols 1..14) */
+.card--05,
+#specimen-card-05 {
+  grid-column: 1 / span 14;
+  margin-top: clamp(-2.8rem, -2vw, -1rem);
+  aspect-ratio: 15.2 / 10;
+}
+
 /* ─── Card Theme Tokens (Light Gallery vs Dark Obsidian) ─── */
 :root,
 html[data-theme="light"] {
@@ -1092,6 +1100,55 @@ html[data-theme="dark"] .card--04 {
 
 .card--04:hover .card__igloo-iframe.is-ready {
   transform: scale(1.03);
+}
+
+/* ─── Card #05: LUMEN MUSE · 潜影缪斯 (Full-Bleed Live :6064 WebGL2 PBR 85mm f/1.2 Stage) ─── */
+.card--05 {
+  background: #07090e;
+  border: 1px solid rgba(140, 210, 255, 0.14) !important;
+  box-shadow: 0 26px 62px rgba(8, 10, 16, 0.24);
+}
+
+html[data-theme="dark"] .card--05 {
+  background: #05070b;
+  border: 1px solid rgba(140, 210, 255, 0.18) !important;
+  box-shadow: 0 30px 72px rgba(0, 0, 0, 0.65);
+}
+
+.card__img--lumen {
+  position: absolute;
+  inset: 0;
+  background: #07090e;
+  overflow: hidden;
+}
+
+.lumen-stage-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 52% 46%, rgba(42, 62, 96, 0.42) 0%, rgba(11, 14, 22, 0.88) 54%, #050609 100%);
+}
+
+.card__lumen-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 1;
+  transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card__lumen-iframe.is-ready {
+  opacity: 1;
+}
+
+.card--05:hover .card__lumen-iframe.is-ready {
+  transform: scale(1.028);
 }
 
 .card__canvas,
@@ -2212,6 +2269,24 @@ html[data-theme="dark"] .card--04 .card__text {
     transparent 68%,
     rgba(68, 78, 94, 0.38) 100%
   );
+}
+
+/* Card #05 LUMEN MUSE uses luminous studio typography over velvet darkroom */
+.card--05 .card__text,
+html[data-theme="dark"] .card--05 .card__text {
+  color: #f4f6fa;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.72);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 64%,
+    rgba(5, 7, 12, 0.72) 100%
+  );
+}
+
+.card--05 .tags,
+html[data-theme="dark"] .card--05 .tags {
+  color: rgba(188, 214, 242, 0.82);
 }
 
 .card__top,
@@ -3430,6 +3505,15 @@ html[data-theme="dark"] .card--04 .card-button {
   flex: 0 0 20rem !important;
 }
 
+#sb-17 .bento-stage--lumen {
+  height: 27rem !important;
+  min-height: 27rem !important;
+  max-height: 27rem !important;
+  flex: 0 0 27rem !important;
+  padding: 0 !important;
+  background: radial-gradient(circle at 52% 48%, #141c2b 0%, #06070b 78%) !important;
+}
+
 .sb10-img {
   object-fit: cover;
 }
@@ -4172,10 +4256,12 @@ body.is-stage-open .navbar #lucy-logo-btn.is-stage-peeking .lucy-face-svg {
   .card--02,
   .card--03,
   .card--04,
+  .card--05,
   #specimen-card-01,
   #specimen-card-02,
   #specimen-card-03,
-  #specimen-card-04 {
+  #specimen-card-04,
+  #specimen-card-05 {
     grid-column: 1 / -1;
     margin-top: 0;
     aspect-ratio: 16 / 10.5;

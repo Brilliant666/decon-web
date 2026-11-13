@@ -30,6 +30,7 @@ import {
   createBlurTextCylinder,
   createPolarReticleHud,
 } from '/shared-ui/igloo-ui.js';
+import { mountLumenMuse } from '/shared-ui/lumen-muse-ui.js';
 
 /* ============================================================================
    1. 30 PRIMITIVES DIRECTORY & LAB STATE
@@ -66,6 +67,9 @@ const ALL_30_PRIMITIVES = [
   { id: '28', name: 'createBlurTextCylinder', target: 'sb-14' },
   { id: '29', name: 'createPolarReticleHud', target: 'sb-15' },
   { id: '30', name: 'createCryoAudioEngine', target: 'sb-16' },
+  { id: '31', name: 'mountLumenMuse', target: 'sb-17' },
+  { id: '32', name: 'createLumenMuseStage', target: 'sb-17' },
+  { id: '33', name: 'createLumenMuseAudio', target: 'sb-17' },
 ];
 
 const state = {
@@ -1396,6 +1400,89 @@ function initBentoSandboxes() {
       document.getElementById('sb15-grid-btn')?.addEventListener('click', () => {
         sb15Hud?.toggleGrid?.();
         playTick();
+      });
+    },
+
+    // --- SB-17: mountLumenMuse (8-Layer WebGL2 PBR 85mm f/1.2 Optical Developer & 48kHz Crystal Chimes) ---
+    () => {
+      const sb17Card = document.getElementById('sb-17');
+      const sb17Canvas = document.getElementById('sb17-canvas');
+      const sb17Explode = document.getElementById('sb17-explode');
+      const sb17ExplodeVal = document.getElementById('sb17-explode-val');
+      const sb17LumeBtn = document.getElementById('sb17-lume-btn');
+      let sb17Api = null;
+      let sb17Vis = false;
+      let sb17Lume = false;
+
+      function ensureSb17Mounted() {
+        if (sb17Api || !sb17Canvas) return sb17Api;
+        sb17Api = mountLumenMuse(sb17Canvas, {
+          autoPlay: false,
+          musePreset: 'ccd',
+          caseMaterial: 'titanium',
+          enableTimelineAudio: false,
+        });
+        const initExp = Number(sb17Explode?.value ?? 0.48);
+        sb17Api.setExplode(Number.isNaN(initExp) ? 0.48 : initExp);
+        return sb17Api;
+      }
+
+      if (sb17Card && sb17Canvas) {
+        observeVisibility(sb17Card, (vis) => {
+          sb17Vis = vis;
+          if (vis && labViewActive) {
+            ensureSb17Mounted()?.resume?.();
+          } else {
+            sb17Api?.pause?.();
+          }
+        });
+        labPauseHooks.push(() => sb17Api?.pause?.());
+        labResumeHooks.push(() => {
+          if (sb17Vis) ensureSb17Mounted()?.resume?.();
+        });
+      }
+
+      document.querySelectorAll('[data-sb17-muse]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.sb17Muse;
+          if (!id) return;
+          document.querySelectorAll('[data-sb17-muse]').forEach((b) => {
+            b.classList.toggle('is-active', b === btn);
+          });
+          ensureSb17Mounted()?.setMusePreset?.(id);
+        });
+      });
+
+      document.querySelectorAll('[data-sb17-mat]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const mat = btn.dataset.sb17Mat;
+          if (!mat) return;
+          document.querySelectorAll('[data-sb17-mat]').forEach((b) => {
+            b.classList.toggle('is-active', b === btn);
+          });
+          ensureSb17Mounted()?.setCaseMaterial?.(mat);
+        });
+      });
+
+      sb17Explode?.addEventListener('input', (e) => {
+        const v = Number(e.target.value);
+        if (sb17ExplodeVal) sb17ExplodeVal.textContent = v.toFixed(2);
+        ensureSb17Mounted()?.setExplode?.(v);
+      });
+
+      sb17LumeBtn?.addEventListener('click', () => {
+        sb17Lume = !sb17Lume;
+        sb17LumeBtn.classList.toggle('is-active', sb17Lume);
+        ensureSb17Mounted()?.setDarkroomLume?.(sb17Lume);
+        playTick();
+      });
+
+      document.getElementById('sb17-chime-d5')?.addEventListener('click', () => {
+        ensureSb17Mounted()?.strikeChime?.('D5');
+      });
+
+      document.getElementById('sb17-chime-fs5')?.addEventListener('click', () => {
+        ensureSb17Mounted()?.strikeChime?.('FS5');
       });
     },
 

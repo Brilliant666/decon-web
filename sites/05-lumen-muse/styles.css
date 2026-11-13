@@ -1,0 +1,376 @@
+/**
+ * sites/05-lumen-muse/styles.css
+ * Specimen #05: LUMEN MUSE (潜影缪斯 · Optics LM-05 · 85mm f/1.2)
+ * Luxury 92% Pure Studio Cinema Framing — CLS = 0, Zero External Font/CDN Links
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+:root {
+  --bg-velvet: #050608;
+  --bg-vignette: #0b0d13;
+  --ink-primary: rgba(244, 245, 248, 0.96);
+  --ink-secondary: rgba(198, 204, 216, 0.68);
+  --ink-muted: rgba(164, 172, 188, 0.44);
+  --accent-lume: #8cd2ff;
+  --accent-amber: #f59e0b;
+  --capsule-bg: rgba(11, 13, 19, 0.62);
+  --capsule-border: rgba(255, 255, 255, 0.09);
+  --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-velvet);
+  color: var(--ink-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+#lumen-viewport {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  contain: strict;
+  background:
+    radial-gradient(circle at 54% 48%, rgba(28, 36, 54, 0.34) 0%, rgba(9, 11, 16, 0.84) 56%, #040507 100%);
+}
+
+#lumen-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  cursor: grab;
+}
+
+#lumen-canvas:active {
+  cursor: grabbing;
+}
+
+/* ?embed=card Fast Path: 100% pure WebGL2 canvas, zero HUD, zero layout shift */
+html[data-embed="card"] #lumen-topbar,
+html[data-embed="card"] #lumen-caption,
+html[data-embed="card"] #lumen-capsule {
+  display: none !important;
+}
+
+html[data-embed="card"] #lumen-canvas {
+  cursor: pointer;
+}
+
+/* 1. Top-Left Whisper-Thin Studio Hairline */
+.lumen-topbar {
+  position: absolute;
+  top: 26px;
+  left: 34px;
+  right: 34px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lumen-topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65);
+}
+
+.lumen-topbar__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-lume);
+  box-shadow: 0 0 10px rgba(140, 210, 255, 0.65);
+}
+
+.lumen-topbar__kicker {
+  color: rgba(244, 245, 248, 0.72);
+}
+
+.lumen-topbar__sep {
+  opacity: 0.32;
+}
+
+.lumen-topbar__links {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  pointer-events: auto;
+  opacity: 0.46;
+  transition: opacity 0.35s ease;
+}
+
+.lumen-topbar__links:hover {
+  opacity: 0.94;
+}
+
+.lumen-topbar__link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.lumen-topbar__link:hover {
+  color: var(--ink-primary);
+  border-bottom-color: rgba(140, 210, 255, 0.55);
+}
+
+/* 2. Bottom-Left Unboxed Cinema Caption Plate */
+.lumen-caption {
+  position: absolute;
+  left: 34px;
+  bottom: 84px;
+  z-index: 10;
+  max-width: min(760px, 72vw);
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  opacity: 1;
+  transition:
+    opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.lumen-caption.is-swapping {
+  opacity: 0.18;
+  transform: translate3d(0, 5px, 0);
+}
+
+.lumen-caption__meta {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-lume);
+  opacity: 0.94;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65), 0 1px 4px rgba(0, 0, 0, 0.82);
+}
+
+.lumen-caption__title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(28px, 3.05vw, 42px);
+  line-height: 1.08;
+  letter-spacing: -0.012em;
+  color: var(--ink-primary);
+  text-wrap: balance;
+  hyphens: none;
+  white-space: nowrap;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65), 0 8px 28px rgba(0, 0, 0, 0.58);
+  margin-bottom: 7px;
+}
+
+.lumen-caption__sub {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0.015em;
+  color: var(--ink-secondary);
+  text-wrap: balance;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(0, 0, 0, 0.72);
+}
+
+/* 3. Bottom-Center Auto-Hiding Sleek Frosted Capsule */
+.lumen-capsule {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  z-index: 20;
+  transform: translate3d(-50%, 0, 0);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--capsule-bg);
+  border: 1px solid var(--capsule-border);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.52);
+  opacity: 1;
+  transition:
+    opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+  max-width: calc(100vw - 32px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.lumen-capsule::-webkit-scrollbar {
+  display: none;
+}
+
+.lumen-capsule.is-idle {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(-50%, 10px, 0);
+}
+
+.capsule-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.capsule-group--slider {
+  gap: 8px;
+}
+
+.capsule-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-right: 3px;
+}
+
+.capsule-divider {
+  width: 1px;
+  height: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.capsule-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 78px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  outline: none;
+  cursor: pointer;
+}
+
+.capsule-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #f4f5f8;
+  border: 1px solid rgba(140, 210, 255, 0.7);
+  box-shadow: 0 0 8px rgba(140, 210, 255, 0.45);
+  transition: transform 0.15s ease;
+}
+
+.capsule-range::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+
+.capsule-range::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #f4f5f8;
+  border: 1px solid rgba(140, 210, 255, 0.7);
+}
+
+.capsule-pill {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+  white-space: nowrap;
+}
+
+.capsule-pill:hover {
+  color: var(--ink-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.capsule-pill.is-active,
+.capsule-pill[aria-pressed="true"] {
+  color: #06080c;
+  background: rgba(240, 244, 250, 0.92);
+  border-color: rgba(255, 255, 255, 0.92);
+  font-weight: 600;
+}
+
+.capsule-pill--accent {
+  border-color: rgba(140, 210, 255, 0.28);
+  color: var(--accent-lume);
+}
+
+.capsule-pill--accent:hover {
+  background: rgba(140, 210, 255, 0.14);
+  border-color: rgba(140, 210, 255, 0.55);
+  color: #cbeaff;
+}
+
+@media (max-width: 900px) {
+  .lumen-topbar {
+    top: 18px;
+    left: 20px;
+    right: 20px;
+  }
+
+  .lumen-topbar__links {
+    display: none;
+  }
+
+  .lumen-caption {
+    left: 20px;
+    bottom: 78px;
+    max-width: calc(100vw - 40px);
+  }
+
+  .lumen-caption__title {
+    white-space: normal;
+  }
+}
